@@ -1,0 +1,44 @@
+# Git LFS configuration for large files
+# ไฟล์นี้ใช้สำหรับจัดการไฟล์ขนาดใหญ่ใน Git
+
+# ไฟล์ SQL ขนาดใหญ่
+*.sql filter=lfs diff=lfs merge=lfs -text
+
+# ไฟล์ฐานข้อมูล SQLite
+*.db filter=lfs diff=lfs merge=lfs -text
+
+# ไฟล์ Excel ขนาดใหญ่
+*.xlsx filter=lfs diff=lfs merge=lfs -text
+*.xls filter=lfs diff=lfs merge=lfs -text
+
+# ไฟล์ CSV ขนาดใหญ่ (ถ้ามี)
+*.csv filter=lfs diff=lfs merge=lfs -text
+
+# ไฟล์ backup และ archive
+*.backup filter=lfs diff=lfs merge=lfs -text
+*.bak filter=lfs diff=lfs merge=lfs -text
+*.tar.gz filter=lfs diff=lfs merge=lfs -text
+*.zip filter=lfs diff=lfs merge=lfs -text
+
+# ไฟล์ media ขนาดใหญ่
+*.mp4 filter=lfs diff=lfs merge=lfs -text
+*.avi filter=lfs diff=lfs merge=lfs -text
+*.mov filter=lfs diff=lfs merge=lfs -text
+*.wmv filter=lfs diff=lfs merge=lfs -text
+
+# ไฟล์ audio ขนาดใหญ่
+*.mp3 filter=lfs diff=lfs merge=lfs -text
+*.wav filter=lfs diff=lfs merge=lfs -text
+*.flac filter=lfs diff=lfs merge=lfs -text
+
+# ไฟล์ image ขนาดใหญ่
+*.psd filter=lfs diff=lfs merge=lfs -text
+*.ai filter=lfs diff=lfs merge=lfs -text
+*.eps filter=lfs diff=lfs merge=lfs -text
+
+# ไฟล์ document ขนาดใหญ่
+*.pdf filter=lfs diff=lfs merge=lfs -text
+*.doc filter=lfs diff=lfs merge=lfs -text
+*.docx filter=lfs diff=lfs merge=lfs -text
+*.ppt filter=lfs diff=lfs merge=lfs -text
+*.pptx filter=lfs diff=lfs merge=lfs -text
