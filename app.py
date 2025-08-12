@@ -28,6 +28,8 @@ app = Flask(__name__)
 app.secret_key = 'jms_secret_key_2025'
 CORS(app)
 
+
+
 # สร้างโฟลเดอร์ database ถ้ายังไม่มี
 os.makedirs('database', exist_ok=True)
 
@@ -284,8 +286,70 @@ def init_db():
     conn.commit()
     conn.close()
 
-# เรียกใช้ init_db() - skip for existing database
-# init_db()
+def seed_default_users() -> None:
+    """Create default users if they do not already exist so local login works.
+    The passwords are plain text here but stored hashed in the database.
+    """
+    # บัญชีผู้ดูแลระบบ
+    admin_users = [
+        # username, password, role, branch_code, name, email
+        ("GM", "gm123", "GM", "520063", "GM", "gm@jms.com"),
+        ("HR", "hr123", "HR", "520063", "HR", "hr@jms.com"),
+        ("FINANCE", "finance123", "การเงิน", "520063", "FINANCE", "finance@jms.com"),
+        ("SPV671180", "spv123", "SPV", "671180", "SPV 671180", "spv671180@jms.com"),
+        ("ADMIN", "admin123", "ADM", "520063", "ADMIN", "admin@jms.com"),
+        ("SPT001", "spt123", "SPT", "520063", "SPT001", "spt001@jms.com"),
+    ]
+    
+    # ดึงรหัสพนักงานทั้งหมดจากตาราง employees
+    conn = sqlite3.connect('database/daex_system.db')
+    cursor = conn.cursor()
+    
+    # ตรวจสอบว่าตาราง employees มีอยู่หรือไม่
+    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='employees'")
+    if cursor.fetchone():
+        cursor.execute('SELECT employee_id, name, branch_code FROM employees WHERE status = "active"')
+        employee_users = cursor.fetchall()
+    else:
+        employee_users = []
+    
+    conn.close()
+    
+    # รวมบัญชีทั้งหมด
+    all_users = admin_users + [
+        (emp_id, "123456", "SPT", branch_code, emp_name, f"{emp_id}@jms.com")
+        for emp_id, emp_name, branch_code in employee_users
+    ]
+
+    conn = sqlite3.connect('database/daex_system.db')
+    cursor = conn.cursor()
+
+    # Ensure table exists even if init_db was not called
+    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='users'")
+    if not cursor.fetchone():
+        conn.close()
+        init_db()
+        conn = sqlite3.connect('database/daex_system.db')
+        cursor = conn.cursor()
+
+    for username, plain_password, role, branch_code, name, email in all_users:
+        password_hash = generate_password_hash(plain_password)
+        cursor.execute('SELECT id FROM users WHERE username = ?', (username,))
+        row = cursor.fetchone()
+        if row is None:
+            cursor.execute(
+                'INSERT INTO users (username, password_hash, role, branch_code, name, email) VALUES (?, ?, ?, ?, ?, ?)',
+                (username, password_hash, role, branch_code, name, email),
+            )
+        else:
+            # Reset password and keep role/branch/name/email in sync for testing
+            cursor.execute(
+                'UPDATE users SET password_hash = ?, role = ?, branch_code = ?, name = ?, email = ? WHERE username = ?',
+                (password_hash, role, branch_code, name, email, username),
+            )
+
+    conn.commit()
+    conn.close()
 
 # ฟังก์ชันตรวจสอบการล็อกอิน
 def login_required(f):
@@ -324,27 +388,34 @@ def index():
 def login():
     """หน้าล็อกอิน"""
     if request.method == 'POST':
-        username = request.form['username'].strip()
-        password = request.form['password'].strip()
-        
-        conn = sqlite3.connect('database/daex_system.db')
-        cursor = conn.cursor()
-        cursor.execute('SELECT id, username, password_hash, role, branch_code, email FROM users WHERE username = ?', (username,))
-        user = cursor.fetchone()
-        conn.close()
-        
-        if user and check_password_hash(user[2], password):
-            session['user_id'] = user[0]
-            session['username'] = user[1]
-            session['user_role'] = user[3]
-            session['branch_code'] = user[4]
-            session['user_name'] = user[1]  # ใช้ username แทน name
-            print(f"DEBUG: เข้าสู่ระบบสำเร็จ - Role: {user[3]}")
-            print(f"DEBUG: Session data: {dict(session)}")
-            flash('เข้าสู่ระบบสำเร็จ', 'success')
-            return redirect(url_for('dashboard'))
-        else:
-            flash('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง', 'error')
+        try:
+            username = request.form['username'].strip()
+            password = request.form['password'].strip()
+            
+            print(f"DEBUG: พยายามเข้าสู่ระบบ - Username: {username}")
+            
+            conn = sqlite3.connect('database/daex_system.db')
+            cursor = conn.cursor()
+            cursor.execute('SELECT id, username, password_hash, role, branch_code, email FROM users WHERE username = ?', (username,))
+            user = cursor.fetchone()
+            conn.close()
+            
+            if user and check_password_hash(user[2], password):
+                session['user_id'] = user[0]
+                session['username'] = user[1]
+                session['user_role'] = user[3]
+                session['branch_code'] = user[4]
+                session['user_name'] = user[1]
+                print(f"DEBUG: เข้าสู่ระบบสำเร็จ - Role: {user[3]}")
+                print(f"DEBUG: Session data: {dict(session)}")
+                flash('เข้าสู่ระบบสำเร็จ', 'success')
+                return redirect(url_for('dashboard'))
+            else:
+                print(f"DEBUG: เข้าสู่ระบบล้มเหลว - Username: {username}")
+                flash('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง', 'error')
+        except Exception as e:
+            print(f"DEBUG: Error ในฟังก์ชัน login: {str(e)}")
+            flash('เกิดข้อผิดพลาดในการเข้าสู่ระบบ', 'error')
     
     return render_template('login.html')
 
@@ -382,6 +453,42 @@ def logout():
     session.clear()
     flash('ออกจากระบบแล้ว', 'info')
     return redirect(url_for('index'))
+
+@app.route('/test-login')
+def test_login():
+    """ทดสอบการเข้าสู่ระบบ (สำหรับ debug)"""
+    try:
+        conn = sqlite3.connect('database/daex_system.db')
+        cursor = conn.cursor()
+        cursor.execute('SELECT username, role FROM users LIMIT 5')
+        users = cursor.fetchall()
+        conn.close()
+        
+        return jsonify({
+            'status': 'success',
+            'message': 'Database connection successful',
+            'users_found': len(users),
+            'sample_users': users
+        })
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': f'Database connection failed: {str(e)}'
+        })
+
+@app.route('/debug-session')
+def debug_session():
+    """ดูข้อมูล session (สำหรับ debug)"""
+    return jsonify({
+        'session_data': dict(session),
+        'cookies': dict(request.cookies),
+        'headers': dict(request.headers)
+    })
+
+@app.route('/test-form')
+def test_form():
+    """ทดสอบฟอร์ม (สำหรับ debug)"""
+    return render_template('test_form.html')
 
 @app.route('/dashboard')
 @login_required
@@ -4946,4 +5053,5 @@ def api_export_vehicle_data():
 
 if __name__ == '__main__':
     init_db()
+    seed_default_users()
     app.run(host='0.0.0.0', port=8080, debug=True)
