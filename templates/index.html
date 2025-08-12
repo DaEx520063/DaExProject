@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JMS - ระบบจัดการบริษัท</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            min-height: 100vh;
+        }
+        .login-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+        .logo {
+            font-size: 3rem;
+            font-weight: bold;
+            color: #dc3545;
+        }
+        .feature-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row min-vh-100 align-items-center">
+            <div class="col-lg-8">
+                <div class="text-center text-white mb-5">
+                    <h1 class="display-3 fw-bold mb-4">JMS TH</h1>
+                    <p class="lead mb-4">ระบบจัดการบริษัทครบวงจร</p>
+                    <div class="row g-4">
+                        <div class="col-md-4">
+                            <div class="feature-card p-4 text-center">
+                                <i class="fas fa-users fa-3x text-primary mb-3"></i>
+                                <h5>จัดการพนักงาน</h5>
+                                <p class="text-muted">ระบบจัดการข้อมูลพนักงาน การลา และประวัติการทำงาน</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="feature-card p-4 text-center">
+                                <i class="fas fa-money-bill-wave fa-3x text-success mb-3"></i>
+                                <h5>การเงิน</h5>
+                                <p class="text-muted">ระบบจัดการเงินเดือน ค่าใช้จ่าย และรายงานการเงิน</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="feature-card p-4 text-center">
+                                <i class="fas fa-chart-line fa-3x text-info mb-3"></i>
+                                <h5>รายงาน</h5>
+                                <p class="text-muted">ระบบรายงานและวิเคราะห์ข้อมูลแบบ Excel</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="login-container p-5">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-building fa-3x text-primary mb-3"></i>
+                        <h3 class="fw-bold">เข้าสู่ระบบ</h3>
+                        <p class="text-muted">กรุณาเข้าสู่ระบบเพื่อใช้งาน</p>
+                    </div>
+                    
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                    
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <a href="/login" class="btn btn-primary btn-lg w-100">
+                                <i class="fas fa-desktop me-2"></i>
+                                เข้าสู่ระบบผ่านคอมพิวเตอร์
+                            </a>
+                        </div>
+                        <div class="col-12">
+                            <a href="/mobile/login" class="btn btn-success btn-lg w-100">
+                                <i class="fas fa-mobile-alt me-2"></i>
+                                เข้าสู่ระบบผ่านมือถือ
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center mt-4">
+                        <small class="text-muted">
+                            <strong>ตัวอย่างบัญชี:</strong><br>
+                            GM: GM / gm123<br>
+                            HR: HR / hr123<br>
+                            การเงิน: FINANCE / finance123<br>
+                            SPV: SPV671180 / spv123<br>
+                            ADMIN: ADMIN / admin123<br>
+                            SPT: SPT001 / spt123
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> 
