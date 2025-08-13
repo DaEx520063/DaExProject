@@ -33,7 +33,7 @@ os.makedirs('database', exist_ok=True)
 
 def init_db():
     """สร้างตารางฐานข้อมูลสำหรับระบบ JMS"""
-    conn = sqlite3.connect('database/daex_system.db')
+    conn = get_db_connection()
     cursor = conn.cursor()
     
     # สร้างตารางผู้ใช้งานระบบ
@@ -327,7 +327,7 @@ def login():
         username = request.form['username'].strip()
         password = request.form['password'].strip()
         
-        conn = sqlite3.connect('database/daex_system.db')
+        conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute('SELECT id, username, password_hash, role, branch_code, email FROM users WHERE username = ?', (username,))
         user = cursor.fetchone()
@@ -355,7 +355,7 @@ def mobile_login():
         username = request.form['username'].strip()
         password = request.form['password'].strip()
         
-        conn = sqlite3.connect('database/daex_system.db')
+        conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute('SELECT id, username, password_hash, role, branch_code, email FROM users WHERE username = ?', (username,))
         user = cursor.fetchone()
@@ -387,7 +387,7 @@ def logout():
 @login_required
 def dashboard():
     """แดชบอร์ดหลัก"""
-    conn = sqlite3.connect('database/daex_system.db')
+    conn = get_db_connection()
     cursor = conn.cursor()
     
     # ข้อมูลสรุปตาม role
@@ -469,7 +469,7 @@ def dashboard():
 @role_required(['GM', 'MD'])
 def gm_permissions():
     """หน้าจัดการสิทธิ์สำหรับ GM"""
-    conn = sqlite3.connect('database/daex_system.db')
+    conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('SELECT id, username, role, name, email, branch_code FROM users ORDER BY role, username')
     users = cursor.fetchall()
@@ -482,7 +482,7 @@ def gm_permissions():
 @role_required(['HR', 'GM', 'MD'])
 def hr_employee_requests():
     """หน้าอนุมัติการขอเปิดรหัสพนักงาน"""
-    conn = sqlite3.connect('database/daex_system.db')
+    conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('''
         SELECT er.*, e.name as requester_name 
@@ -499,7 +499,7 @@ def hr_employee_requests():
 @role_required(['HR', 'GM', 'MD'])
 def hr_employees():
     """หน้ารายชื่อพนักงานทั้งหมด"""
-    conn = sqlite3.connect('database/daex_system.db')
+    conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('''
         SELECT e.*, m.name as manager_name 
@@ -532,7 +532,7 @@ def hr_employees():
 @role_required(['HR', 'GM', 'MD'])
 def hr_leave_approvals():
     """หน้าอนุมัติการลา"""
-    conn = sqlite3.connect('database/daex_system.db')
+    conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('''
         SELECT l.*, e.name as employee_name, e.branch_code 
@@ -558,7 +558,7 @@ def hr_upload_salary():
 @role_required(['การเงิน', 'GM', 'MD'])
 def finance_expense_approvals():
     """หน้าอนุมัติการเบิกค่าใช้จ่าย"""
-    conn = sqlite3.connect('database/daex_system.db')
+    conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('''
         SELECT e.*, emp.name as employee_name, emp.branch_code 
@@ -577,7 +577,7 @@ def finance_expense_approvals():
 def finance_expense_reports():
     """หน้ารายการเบิกต่างๆ"""
     expense_type = request.args.get('type', 'all')
-    conn = sqlite3.connect('database/daex_system.db')
+    conn = get_db_connection()
     cursor = conn.cursor()
     
     if expense_type == 'all':
@@ -612,7 +612,7 @@ def finance_upload_expenses():
 @role_required(['การเงิน', 'GM', 'MD'])
 def finance_expense_summary():
     """หน้าสรุปรายการค่าใช้จ่าย"""
-    conn = sqlite3.connect('database/daex_system.db')
+    conn = get_db_connection()
     cursor = conn.cursor()
     
     # สรุปตามประเภทค่าใช้จ่าย
@@ -653,7 +653,7 @@ def api_my_leave_requests():
     """API สำหรับดึงข้อมูลการลาของผู้ใช้"""
     try:
         employee_id = session.get('username')
-        conn = sqlite3.connect('database/daex_system.db')
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         cursor.execute('''
@@ -695,7 +695,7 @@ def api_content(content_type):
     print(f"DEBUG: user_role: {user_role}")
     print(f"DEBUG: branch_code: {branch_code}")
     
-    conn = sqlite3.connect('database/daex_system.db')
+    conn = get_db_connection()
     cursor = conn.cursor()
     
     if content_type == 'employee-management' and user_role in ['HR', 'GM', 'MD']:
@@ -869,7 +869,7 @@ def api_content(content_type):
     
     elif content_type == 'all-expenses' and user_role in ['GM', 'MD']:
         # ค่าใช้จ่ายทั้งหมด
-        conn = sqlite3.connect('database/daex_system.db')
+        conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute('''
             SELECT e.*, emp.name as employee_name, emp.branch_code 
@@ -899,7 +899,7 @@ def api_content(content_type):
     
     elif content_type == 'all-penalties' and user_role in ['GM', 'MD']:
         # ค่าปรับทั้งหมด
-        conn = sqlite3.connect('database/daex_system.db')
+        conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute('''
             SELECT p.*, e.name as employee_name, e.branch_code 
@@ -1058,7 +1058,7 @@ def api_salary_monthly_data():
         branch = request.args.get('branch', '')
         employee_id = request.args.get('employee_id', '')
         
-        conn = sqlite3.connect('database/daex_system.db')
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         # ดึงข้อมูลจาก monthly_salary_data (ข้อมูลที่มีช่วงน้ำหนักแยก)
@@ -1275,7 +1275,7 @@ def api_salary_monthly_data():
 def api_employee_salary_details(employee_id):
     """API สำหรับดึงข้อมูลรายละเอียดเงินเดือนของพนักงานคนเดียว"""
     try:
-        conn = sqlite3.connect('database/daex_system.db')
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         # ดึงข้อมูลพนักงาน
@@ -1448,7 +1448,7 @@ def api_import_employees():
         data = request.get_json()
         employees = data.get('employees', [])
         
-        conn = sqlite3.connect('database/daex_system.db')
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         success_count = 0
@@ -1523,7 +1523,7 @@ def api_update_employee():
     try:
         data = request.get_json()
         
-        conn = sqlite3.connect('database/daex_system.db')
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         old_employee_id = data['employee_id']
@@ -1591,7 +1591,7 @@ def api_update_employee():
 def api_activate_employee(employee_id):
     """API สำหรับเปิดรหัสพนักงาน"""
     try:
-        conn = sqlite3.connect('database/daex_system.db')
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         cursor.execute('''
@@ -1618,7 +1618,7 @@ def api_activate_employee(employee_id):
 def api_deactivate_employee(employee_id):
     """API สำหรับปิดรหัสพนักงาน"""
     try:
-        conn = sqlite3.connect('database/daex_system.db')
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         cursor.execute('''
@@ -1645,7 +1645,7 @@ def api_deactivate_employee(employee_id):
 def api_export_employees():
     """API สำหรับ Export ข้อมูลพนักงานเป็น Excel"""
     try:
-        conn = sqlite3.connect('database/daex_system.db')
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         # Get all employees with branch names
@@ -1688,7 +1688,7 @@ def api_export_employees():
 def api_get_employee_password(employee_id):
     """API สำหรับดึงข้อมูลรหัสผ่านของพนักงาน"""
     try:
-        conn = sqlite3.connect('database/daex_system.db')
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         # First try to get password from users table with employee_id as username
@@ -1739,7 +1739,7 @@ def api_get_employee_password(employee_id):
             # ถ้าเป็น hash ให้แสดงรหัสผ่านเริ่มต้น
             if password_hash.startswith('scrypt:') or password_hash.startswith('pbkdf2:'):
                 # ตรวจสอบว่ามีรหัสผ่านที่แก้ไขแล้วหรือไม่
-                conn = sqlite3.connect('database/daex_system.db')
+                conn = get_db_connection()
                 cursor = conn.cursor()
                 cursor.execute('''
                     SELECT plain_password FROM user_passwords WHERE username = ?
@@ -1782,7 +1782,7 @@ def spv_request_employee():
         position = request.form['position']
         reason = request.form['reason']
         
-        conn = sqlite3.connect('database/daex_system.db')
+        conn = get_db_connection()
         cursor = conn.cursor()
         try:
             cursor.execute('''
@@ -1816,7 +1816,7 @@ def spv_leave_request():
         end = datetime.strptime(end_date, '%Y-%m-%d')
         days_requested = (end - start).days + 1
         
-        conn = sqlite3.connect('database/daex_system.db')
+        conn = get_db_connection()
         cursor = conn.cursor()
         try:
             cursor.execute('''
@@ -1845,7 +1845,7 @@ def spv_expense_request():
         description = request.form['description']
         amount = float(request.form['amount'])
         
-        conn = sqlite3.connect('database/daex_system.db')
+        conn = get_db_connection()
         cursor = conn.cursor()
         try:
             cursor.execute('''
@@ -1869,7 +1869,7 @@ def spv_expense_request():
 def spv_branch_employees():
     """หน้ารายชื่อและประวัติพนักงานในสาขา"""
     branch_code = session.get('branch_code')
-    conn = sqlite3.connect('database/daex_system.db')
+    conn = get_db_connection()
     cursor = conn.cursor()
     
     cursor.execute('''
@@ -1891,7 +1891,7 @@ def spv_branch_employees():
 def employee_salary():
     """หน้าข้อมูลเงินเดือน"""
     username = session.get('username')
-    conn = sqlite3.connect('database/daex_system.db')
+    conn = get_db_connection()
     cursor = conn.cursor()
     
     cursor.execute('SELECT employee_id FROM employees WHERE email = ?', (username,))
@@ -1919,7 +1919,7 @@ def employee_salary():
 def employee_penalties():
     """หน้าค่าปรับ"""
     username = session.get('username')
-    conn = sqlite3.connect('database/daex_system.db')
+    conn = get_db_connection()
     cursor = conn.cursor()
     
     cursor.execute('SELECT employee_id FROM employees WHERE email = ?', (username,))
@@ -2094,7 +2094,7 @@ def upload_salary():
 def sync_monthly_salary_data(batch_id):
     """ซิงค์ข้อมูลจาก employee_salary_records ไปยัง monthly_salary_data"""
     try:
-        conn = sqlite3.connect('database/daex_system.db')
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         # คำนวณข้อมูลสรุปจาก employee_salary_records
@@ -2149,7 +2149,7 @@ def sync_monthly_salary_data(batch_id):
 def process_salary_upload_old_system(df, filename, found_columns, month, year):
     """ประมวลผลข้อมูลเงินเดือนตามขั้นตอนใหม่ - เชื่อมโยง 4 เมนู"""
     try:
-        conn = sqlite3.connect('database/daex_system.db')
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         # สร้าง batch_id สำหรับการอัพโหลด
@@ -2488,7 +2488,7 @@ def api_upload_results_latest():
     """API สำหรับดึงผลลัพธ์การอัพโหลดล่าสุด"""
     try:
         print("DEBUG: API upload-results/latest called")
-        conn = sqlite3.connect('database/daex_system.db')
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         # ดึงข้อมูลการอัพโหลดล่าสุด
@@ -2687,7 +2687,7 @@ def api_upload_results_by_month_year(month, year):
     """API สำหรับดึงผลลัพธ์การอัพโหลดตามเดือนและปี"""
     try:
         print(f"DEBUG: API upload-results/{month}/{year} called")
-        conn = sqlite3.connect('database/daex_system.db')
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         # ดึงข้อมูลการอัพโหลดตามเดือนและปี
@@ -2852,7 +2852,7 @@ def api_upload_history(month, year):
     """API สำหรับดึงประวัติการอัพโหลดตามเดือนและปี"""
     try:
         print(f"DEBUG: API upload-history called with month={month}, year={year}")
-        conn = sqlite3.connect('database/daex_system.db')
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         # ดึงข้อมูลการอัพโหลดตามเดือนและปี
@@ -2920,7 +2920,7 @@ def api_upload_history(month, year):
 def api_delete_upload(upload_id):
     """API สำหรับลบข้อมูลการอัพโหลดและข้อมูลที่เกี่ยวข้อง"""
     try:
-        conn = sqlite3.connect('database/daex_system.db')
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         # ดึงข้อมูลการอัพโหลด
@@ -3027,7 +3027,7 @@ def api_confirm_payment():
         if not work_month:
             return jsonify({'success': False, 'message': 'กรุณาระบุเดือนและปี'})
         
-        conn = sqlite3.connect('database/daex_system.db')
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         # ตรวจสอบว่ามีข้อมูลในเดือนนั้นหรือไม่
@@ -3078,7 +3078,7 @@ def api_confirm_payment():
 def api_payment_status(work_month):
     """API สำหรับตรวจสอบสถานะการยืนยันการจ่ายเงินเดือน"""
     try:
-        conn = sqlite3.connect('database/daex_system.db')
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         # ตรวจสอบสถานะการยืนยัน
@@ -3117,7 +3117,7 @@ def api_test_salary_data():
         month = request.args.get('month', '6')
         year = request.args.get('year', '2025')
         
-        conn = sqlite3.connect('database/daex_system.db')
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         # ดึงข้อมูลจาก employee_salary_records (ข้อมูลจริงจากการอัพโหลด)
@@ -3306,7 +3306,7 @@ def api_test_salary_data():
 def api_get_piece_rate(rate_id):
     """ดึงข้อมูลเรทตาม ID"""
     try:
-        conn = sqlite3.connect('database/daex_system.db')
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         cursor.execute("""
@@ -3386,7 +3386,7 @@ def api_save_piece_rate():
         except (ValueError, TypeError) as e:
             return jsonify({'success': False, 'error': f'ข้อมูลตัวเลขไม่ถูกต้อง: {str(e)}'}), 400
         
-        conn = sqlite3.connect('database/daex_system.db')
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         if data.get('piece_rate_id'):  # ใช้ piece_rate_id แทน id
@@ -3436,7 +3436,7 @@ def api_save_piece_rate():
 def api_delete_piece_rate(rate_id):
     """ลบข้อมูลเรท"""
     try:
-        conn = sqlite3.connect('database/daex_system.db')
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         cursor.execute("DELETE FROM piece_rates WHERE id = ?", (rate_id,))
@@ -3462,7 +3462,7 @@ def api_update_piece_rate_field():
         if not all([rate_id, field, value]):
             return jsonify({'error': 'ข้อมูลไม่ครบถ้วน'}), 400
         
-        conn = sqlite3.connect('database/daex_system.db')
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         cursor.execute(f"UPDATE piece_rates SET {field} = ? WHERE id = ?", (value, rate_id))
@@ -3483,7 +3483,7 @@ def api_get_piece_rates_by_zone_branch():
         zone = request.args.get('zone', '')
         branch = request.args.get('branch', '')
         
-        conn = sqlite3.connect('database/daex_system.db')
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         query = """
@@ -3546,7 +3546,7 @@ def api_get_piece_rates_by_zone_branch():
 def api_get_employee_rate(employee_id):
     """ดึงข้อมูลเรทของพนักงาน"""
     try:
-        conn = sqlite3.connect('database/daex_system.db')
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         # ดึงข้อมูลพนักงาน
@@ -3619,7 +3619,7 @@ def api_update_employee_rate():
         if not employee_id:
             return jsonify({'success': False, 'message': 'ไม่พบรหัสพนักงาน'})
         
-        conn = sqlite3.connect('database/daex_system.db')
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         # อัปเดตข้อมูลพนักงาน
@@ -3673,7 +3673,7 @@ def api_update_employee_rate():
 def api_dashboard_summary():
     """API สำหรับข้อมูลสรุป dashboard"""
     try:
-        conn = sqlite3.connect('database/daex_system.db')
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         # นับจำนวนพนักงานทั้งหมด
@@ -3713,7 +3713,7 @@ def api_dashboard_summary():
 def api_dashboard_recent_activity():
     """API สำหรับกิจกรรมล่าสุด"""
     try:
-        conn = sqlite3.connect('database/daex_system.db')
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         # ดึงข้อมูลกิจกรรมล่าสุด (จำลองข้อมูล)
@@ -3854,7 +3854,7 @@ def calculate_salary_unified(employee_data, rate_data, pieces):
 def api_get_user_permissions(user_id):
     """ดึงข้อมูลสิทธิ์ของผู้ใช้"""
     try:
-        conn = sqlite3.connect('database/daex_system.db')
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         # ดึงข้อมูลเมนูทั้งหมด
@@ -3906,7 +3906,7 @@ def api_update_user_permissions(user_id):
         data = request.get_json()
         permissions = data.get('permissions', [])
         
-        conn = sqlite3.connect('database/daex_system.db')
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         # ลบสิทธิ์เดิม
@@ -3949,7 +3949,7 @@ def api_update_user_permissions(user_id):
 def api_get_users():
     """ดึงรายการผู้ใช้ทั้งหมด"""
     try:
-        conn = sqlite3.connect('database/daex_system.db')
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         cursor.execute('SELECT id, username, role, name, email FROM users ORDER BY role, username')
@@ -3984,7 +3984,7 @@ def api_get_users():
 def api_get_user_by_username(username):
     """ดึงข้อมูลผู้ใช้ตาม username"""
     try:
-        conn = sqlite3.connect('database/daex_system.db')
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         cursor.execute('SELECT id, username, role, name, email, branch_code FROM users WHERE username = ?', (username,))
@@ -4034,7 +4034,7 @@ def api_create_user():
                 'message': 'กรุณากรอกข้อมูลให้ครบถ้วน'
             })
         
-        conn = sqlite3.connect('database/daex_system.db')
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         # ตรวจสอบว่ามี username นี้อยู่แล้วหรือไม่
@@ -4099,7 +4099,7 @@ def api_create_user():
 def api_delete_user(username):
     """ลบผู้ใช้"""
     try:
-        conn = sqlite3.connect('database/daex_system.db')
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         # ตรวจสอบว่ามีผู้ใช้นี้หรือไม่
@@ -4186,7 +4186,7 @@ def mobile_app():
 def api_vehicle_dashboard_stats():
     """API สำหรับข้อมูลสถิติ Dashboard รถ"""
     try:
-        conn = sqlite3.connect('database/daex_system.db')
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         # นับรถทั้งหมด
@@ -4228,7 +4228,7 @@ def api_vehicle_dashboard_stats():
 def api_vehicle_recent_activities():
     """API สำหรับกิจกรรมล่าสุด"""
     try:
-        conn = sqlite3.connect('database/daex_system.db')
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         # ดึงข้อมูลการใช้งานล่าสุด
@@ -4289,7 +4289,7 @@ def api_vehicle_recent_activities():
 def api_vehicle_notifications():
     """API สำหรับการแจ้งเตือน"""
     try:
-        conn = sqlite3.connect('database/daex_system.db')
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         # ดึงการแจ้งเตือนที่ยังไม่เสร็จสิ้น
@@ -4326,7 +4326,7 @@ def api_vehicle_notifications():
 def api_vehicle_list():
     """API สำหรับรายการรถ"""
     try:
-        conn = sqlite3.connect('database/daex_system.db')
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         # ดึงพารามิเตอร์การกรอง
@@ -4407,7 +4407,7 @@ def api_vehicle_list():
 def api_vehicle_statistics():
     """API สำหรับสถิติรถ"""
     try:
-        conn = sqlite3.connect('database/daex_system.db')
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         # นับรถทั้งหมด
@@ -4444,7 +4444,7 @@ def api_vehicle_statistics():
 def api_vehicle_drivers():
     """API สำหรับรายการคนขับ"""
     try:
-        conn = sqlite3.connect('database/daex_system.db')
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         cursor.execute('SELECT employee_id, name FROM employees WHERE status = "active" ORDER BY name')
@@ -4488,7 +4488,7 @@ def api_branches():
 def api_vehicle_details(vehicle_id):
     """API สำหรับรายละเอียดรถ"""
     try:
-        conn = sqlite3.connect('database/daex_system.db')
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         # ดึงข้อมูลรถ
@@ -4562,7 +4562,7 @@ def api_vehicle_add():
     try:
         data = request.get_json()
         
-        conn = sqlite3.connect('database/daex_system.db')
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         cursor.execute('''
@@ -4593,7 +4593,7 @@ def api_vehicle_add():
 def api_vehicle_delete(vehicle_id):
     """API สำหรับลบรถ"""
     try:
-        conn = sqlite3.connect('database/daex_system.db')
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         cursor.execute('DELETE FROM vehicles WHERE vehicle_id = ?', (vehicle_id,))
@@ -4613,7 +4613,7 @@ def api_vehicle_register_usage():
     try:
         data = request.get_json()
         
-        conn = sqlite3.connect('database/daex_system.db')
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         cursor.execute('''
@@ -4643,7 +4643,7 @@ def api_vehicle_check():
     try:
         data = request.get_json()
         
-        conn = sqlite3.connect('database/daex_system.db')
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         cursor.execute('''
@@ -4680,7 +4680,7 @@ def api_vehicle_check():
 def api_fuel_statistics():
     """API สำหรับสถิติน้ำมัน"""
     try:
-        conn = sqlite3.connect('database/daex_system.db')
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         # คำนวณค่าใช้จ่ายน้ำมันเดือนนี้
@@ -4724,7 +4724,7 @@ def api_fuel_statistics():
 def api_fuel_records():
     """API สำหรับรายการเบิกจ่ายน้ำมัน"""
     try:
-        conn = sqlite3.connect('database/daex_system.db')
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         # ดึงพารามิเตอร์การกรอง
@@ -4807,7 +4807,7 @@ def api_add_fuel_record():
     try:
         data = request.get_json()
         
-        conn = sqlite3.connect('database/daex_system.db')
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         cursor.execute('''
@@ -4835,7 +4835,7 @@ def api_add_fuel_record():
 def api_delete_fuel_record(record_id):
     """API สำหรับลบรายการน้ำมัน"""
     try:
-        conn = sqlite3.connect('database/daex_system.db')
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         cursor.execute('DELETE FROM vehicle_fuel_usage WHERE id = ?', (record_id,))
@@ -4853,7 +4853,7 @@ def api_delete_fuel_record(record_id):
 def api_export_fuel_data():
     """API สำหรับส่งออกข้อมูลน้ำมัน"""
     try:
-        conn = sqlite3.connect('database/daex_system.db')
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         cursor.execute('''
@@ -4901,7 +4901,7 @@ def api_export_fuel_data():
 def api_export_vehicle_data():
     """API สำหรับส่งออกข้อมูลรถ"""
     try:
-        conn = sqlite3.connect('database/daex_system.db')
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         cursor.execute('''
