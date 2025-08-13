@@ -1,0 +1,405 @@
+
+<div class="excel-interface">
+    <!-- Excel Toolbar -->
+    <div class="excel-toolbar">
+        <div class="d-flex">
+            <button class="btn btn-success btn-sm" onclick="bulkApprove()">
+                <i class="fas fa-check-double"></i> อนุมัติทั้งหมด
+            </button>
+            <button class="btn btn-danger btn-sm" onclick="bulkReject()">
+                <i class="fas fa-times"></i> ไม่อนุมัติทั้งหมด
+            </button>
+            <button class="btn btn-info btn-sm" onclick="exportToExcel()">
+                <i class="fas fa-file-excel"></i> ส่งออก
+            </button>
+            <button class="btn btn-warning btn-sm" onclick="clearFilters()">
+                <i class="fas fa-eraser"></i> ล้างข้อมูล
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="downloadData()">
+                <i class="fas fa-download"></i> ดาวน์โหลดข้อมูล
+            </button>
+        </div>
+        <button class="btn btn-outline-secondary btn-sm" onclick="toggleFilters()">
+            <i class="fas fa-chevron-up"></i> ย่อ
+        </button>
+    </div>
+
+    <!-- Excel Filter Section -->
+    <div class="excel-filter-section" id="filterSection">
+        <div class="excel-filter-row">
+            <div class="excel-filter-item">
+                <label>ชื่อพนักงาน</label>
+                <input type="text" id="employeeNameFilter" placeholder="ชื่อพนักงาน" class="form-control">
+            </div>
+            <div class="excel-filter-item">
+                <label>สาขา</label>
+                <select id="branchFilter" class="form-select">
+                    <option value="">ทุกสาขา</option>
+                    {% for code, name in branches.items() %}
+                        <option value="{{ code }}">{{ name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="excel-filter-item">
+                <label>ประเภทการลา</label>
+                <select id="leaveTypeFilter" class="form-select">
+                    <option value="">ทุกประเภท</option>
+                    <option value="ลาป่วย">ลาป่วย</option>
+                    <option value="ลากิจ">ลากิจ</option>
+                    <option value="ลาพักร้อน">ลาพักร้อน</option>
+                    <option value="ลาคลอด">ลาคลอด</option>
+                </select>
+            </div>
+            <div class="excel-filter-item">
+                <label>สถานะ</label>
+                <select id="statusFilter" class="form-select">
+                    <option value="">ทุกสถานะ</option>
+                    <option value="pending">รออนุมัติ</option>
+                    <option value="approved">อนุมัติแล้ว</option>
+                    <option value="rejected">ไม่อนุมัติ</option>
+                </select>
+            </div>
+            <div class="excel-filter-item">
+                <label>วันที่เริ่มต้น</label>
+                <input type="date" id="dateFromFilter" class="form-control">
+            </div>
+            <div class="excel-filter-item">
+                <label>วันที่สิ้นสุด</label>
+                <input type="date" id="dateToFilter" class="form-control">
+            </div>
+        </div>
+    </div>
+
+    <!-- Excel Table -->
+    <div class="table-responsive">
+        <table class="table table-bordered mb-0" id="leavesTable">
+            <thead class="excel-table-header">
+                <tr>
+                    <th>
+                        <input type="checkbox" id="selectAll" onchange="toggleSelectAll()">
+                    </th>
+                    <th>ลำดับ</th>
+                    <th>ชื่อพนักงาน</th>
+                    <th>สาขา</th>
+                    <th>ประเภทการลา</th>
+                    <th>วันที่เริ่ม</th>
+                    <th>วันที่สิ้นสุด</th>
+                    <th>จำนวนวัน</th>
+                    <th>เหตุผล</th>
+                    <th>สถานะ</th>
+                    <th>การดำเนินการ</th>
+                </tr>
+            </thead>
+            <tbody class="excel-table-body">
+                {% for leave in leave_requests %}
+                <tr>
+                    <td>
+                        <input type="checkbox" class="leave-checkbox" value="{{ leave[0] }}">
+                    </td>
+                    <td>{{ loop.index }}</td>
+                    <td><strong>{{ leave[1] }}</strong></td>
+                    <td>
+                        {% if leave[2] %}
+                            <span class="badge bg-info">{{ branches[leave[2]] }}</span>
+                        {% else %}
+                            <span class="badge bg-info">-</span>
+                        {% endif %}
+                    </td>
+                    <td><span class="badge bg-secondary">{{ leave[3] }}</span></td>
+                    <td>{{ leave[4] }}</td>
+                    <td>{{ leave[5] }}</td>
+                    <td>{{ leave[6] }} วัน</td>
+                    <td>{{ leave[7] }}</td>
+                    <td>
+                        {% if leave[8] == 'pending' %}
+                            <span class="status-badge status-pending">รออนุมัติ</span>
+                        {% elif leave[8] == 'approved' %}
+                            <span class="status-badge status-approved">อนุมัติแล้ว</span>
+                        {% else %}
+                            <span class="status-badge status-rejected">ไม่อนุมัติ</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="excel-actions">
+                            <button class="btn btn-sm btn-success" onclick="approveLeave({{ leave[0] }})" title="อนุมัติ">
+                                <i class="fas fa-check"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger" onclick="rejectLeave({{ leave[0] }})" title="ไม่อนุมัติ">
+                                <i class="fas fa-times"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-primary" onclick="viewLeave({{ leave[0] }})" title="ดูรายละเอียด">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="row mt-4">
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <h5 class="card-title">รออนุมัติ</h5>
+                <h3 id="pendingCount">0 รายการ</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <h5 class="card-title">อนุมัติแล้ว</h5>
+                <h3 id="approvedCount">0 รายการ</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-danger text-white">
+            <div class="card-body">
+                <h5 class="card-title">ไม่อนุมัติ</h5>
+                <h3 id="rejectedCount">0 รายการ</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <h5 class="card-title">รวมวันลา</h5>
+                <h3 id="totalDays">0 วัน</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleFilters() {
+    const filterSection = document.getElementById('filterSection');
+    const toggleBtn = event.target.closest('button');
+    const icon = toggleBtn.querySelector('i');
+    
+    if (filterSection.style.display === 'none') {
+        filterSection.style.display = 'block';
+        icon.className = 'fas fa-chevron-up';
+    } else {
+        filterSection.style.display = 'none';
+        icon.className = 'fas fa-chevron-down';
+    }
+}
+
+function clearFilters() {
+    document.getElementById('employeeNameFilter').value = '';
+    document.getElementById('branchFilter').value = '';
+    document.getElementById('leaveTypeFilter').value = '';
+    document.getElementById('statusFilter').value = '';
+    document.getElementById('dateFromFilter').value = '';
+    document.getElementById('dateToFilter').value = '';
+    
+    // Show all rows
+    const rows = document.querySelectorAll('#leavesTable tbody tr');
+    rows.forEach(row => row.style.display = '');
+}
+
+function filterLeaves() {
+    const employeeName = document.getElementById('employeeNameFilter').value.toLowerCase();
+    const branch = document.getElementById('branchFilter').value;
+    const leaveType = document.getElementById('leaveTypeFilter').value;
+    const status = document.getElementById('statusFilter').value;
+    const dateFrom = document.getElementById('dateFromFilter').value;
+    const dateTo = document.getElementById('dateToFilter').value;
+    
+    const rows = document.querySelectorAll('#leavesTable tbody tr');
+    
+    rows.forEach(row => {
+        const name = row.cells[2].textContent.toLowerCase();
+        const branchText = row.cells[3].textContent;
+        const type = row.cells[4].textContent;
+        const startDate = row.cells[5].textContent;
+        const leaveStatus = row.cells[9].textContent;
+        
+        const nameMatch = !employeeName || name.includes(employeeName);
+        const branchMatch = !branch || branchText.includes(branch);
+        const typeMatch = !leaveType || type.includes(leaveType);
+        const statusMatch = !status || leaveStatus.includes(status);
+        const dateMatch = !dateFrom || !dateTo || (startDate >= dateFrom && startDate <= dateTo);
+        
+        if (nameMatch && branchMatch && typeMatch && statusMatch && dateMatch) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+function toggleSelectAll() {
+    const selectAll = document.getElementById('selectAll');
+    const checkboxes = document.querySelectorAll('.leave-checkbox');
+    
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = selectAll.checked;
+    });
+}
+
+function approveLeave(leaveId) {
+    if (confirm('คุณต้องการอนุมัติการลานี้ใช่หรือไม่?')) {
+        fetch(`/api/leaves/${leaveId}/approve`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        }).then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('เกิดข้อผิดพลาด: ' + data.message);
+            }
+        }).catch(error => {
+            alert('เกิดข้อผิดพลาด: ' + error);
+        });
+    }
+}
+
+function rejectLeave(leaveId) {
+    const reason = prompt('เหตุผลในการไม่อนุมัติ:');
+    if (reason !== null) {
+        fetch(`/api/leaves/${leaveId}/reject`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ reason: reason })
+        }).then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('เกิดข้อผิดพลาด: ' + data.message);
+            }
+        }).catch(error => {
+            alert('เกิดข้อผิดพลาด: ' + error);
+        });
+    }
+}
+
+function viewLeave(leaveId) {
+    // Implement leave detail view functionality
+    alert('ดูรายละเอียดการลา: ' + leaveId);
+}
+
+function bulkApprove() {
+    const selectedLeaves = document.querySelectorAll('.leave-checkbox:checked');
+    if (selectedLeaves.length === 0) {
+        alert('กรุณาเลือกการลาที่ต้องการอนุมัติ');
+        return;
+    }
+    
+    if (confirm(`คุณต้องการอนุมัติการลา ${selectedLeaves.length} รายการใช่หรือไม่?`)) {
+        const leaveIds = Array.from(selectedLeaves).map(cb => cb.value);
+        
+        fetch('/api/leaves/bulk-approve', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ leave_ids: leaveIds })
+        }).then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('เกิดข้อผิดพลาด: ' + data.message);
+            }
+        }).catch(error => {
+            alert('เกิดข้อผิดพลาด: ' + error);
+        });
+    }
+}
+
+function bulkReject() {
+    const selectedLeaves = document.querySelectorAll('.leave-checkbox:checked');
+    if (selectedLeaves.length === 0) {
+        alert('กรุณาเลือกการลาที่ต้องการไม่อนุมัติ');
+        return;
+    }
+    
+    const reason = prompt('เหตุผลในการไม่อนุมัติ:');
+    if (reason !== null) {
+        const leaveIds = Array.from(selectedLeaves).map(cb => cb.value);
+        
+        fetch('/api/leaves/bulk-reject', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ leave_ids: leaveIds, reason: reason })
+        }).then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('เกิดข้อผิดพลาด: ' + data.message);
+            }
+        }).catch(error => {
+            alert('เกิดข้อผิดพลาด: ' + error);
+        });
+    }
+}
+
+function exportToExcel() {
+    // Implement Excel export functionality
+    alert('ส่งออกเป็นไฟล์ Excel');
+}
+
+function downloadData() {
+    // Implement download functionality
+    alert('ดาวน์โหลดข้อมูล');
+}
+
+// Add event listeners for real-time filtering
+document.getElementById('employeeNameFilter').addEventListener('input', filterLeaves);
+document.getElementById('branchFilter').addEventListener('change', filterLeaves);
+document.getElementById('leaveTypeFilter').addEventListener('change', filterLeaves);
+document.getElementById('statusFilter').addEventListener('change', filterLeaves);
+document.getElementById('dateFromFilter').addEventListener('change', filterLeaves);
+document.getElementById('dateToFilter').addEventListener('change', filterLeaves);
+
+// Update statistics on page load
+function updateStatistics() {
+    const rows = document.querySelectorAll('#leavesTable tbody tr');
+    let pendingCount = 0;
+    let approvedCount = 0;
+    let rejectedCount = 0;
+    let totalDays = 0;
+    
+    rows.forEach(row => {
+        const status = row.cells[9].textContent.trim();
+        const days = parseInt(row.cells[7].textContent) || 0;
+        
+        if (status === 'รออนุมัติ') {
+            pendingCount++;
+        } else if (status === 'อนุมัติแล้ว') {
+            approvedCount++;
+        } else if (status === 'ไม่อนุมัติ') {
+            rejectedCount++;
+        }
+        
+        totalDays += days;
+    });
+    
+    document.getElementById('pendingCount').textContent = pendingCount + ' รายการ';
+    document.getElementById('approvedCount').textContent = approvedCount + ' รายการ';
+    document.getElementById('rejectedCount').textContent = rejectedCount + ' รายการ';
+    document.getElementById('totalDays').textContent = totalDays + ' วัน';
+}
+
+// Initialize statistics when page loads
+document.addEventListener('DOMContentLoaded', updateStatistics);
+</script> 

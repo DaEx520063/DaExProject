@@ -1,0 +1,192 @@
+{% extends "dashboard.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-clock"></i> ประวัติการทำงาน</h2>
+                <button class="btn btn-primary" onclick="exportToExcel()">
+                    <i class="fas fa-download"></i> Export Excel
+                </button>
+            </div>
+
+            <!-- Filter Controls -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <label class="form-label">พนักงาน</label>
+                            <input type="text" class="form-control" id="employeeFilter" placeholder="ชื่อพนักงาน">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">วันที่</label>
+                            <input type="date" class="form-control" id="dateFilter">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">สถานะ</label>
+                            <select class="form-select" id="statusFilter">
+                                <option value="">ทุกสถานะ</option>
+                                <option value="present">มาทำงาน</option>
+                                <option value="absent">ขาดงาน</option>
+                                <option value="late">มาสาย</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">ค้นหา</label>
+                            <input type="text" class="form-control" id="searchFilter" placeholder="ค้นหา...">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Work Records Table -->
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="workRecordsTable">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th><input type="checkbox" id="selectAll"></th>
+                                    <th>วันที่</th>
+                                    <th>พนักงาน</th>
+                                    <th>เวลาเข้า</th>
+                                    <th>เวลาออก</th>
+                                    <th>ชั่วโมงทำงาน</th>
+                                    <th>โอที</th>
+                                    <th>สถานะ</th>
+                                    <th>การดำเนินการ</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for record in work_records %}
+                                <tr>
+                                    <td><input type="checkbox" class="record-checkbox" value="{{ record[0] }}"></td>
+                                    <td>{{ record[0] }}</td>
+                                    <td>{{ record[1] }}</td>
+                                    <td>{{ record[2] or '-' }}</td>
+                                    <td>{{ record[3] or '-' }}</td>
+                                    <td class="text-center">{{ record[4] or 0 }} ชม.</td>
+                                    <td class="text-center">{{ record[5] or 0 }} ชม.</td>
+                                    <td>
+                                        {% if record[6] == 'present' %}
+                                            <span class="badge bg-success">มาทำงาน</span>
+                                        {% elif record[6] == 'absent' %}
+                                            <span class="badge bg-danger">ขาดงาน</span>
+                                        {% elif record[6] == 'late' %}
+                                            <span class="badge bg-warning">มาสาย</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ record[6] }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-info" onclick="viewRecord('{{ record[0] }}', '{{ record[1] }}')">
+                                            <i class="fas fa-eye"></i> ดู
+                                        </button>
+                                        <button class="btn btn-sm btn-warning" onclick="editRecord('{{ record[0] }}', '{{ record[1] }}')">
+                                            <i class="fas fa-edit"></i> แก้ไข
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary Cards -->
+            <div class="row mt-4">
+                <div class="col-md-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">รายการทั้งหมด</h5>
+                            <h3 class="card-text">{{ total_records }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">มาทำงาน</h5>
+                            <h3 class="card-text">{{ present_count }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-danger text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">ขาดงาน</h5>
+                            <h3 class="card-text">{{ absent_count }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-warning text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">มาสาย</h5>
+                            <h3 class="card-text">{{ late_count }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Filter functionality
+document.getElementById('employeeFilter').addEventListener('input', filterTable);
+document.getElementById('dateFilter').addEventListener('change', filterTable);
+document.getElementById('statusFilter').addEventListener('change', filterTable);
+document.getElementById('searchFilter').addEventListener('input', filterTable);
+
+function filterTable() {
+    const employeeFilter = document.getElementById('employeeFilter').value.toLowerCase();
+    const dateFilter = document.getElementById('dateFilter').value;
+    const statusFilter = document.getElementById('statusFilter').value;
+    const searchFilter = document.getElementById('searchFilter').value.toLowerCase();
+    
+    const rows = document.querySelectorAll('#workRecordsTable tbody tr');
+    
+    rows.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        const date = cells[1].textContent;
+        const employee = cells[2].textContent.toLowerCase();
+        const status = cells[7].textContent.trim();
+        
+        let show = true;
+        
+        if (employeeFilter && !employee.includes(employeeFilter)) show = false;
+        if (dateFilter && date !== dateFilter) show = false;
+        if (statusFilter && !status.includes(statusFilter)) show = false;
+        if (searchFilter && !employee.includes(searchFilter) && !date.includes(searchFilter)) show = false;
+        
+        row.style.display = show ? '' : 'none';
+    });
+}
+
+// Select all functionality
+document.getElementById('selectAll').addEventListener('change', function() {
+    const checkboxes = document.querySelectorAll('.record-checkbox');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = this.checked;
+    });
+});
+
+function viewRecord(date, employee) {
+    // Implementation for viewing work record details
+    alert('ดูรายละเอียดการทำงาน: ' + employee + ' วันที่ ' + date);
+}
+
+function editRecord(date, employee) {
+    // Implementation for editing work record
+    alert('แก้ไขการทำงาน: ' + employee + ' วันที่ ' + date);
+}
+
+function exportToExcel() {
+    // Implementation for Excel export
+    alert('ฟีเจอร์ Export Excel กำลังพัฒนา');
+}
+</script>
+{% endblock %} 

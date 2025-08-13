@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>สรุปเงินได้พนักงาน - DaEx</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .employment-type-badge {
+            font-size: 0.8rem;
+            padding: 0.25rem 0.5rem;
+        }
+        .rate-status-badge {
+            font-size: 0.7rem;
+            padding: 0.2rem 0.4rem;
+        }
+        .table-responsive {
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .salary-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .salary-card h3 {
+            margin: 0;
+            font-size: 2rem;
+            font-weight: bold;
+        }
+        .salary-card p {
+            margin: 5px 0 0 0;
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1">สรุปเงินได้พนักงาน</h2>
+            <p class="text-muted mb-0">เชื่อมโยงข้อมูลพื้นฐานพนักงานกับการจัดการเรทเงินเดือน</p>
+        </div>
+        <div>
+            <button class="btn btn-success me-2" onclick="exportToExcel()">
+                <i class="fas fa-file-excel me-2"></i>
+                ส่งออก Excel
+            </button>
+            <button class="btn btn-info" onclick="refreshData()">
+                <i class="fas fa-sync-alt me-2"></i>
+                รีเฟรชข้อมูล
+            </button>
+        </div>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                    <i class="fas fa-{{ 'exclamation-triangle' if category == 'error' else 'info-circle' }} me-2"></i>
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-2">
+            <div class="salary-card">
+                <h3>{{ stats.total_employees }}</h3>
+                <p><i class="fas fa-users"></i> พนักงานทั้งหมด</p>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="salary-card">
+                <h3>{{ stats.assigned_rates }}</h3>
+                <p><i class="fas fa-check-circle"></i> มีเรทแล้ว</p>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="salary-card">
+                <h3>{{ stats.unassigned_rates }}</h3>
+                <p><i class="fas fa-exclamation-triangle"></i> ยังไม่มีเรท</p>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="salary-card">
+                <h3 id="totalPackages">{{ stats.total_packages }}</h3>
+                <p><i class="fas fa-box"></i> พัสดุรวม</p>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="salary-card">
+                <h3 id="unmatchedPackages">{{ stats.unmatched_packages or 0 }}</h3>
+                <p><i class="fas fa-exclamation-triangle"></i> ไม่ระบุรหัส</p>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="salary-card">
+                <h3>฿{{ "{:,.0f}".format(stats.total_calculated_salary) }}</h3>
+                <p><i class="fas fa-money-bill-wave"></i> เงินเดือนรวม</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Controls -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-2">
+                    <label class="form-label">เดือน</label>
+                    <select class="form-select" id="monthFilter">
+                        <option value="">เลือกเดือน</option>
+                        <option value="1">มกราคม</option>
+                        <option value="2">กุมภาพันธ์</option>
+                        <option value="3">มีนาคม</option>
+                        <option value="4">เมษายน</option>
+                        <option value="5">พฤษภาคม</option>
+                        <option value="6">มิถุนายน</option>
+                        <option value="7">กรกฎาคม</option>
+                        <option value="8">สิงหาคม</option>
+                        <option value="9">กันยายน</option>
+                        <option value="10">ตุลาคม</option>
+                        <option value="11">พฤศจิกายน</option>
+                        <option value="12">ธันวาคม</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">ปี</label>
+                    <select class="form-select" id="yearFilter">
+                        <option value="">เลือกปี</option>
+                        <option value="2024">2024</option>
+                        <option value="2025">2025</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">สาขา</label>
+                    <select class="form-select" id="branchFilter">
+                        <option value="">ทุกสาขา</option>
+                        {% for code, name in branches.items() %}
+                            <option value="{{ code }}">{{ name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">รหัสพนักงาน</label>
+                    <input type="text" class="form-control" id="employeeIdFilter" placeholder="ค้นหารหัสพนักงาน">
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-primary mt-4" onclick="loadMonthlyData()">
+                        <i class="fas fa-search me-2"></i>
+                        ค้นหาข้อมูล
+                    </button>
+                    <button class="btn btn-secondary mt-4 ms-2" onclick="resetFilters()">
+                        <i class="fas fa-refresh me-2"></i>
+                        รีเซ็ต
+                    </button>
+                </div>
+                <div class="col-md-2">
+                    <button id="confirmPaymentBtn" class="btn btn-success mt-4 w-100" onclick="confirmPayment()" style="display: none;">
+                        <i class="fas fa-check me-2"></i>
+                        ยืนยันการจ่าย
+                    </button>
+                </div>
+                <div class="col-md-2">
+                    <div id="confirmationStatus" class="alert alert-info mt-4" style="display: none; margin-bottom: 0;">
+                        <i class="fas fa-lock me-2"></i>
+                        <span id="confirmationText"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+    <!-- Employee Summary Table -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="fas fa-users me-2"></i>
+                สรุปข้อมูลพนักงานและเงินเดือน
+                <span id="employeeCount" class="badge bg-primary ms-2">0 รายการ</span>
+            </h5>
+        </div>
+        <div class="card-body">
+            <div id="loadingSpinner" class="text-center d-none">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">กำลังโหลด...</span>
+                </div>
+                <p class="mt-2">กำลังโหลดข้อมูล...</p>
+            </div>
+            <div id="noDataMessage" class="text-center d-none">
+                <i class="fas fa-info-circle text-muted" style="font-size: 3rem;"></i>
+                <p class="mt-2 text-muted">กรุณาเลือกเดือนและปีเพื่อดูข้อมูล</p>
+            </div>
+            <div class="table-responsive" style="overflow-x: auto;">
+                <table class="table table-hover" id="employeeSummaryTable" style="min-width: 2000px;">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>รหัสพนักงาน</th>
+                            <th>ชื่อ-นามสกุล</th>
+                            <th>ตำแหน่ง</th>
+                            <th>สาขา</th>
+                            <th>ประเภทการจ้าง</th>
+                            <th>ฐานเงินเดือน</th>
+                            <th>ค่าชิ้นโบนัส</th>
+                            <th>เงินสมทบ</th>
+                            <th>พัสดุ (ชิ้น)</th>
+                            <th>ยอดเงินรวม</th>
+                            <th>0.00-0.50KG<br><small>(ชิ้น/เงิน)</small></th>
+                            <th>0.51-1.00KG<br><small>(ชิ้น/เงิน)</small></th>
+                            <th>1.01-1.50KG<br><small>(ชิ้น/เงิน)</small></th>
+                            <th>1.51-2.00KG<br><small>(ชิ้น/เงิน)</small></th>
+                            <th>2.01-2.50KG<br><small>(ชิ้น/เงิน)</small></th>
+                            <th>2.51-3.00KG<br><small>(ชิ้น/เงิน)</small></th>
+                            <th>3.01-5.00KG<br><small>(ชิ้น/เงิน)</small></th>
+                            <th>5.01-10.00KG<br><small>(ชิ้น/เงิน)</small></th>
+                            <th>10.01-15.00KG<br><small>(ชิ้น/เงิน)</small></th>
+                            <th>15.00+KG<br><small>(ชิ้น/เงิน)</small></th>
+                            <th>สถานะเรท</th>
+                            <th>การดำเนินการ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="employeeTableBody">
+                        <!-- ข้อมูลจะถูกโหลดด้วย JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // ข้อมูลสาขา
+        const employeeSalaryBranchData = JSON.parse('{{ branches|tojson }}');
+        
+        // displayEmployeeData function - handles data display
+        function displayEmployeeData(employees, summary) {
+            const tbody = document.getElementById('employeeTableBody');
+            const employeeCount = document.getElementById('employeeCount');
+            
+            // อัปเดตจำนวนพนักงาน
+            employeeCount.textContent = `${employees.length} รายการ`;
+            
+            // ล้างตาราง
+            tbody.innerHTML = '';
+            
+            if (employees.length === 0) {
+                document.getElementById('noDataMessage').classList.remove('d-none');
+                document.getElementById('employeeSummaryTable').classList.add('d-none');
+                return;
+            }
+            
+            // ซ่อนข้อความไม่มีข้อมูล
+            document.getElementById('noDataMessage').classList.add('d-none');
+            document.getElementById('employeeSummaryTable').classList.remove('d-none');
+            
+            // สร้างแถวข้อมูล
+            employees.forEach(emp => {
+                const row = document.createElement('tr');
+                row.className = 'employee-row';
+                
+                // ตรวจสอบประเภทการจ้าง
+                let employmentTypeBadge = '';
+                if (emp.employment_type === 'piece_rate' || emp.employment_type === 'เรทชิ้น') {
+                    employmentTypeBadge = '<span class="badge bg-info employment-type-badge">เรทชิ้น</span>';
+                } else if (emp.employment_type === 'base_salary' || emp.employment_type === 'เรทฐานเงินเดือน') {
+                    employmentTypeBadge = '<span class="badge bg-warning employment-type-badge">เรทฐานเงินเดือน</span>';
+                } else if (emp.employment_type === 'สัญญาจ้าง') {
+                    employmentTypeBadge = '<span class="badge bg-primary employment-type-badge">สัญญาจ้าง</span>';
+                } else if (emp.employment_type === 'ประจำ') {
+                    employmentTypeBadge = '<span class="badge bg-success employment-type-badge">ประจำ</span>';
+                } else {
+                    employmentTypeBadge = `<span class="badge bg-secondary employment-type-badge">${emp.employment_type || 'ไม่ระบุ'}</span>`;
+                }
+                
+                // ตรวจสอบสถานะเรท
+                let rateStatusBadge = '';
+                if (emp.rate_status === 'assigned') {
+                    rateStatusBadge = '<span class="badge bg-success rate-status-badge">มีเรทแล้ว</span>';
+                } else if (emp.rate_status === 'no_rate') {
+                    rateStatusBadge = '<span class="badge bg-warning rate-status-badge">ยังไม่มีเรท</span>';
+                } else if (emp.rate_status === 'unmatched') {
+                    rateStatusBadge = '<span class="badge bg-danger rate-status-badge">ไม่ระบุรหัส</span>';
+                } else {
+                    rateStatusBadge = '<span class="badge bg-warning rate-status-badge">ยังไม่มีเรท</span>';
+                }
+                
+                // สร้างข้อมูลช่วงน้ำหนักแยกคอลัมน์
+                const weightRangesData = emp.weight_ranges || [];
+                const weightRangeCells = [];
+                
+                // สร้างคอลัมน์แยกสำหรับแต่ละช่วงน้ำหนัก (แสดงจำนวนชิ้นและเงิน)
+                for (let i = 0; i < 10; i++) {
+                    const range = weightRangesData[i] || { pieces: 0, amount: 0, rate: 0 };
+                    const pieces = range.pieces || 0;
+                    const amount = range.amount || 0;
+                    const rate = range.rate || 0;
+                    
+                    // ตรวจสอบว่ามีเรทหรือไม่
+                    let displayText = '';
+                    if (rate > 0) {
+                        displayText = `<div class="text-primary fw-bold">${pieces}</div><div class="text-success small">฿${amount.toLocaleString()}</div>`;
+                    } else if (pieces > 0) {
+                        // แสดงข้อมูลเดิมถ้าไม่มีเรทแต่มีชิ้น
+                        displayText = `<div class="text-primary fw-bold">${pieces}</div><div class="text-warning small">฿${amount.toLocaleString()}</div>`;
+                    } else {
+                        displayText = '<span class="text-muted">-</span>';
+                    }
+                    
+                    weightRangeCells.push(`<td class="text-center">${displayText}</td>`);
+                }
+                
+                // เพิ่ม class สำหรับแถวที่ไม่ระบุรหัสพนักงาน
+                if (emp.rate_status === 'unmatched') {
+                    row.className = 'employee-row table-danger';
+                }
+                
+                // ปิดปุ่มสำหรับข้อมูลที่ไม่ระบุรหัสพนักงาน
+                const actionButtons = emp.rate_status === 'unmatched'
+                    ? '<td><span class="text-muted">-</span></td>'
+                    : `<td>
+                        <button class="btn btn-sm btn-info" onclick="viewEmployeeDetail('${emp.employee_id}')">
+                            <i class="fas fa-eye"></i> ดู
+                        </button>
+                        <button class="btn btn-sm btn-warning" onclick="editEmployeeRate('${emp.employee_id}')">
+                            <i class="fas fa-edit"></i> แก้ไข
+                        </button>
+                    </td>`;
+                
+                // สร้าง HTML สำหรับแถว
+                const allowanceHtml = '<div class="text-primary fw-bold">฿' + (emp.allowance || 0).toLocaleString('en-US', {minimumFractionDigits: 2}) + '</div>' +
+                                   '<div class="text-success small">฿' + (emp.allowance_bonus || 0).toLocaleString('en-US', {minimumFractionDigits: 2}) + '</div>';
+                
+                const rowHtml = '<td>' + (emp.employee_id || '') + '</td>' +
+                              '<td>' + (emp.name || '') + '</td>' +
+                              '<td>' + (emp.position || '') + '</td>' +
+                              '<td>' + (employeeSalaryBranchData[emp.branch_code] || emp.branch_code || '') + '</td>' +
+                              '<td>' + employmentTypeBadge + '</td>' +
+                              '<td class="text-end">฿' + (emp.base_salary || 0).toLocaleString('en-US', {minimumFractionDigits: 2}) + '</td>' +
+                              '<td class="text-end">฿' + (emp.piece_rate_bonus || 0).toLocaleString('en-US', {minimumFractionDigits: 2}) + '</td>' +
+                              '<td class="text-end">฿' + (emp.allowance_bonus || 0).toLocaleString('en-US', {minimumFractionDigits: 2}) + '</td>' +
+                              '<td class="text-end">฿' + (emp.allowance || 0).toLocaleString('en-US', {minimumFractionDigits: 2}) + '</td>' +
+                              '<td class="text-end">' + (emp.packages || 0).toLocaleString() + '</td>' +
+                              '<td class="text-end fw-bold">฿' + (emp.total_amount || 0).toLocaleString('en-US', {minimumFractionDigits: 2}) + '</td>' +
+                              weightRangeCells.join('') +
+                              '<td>' + rateStatusBadge + '</td>' +
+                              actionButtons;
+                
+                row.innerHTML = rowHtml;
+                
+                tbody.appendChild(row);
+            });
+            
+            // อัปเดตสถิติ
+            updateSummaryCards(summary);
+        }
+        
+        // อัปเดตการ์ดสรุป
+        function updateSummaryCards(summary) {
+            // อัปเดตการ์ดจำนวนพนักงานทั้งหมด
+            const totalEmployeesCard = document.querySelector('.salary-card:nth-child(1) h3');
+            if (totalEmployeesCard) {
+                totalEmployeesCard.textContent = summary.total_employees || 0;
+            }
+            
+            // อัปเดตการ์ดจำนวนที่มีเรทแล้ว
+            const assignedRatesCard = document.querySelector('.salary-card:nth-child(2) h3');
+            if (assignedRatesCard) {
+                const assignedCount = summary.employees_with_rates || 0;
+                assignedRatesCard.textContent = assignedCount;
+            }
+            
+            // อัปเดตการ์ดจำนวนที่ยังไม่มีเรท
+            const unassignedRatesCard = document.querySelector('.salary-card:nth-child(3) h3');
+            if (unassignedRatesCard) {
+                const unassignedCount = summary.employees_without_rates || 0;
+                unassignedRatesCard.textContent = unassignedCount;
+            }
+            
+            // อัปเดตการ์ดจำนวนพัสดุรวม
+            const totalPackagesCard = document.querySelector('.salary-card:nth-child(4) h3');
+            if (totalPackagesCard) {
+                totalPackagesCard.textContent = (summary.total_packages || 0).toLocaleString();
+            }
+            
+            // อัปเดตการ์ดจำนวนที่ไม่ระบุรหัส
+            const unmatchedPackagesCard = document.querySelector('.salary-card:nth-child(5) h3');
+            if (unmatchedPackagesCard) {
+                const unmatchedCount = summary.unmatched_packages || 0;
+                unmatchedPackagesCard.textContent = unmatchedCount;
+            }
+            
+            // อัปเดตการ์ดเงินเดือนรวม
+            const totalSalaryCard = document.querySelector('.salary-card:nth-child(6) h3');
+            if (totalSalaryCard) {
+                totalSalaryCard.textContent = '฿' + (summary.total_amount || 0).toLocaleString();
+            }
+        }
+        
+        // อัปเดตสถานะการยืนยันการจ่าย
+        function updateConfirmationStatus(confirmation) {
+            const confirmBtn = document.getElementById('confirmPaymentBtn');
+            const statusDiv = document.getElementById('confirmationStatus');
+            const statusText = document.getElementById('confirmationText');
+            
+            if (confirmation.is_confirmed) {
+                // ถ้ายืนยันแล้ว
+                confirmBtn.style.display = 'none';
+                statusDiv.style.display = 'block';
+                statusDiv.className = 'alert alert-success mt-4';
+                statusText.innerHTML = `<i class="fas fa-lock me-2"></i>ยืนยันการจ่ายแล้ว<br><small>โดย: ${confirmation.confirmed_info.confirmed_by}<br>วันที่: ${new Date(confirmation.confirmed_info.confirmed_at).toLocaleString('th-TH')}</small>`;
+            } else {
+                // ถ้ายังไม่ยืนยัน
+                confirmBtn.style.display = 'block';
+                statusDiv.style.display = 'none';
+            }
+        }
+        
+        // ฟังก์ชันยืนยันการจ่าย
+        function confirmPayment() {
+            const month = document.getElementById('monthFilter').value;
+            const year = document.getElementById('yearFilter').value;
+            
+            if (!month || !year) {
+                alert('กรุณาเลือกเดือนและปี');
+                return;
+            }
+            
+            const workMonth = `${year}-${month.padStart(2, '0')}`;
+            
+            if (confirm(`คุณต้องการยืนยันการจ่ายเงินเดือนเดือน ${workMonth} ใช่หรือไม่?\n\n⚠️ หมายเหตุ: หลังจากยืนยันแล้ว ข้อมูลจะถูกล็อคและไม่สามารถเปลี่ยนแปลงได้`)) {
+                // แสดง loading
+                const confirmBtn = document.getElementById('confirmPaymentBtn');
+                const originalText = confirmBtn.innerHTML;
+                confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>กำลังยืนยัน...';
+                confirmBtn.disabled = true;
+                
+                fetch('/api/salary/confirm-payment', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        work_month: workMonth
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('✅ ' + data.message);
+                        // โหลดข้อมูลใหม่เพื่อแสดงสถานะ
+                        loadMonthlyData();
+                    } else {
+                        alert('❌ ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('❌ เกิดข้อผิดพลาดในการยืนยันการจ่าย');
+                })
+                .finally(() => {
+                    // คืนค่าปุ่ม
+                    confirmBtn.innerHTML = originalText;
+                    confirmBtn.disabled = false;
+                });
+            }
+        }
+        
+        // รีเซ็ตฟิลเตอร์
+        function resetFilters() {
+            document.getElementById('monthFilter').value = '';
+            document.getElementById('yearFilter').value = '';
+            document.getElementById('branchFilter').value = '';
+            document.getElementById('employeeIdFilter').value = '';
+            
+            // ล้างตารางพนักงาน
+            document.getElementById('employeeTableBody').innerHTML = '';
+            document.getElementById('employeeCount').textContent = '0 รายการ';
+            document.getElementById('noDataMessage').classList.remove('d-none');
+            document.getElementById('employeeSummaryTable').classList.add('d-none');
+            
+
+        }
+
+        function viewEmployeeDetail(employeeId) {
+            alert('ดูรายละเอียดพนักงาน: ' + employeeId);
+        }
+
+        function editEmployeeRate(employeeId) {
+            alert('แก้ไขข้อมูลเรทของพนักงาน: ' + employeeId);
+        }
+
+        function exportToExcel() {
+            alert('ส่งออก Excel');
+        }
+
+        function refreshData() {
+            location.reload();
+        }
+
+        // loadMonthlyData function - เรียกใช้เมื่อกดปุ่มค้นหา
+        function loadMonthlyData() {
+            const month = document.getElementById('monthFilter').value;
+            const year = document.getElementById('yearFilter').value;
+            const branch = document.getElementById('branchFilter').value;
+            const employeeId = document.getElementById('employeeIdFilter').value;
+            
+            if (!month || !year) {
+                alert('กรุณาเลือกเดือนและปี');
+                return;
+            }
+            
+            // แสดง loading
+            document.getElementById('loadingSpinner').classList.remove('d-none');
+            document.getElementById('noDataMessage').classList.add('d-none');
+            document.getElementById('employeeSummaryTable').classList.add('d-none');
+            
+            // สร้าง URL พร้อม parameters
+            let url = `/api/test-salary-data?month=${month}&year=${year}`;
+            if (branch) url += `&branch=${branch}`;
+            if (employeeId) url += `&employee_id=${employeeId}`;
+            
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('loadingSpinner').classList.add('d-none');
+                    
+                    if (data.error) {
+                        alert('เกิดข้อผิดพลาด: ' + data.error);
+                        return;
+                    }
+                    
+                    // แสดงข้อมูลพนักงาน
+                    displayEmployeeData(data.employees, data.summary);
+                    
+                    // อัปเดต summary cards ด้วยข้อมูลจริง
+                    updateSummaryCards(data.summary);
+                    
+                    // ตรวจสอบสถานะการยืนยันการจ่าย
+                    const workMonth = `${year}-${month.padStart(2, '0')}`;
+                    checkPaymentStatus(workMonth);
+                })
+                .catch(error => {
+                    document.getElementById('loadingSpinner').classList.add('d-none');
+                    alert('เกิดข้อผิดพลาดในการโหลดข้อมูล: ' + error);
+                });
+        }
+
+        // ตรวจสอบสถานะการยืนยันการจ่าย
+        function checkPaymentStatus(workMonth) {
+            fetch(`/api/salary/payment-status/${workMonth}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        updateConfirmationStatus(data);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error checking payment status:', error);
+                });
+        }
+        
+        // โหลดข้อมูลอัตโนมัติเมื่อหน้าเว็บโหลดเสร็จ
+        document.addEventListener('DOMContentLoaded', function() {
+            // ตั้งค่าเดือนและปีเริ่มต้น
+            document.getElementById('monthFilter').value = '6';
+            document.getElementById('yearFilter').value = '2025';
+            
+            // โหลดข้อมูล
+            loadMonthlyData();
+        });
+    </script>
+</body>
+</html> 

@@ -1,0 +1,956 @@
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="card-title">
+                        <i class="fas fa-upload"></i> อัพโหลดข้อมูลเงินเดือน
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i> 
+                                อัพโหลดไฟล์ Excel ที่มีข้อมูลเงินเดือนพนักงาน (ทุกสาขา)
+                                <br><small class="text-muted">
+                                    หมายเหตุ: ข้อมูลจะถูกเชื่อมโยงกับเมนูการจัดการเรทพนักงานและฐานข้อมูลพนักงาน
+                                    <br>ระบบจะประมวลผลข้อมูลจากทุกสาขาในไฟล์อัตโนมัติ
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Upload Form -->
+                    <div class="row mb-4">
+                        <div class="col-md-8">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title">อัพโหลดไฟล์ (ทุกสาขา)</h5>
+                                </div>
+                                <div class="card-body">
+                                    <form id="uploadForm" enctype="multipart/form-data">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label for="salaryFile" class="form-label">ไฟล์ Excel *</label>
+                                                    <input type="file" id="salaryFile" name="salary_file" class="form-control" accept=".xlsx,.xls" required>
+                                                    <div class="form-text">รองรับไฟล์ .xlsx และ .xls</div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label for="uploadMonth" class="form-label">เดือน *</label>
+                                                    <select id="uploadMonth" name="upload_month" class="form-select" required>
+                                                        <option value="">เลือกเดือน</option>
+                                                        <option value="1">มกราคม</option>
+                                                        <option value="2">กุมภาพันธ์</option>
+                                                        <option value="3">มีนาคม</option>
+                                                        <option value="4">เมษายน</option>
+                                                        <option value="5">พฤษภาคม</option>
+                                                        <option value="6">มิถุนายน</option>
+                                                        <option value="7">กรกฎาคม</option>
+                                                        <option value="8">สิงหาคม</option>
+                                                        <option value="9">กันยายน</option>
+                                                        <option value="10">ตุลาคม</option>
+                                                        <option value="11">พฤศจิกายน</option>
+                                                        <option value="12">ธันวาคม</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label for="uploadYear" class="form-label">ปี *</label>
+                                                    <select id="uploadYear" name="upload_year" class="form-select" required>
+                                                        <option value="2025">2025</option>
+                                                        <option value="2024">2024</option>
+                                                        <option value="2023">2023</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-12">
+                                                <button type="submit" class="btn btn-primary" id="uploadBtn">
+                                                    <i class="fas fa-upload"></i> อัพโหลดไฟล์
+                                                </button>
+                                                <button type="button" class="btn btn-secondary" onclick="downloadTemplate()">
+                                                    <i class="fas fa-download"></i> ดาวน์โหลดเทมเพลต
+                                                </button>
+                                                <button type="button" class="btn btn-info" onclick="checkEmployeeData()">
+                                                    <i class="fas fa-users"></i> ตรวจสอบข้อมูลพนักงาน
+                                                </button>
+                                                <button type="button" class="btn btn-warning" onclick="checkRateData()">
+                                                    <i class="fas fa-calculator"></i> ตรวจสอบเรทเงินเดือน
+                                                </button>
+                                                <button type="button" class="btn btn-success" onclick="displayUploadSummary()">
+                                                    <i class="fas fa-chart-bar"></i> แสดงสรุปผล
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title">ข้อมูลล่าสุด</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <strong>ไฟล์ล่าสุด:</strong>
+                                        <div id="latestFile">ไม่มีข้อมูล</div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <strong>จำนวนรายการ:</strong>
+                                        <div id="latestCount">0 รายการ</div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <strong>สถานะ:</strong>
+                                        <div id="latestStatus">-</div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <strong>การเชื่อมโยง:</strong>
+                                        <div id="connectionStatus">-</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Upload History -->
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title">ประวัติการอัพโหลด</h5>
+                                </div>
+                                <div class="card-body">
+                                    <!-- เพิ่ม dropdown เลือกเดือน/ปี -->
+                                    <div class="row mb-3">
+                                        <div class="col-md-3">
+                                            <label for="historyMonth" class="form-label">เลือกเดือน:</label>
+                                            <select id="historyMonth" class="form-select">
+                                                <option value="">เลือกเดือน</option>
+                                                <option value="1">มกราคม</option>
+                                                <option value="2">กุมภาพันธ์</option>
+                                                <option value="3">มีนาคม</option>
+                                                <option value="4">เมษายน</option>
+                                                <option value="5">พฤษภาคม</option>
+                                                <option value="6">มิถุนายน</option>
+                                                <option value="7">กรกฎาคม</option>
+                                                <option value="8">สิงหาคม</option>
+                                                <option value="9">กันยายน</option>
+                                                <option value="10">ตุลาคม</option>
+                                                <option value="11">พฤศจิกายน</option>
+                                                <option value="12">ธันวาคม</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label for="historyYear" class="form-label">เลือกปี:</label>
+                                            <select id="historyYear" class="form-select">
+                                                <option value="">เลือกปี</option>
+                                                <option value="2025">2025</option>
+                                                <option value="2024">2024</option>
+                                                <option value="2023">2023</option>
+                                                <option value="2022">2022</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label">&nbsp;</label>
+                                            <button id="searchHistoryBtn" class="btn btn-primary w-100">
+                                                <i class="fas fa-search"></i> ค้นหา
+                                            </button>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label">&nbsp;</label>
+                                            <button id="resetHistoryBtn" class="btn btn-secondary w-100">
+                                                <i class="fas fa-refresh"></i> รีเซ็ต
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="table-responsive">
+                                        <table class="table table-striped table-hover" id="uploadHistoryTable">
+                                            <thead class="table-dark">
+                                                <tr>
+                                                    <th>ลำดับ</th>
+                                                    <th>ไฟล์</th>
+                                                    <th>เดือน/ปี</th>
+                                                    <th>สาขา</th>
+                                                    <th>จำนวนรายการ</th>
+                                                    <th>วันที่อัพโหลด</th>
+                                                    <th>สถานะ</th>
+                                                    <th>การเชื่อมโยง</th>
+                                                    <th>การดำเนินการ</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td colspan="9" class="text-center text-muted">
+                                                        <i class="fas fa-spinner fa-spin"></i> กำลังโหลดข้อมูล...
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- ส่วนแสดงผลลัพธ์การอัพโหลด -->
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title">สรุปผลการอัพโหลด</h5>
+                                </div>
+                                <div class="card-body">
+                                    <!-- เพิ่ม dropdown เลือกเดือน/ปี -->
+                                    <div class="row mb-3">
+                                        <div class="col-md-3">
+                                            <label for="summaryMonth" class="form-label">เลือกเดือน:</label>
+                                            <select id="summaryMonth" class="form-select">
+                                                <option value="">เลือกเดือน</option>
+                                                <option value="1">มกราคม</option>
+                                                <option value="2">กุมภาพันธ์</option>
+                                                <option value="3">มีนาคม</option>
+                                                <option value="4">เมษายน</option>
+                                                <option value="5">พฤษภาคม</option>
+                                                <option value="6">มิถุนายน</option>
+                                                <option value="7">กรกฎาคม</option>
+                                                <option value="8">สิงหาคม</option>
+                                                <option value="9">กันยายน</option>
+                                                <option value="10">ตุลาคม</option>
+                                                <option value="11">พฤศจิกายน</option>
+                                                <option value="12">ธันวาคม</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label for="summaryYear" class="form-label">เลือกปี:</label>
+                                            <select id="summaryYear" class="form-select">
+                                                <option value="">เลือกปี</option>
+                                                <option value="2025">2025</option>
+                                                <option value="2024">2024</option>
+                                                <option value="2023">2023</option>
+                                                <option value="2022">2022</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label">&nbsp;</label>
+                                            <button id="searchSummaryBtn" class="btn btn-success w-100">
+                                                <i class="fas fa-search"></i> ค้นหา
+                                            </button>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label">&nbsp;</label>
+                                            <button id="resetSummaryBtn" class="btn btn-secondary w-100">
+                                                <i class="fas fa-refresh"></i> รีเซ็ต
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div id="upload-summary-content">
+                                        <div class="alert alert-info">
+                                            <i class="fas fa-info-circle"></i> กำลังโหลดข้อมูล...
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let salaryUploadHistory = [];
+
+// ฟังก์ชันโหลดประวัติการอัพโหลดจาก API - Global function
+window.loadUploadHistory = async function() {
+    try {
+        console.log('=== loadUploadHistory function called ===');
+        console.log('เริ่มโหลดประวัติการอัพโหลด...');
+        const currentMonth = new Date().getMonth() + 1;
+        const currentYear = new Date().getFullYear();
+        
+        console.log(`เรียก API: /api/upload-history/${currentMonth}/${currentYear}`);
+        const response = await fetch(`/api/upload-history/${currentMonth}/${currentYear}`);
+        
+        console.log('Response status:', response.status);
+        console.log('Response ok:', response.ok);
+        
+        if (response.ok) {
+            const data = await response.json();
+            console.log('ข้อมูลที่ได้รับ:', data);
+            salaryUploadHistory = data.uploads || [];
+            console.log('จำนวนรายการ:', salaryUploadHistory.length);
+            
+            // Debug: ตรวจสอบข้อมูลแต่ละรายการ
+            salaryUploadHistory.forEach((upload, index) => {
+                console.log(`รายการที่ ${index + 1}:`, upload);
+                console.log(`  - ID: ${upload.id} (Type: ${typeof upload.id})`);
+                console.log(`  - Filename: ${upload.filename}`);
+                console.log(`  - Month/Year: ${upload.month}/${upload.year}`);
+            });
+        } else {
+            console.error('API ตอบกลับด้วย error:', response.status, response.statusText);
+            salaryUploadHistory = [];
+        }
+    } catch (error) {
+        console.error('เกิดข้อผิดพลาดในการโหลดประวัติ:', error);
+        salaryUploadHistory = [];
+    }
+    
+    console.log('Calling updateUploadHistoryTable...');
+    window.updateUploadHistoryTable();
+    console.log('Calling updateLatestInfo...');
+    window.updateLatestInfo();
+}
+
+// ฟังก์ชันอัปเดตตารางประวัติการอัพโหลด - Global function
+window.updateUploadHistoryTable = function() {
+    console.log('อัปเดตตารางประวัติการอัพโหลด...');
+    const tbody = document.querySelector('#uploadHistoryTable tbody');
+    
+    if (!tbody) {
+        console.error('ไม่พบ tbody element');
+        return;
+    }
+    
+    tbody.innerHTML = '';
+    
+    if (salaryUploadHistory.length === 0) {
+        console.log('ไม่มีข้อมูลการอัพโหลด');
+        tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted">ไม่มีข้อมูลการอัพโหลด</td></tr>';
+        return;
+    }
+    
+    console.log('แสดงข้อมูลการอัพโหลด:', salaryUploadHistory.length, 'รายการ');
+    
+    salaryUploadHistory.forEach((upload, index) => {
+        console.log('Processing upload:', upload);
+        console.log('Upload ID:', upload.id, 'Type:', typeof upload.id);
+        
+        const row = document.createElement('tr');
+        const statusBadge = upload.status === 'completed' 
+            ? '<span class="badge bg-success">สำเร็จ</span>'
+            : upload.status === 'processing'
+            ? '<span class="badge bg-warning">กำลังประมวลผล</span>'
+            : upload.status === 'file_missing'
+            ? '<span class="badge bg-warning">ไฟล์หายไป</span>'
+            : '<span class="badge bg-danger">ผิดพลาด</span>';
+        
+        const connectionBadge = upload.employee_linked && upload.rate_linked
+            ? '<span class="badge bg-success">เชื่อมโยงแล้ว</span>'
+            : '<span class="badge bg-warning">ยังไม่เชื่อมโยง</span>';
+        
+        // สร้าง data attribute สำหรับเก็บ ID
+        const uploadId = upload.id || upload.upload_id || 'unknown';
+        
+        row.innerHTML = `
+            <td>${index + 1}</td>
+            <td>${upload.filename || 'ไม่มีชื่อไฟล์'}</td>
+            <td>${upload.month || 0}/${upload.year || 0}</td>
+            <td>สาขา ${upload.branch_code || 'ไม่ระบุ'}</td>
+            <td>${upload.total_employees || 0} รายการ</td>
+            <td>${upload.upload_date || 'ไม่ระบุ'}</td>
+            <td>${statusBadge}</td>
+            <td>${connectionBadge}</td>
+            <td>
+                <button class="btn btn-sm btn-info" data-upload-id="${uploadId}" onclick="viewDetails(this.dataset.uploadId)">
+                    <i class="fas fa-eye"></i>
+                </button>
+                <button class="btn btn-sm btn-success" data-upload-id="${uploadId}" onclick="syncWithEmployees(this.dataset.uploadId)">
+                    <i class="fas fa-users"></i>
+                </button>
+                <button class="btn btn-sm btn-warning" data-upload-id="${uploadId}" onclick="syncWithRates(this.dataset.uploadId)">
+                    <i class="fas fa-calculator"></i>
+                </button>
+                <button class="btn btn-sm btn-danger" data-upload-id="${uploadId}" onclick="deleteUpload(this.dataset.uploadId)">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+// ฟังก์ชันอัปเดตข้อมูลล่าสุด - Global function
+window.updateLatestInfo = async function() {
+    try {
+        console.log('โหลดข้อมูลล่าสุด...');
+        const response = await fetch('/api/upload-results/latest');
+        
+        if (response.ok) {
+            const data = await response.json();
+            console.log('ข้อมูลล่าสุด:', data);
+            
+            // ตรวจสอบว่า elements มีอยู่หรือไม่
+            const latestFile = document.getElementById('latestFile');
+            const latestCount = document.getElementById('latestCount');
+            const latestStatus = document.getElementById('latestStatus');
+            const connectionStatus = document.getElementById('connectionStatus');
+            
+            if (data.success) {
+                if (latestFile) latestFile.textContent = data.filename || 'ไม่มีข้อมูล';
+                if (latestCount) latestCount.textContent = (data.total_employees || 0) + ' รายการ';
+                if (latestStatus) latestStatus.textContent = data.status === 'completed' ? 'สำเร็จ' : 'กำลังประมวลผล';
+                
+                const connectionText = data.employee_linked && data.rate_linked 
+                    ? 'เชื่อมโยงกับฐานข้อมูลพนักงานและเรทเงินเดือนแล้ว'
+                    : 'ยังไม่เชื่อมโยง';
+                if (connectionStatus) connectionStatus.textContent = connectionText;
+            } else {
+                console.log('ไม่มีข้อมูลล่าสุด');
+                if (latestFile) latestFile.textContent = 'ไม่มีข้อมูล';
+                if (latestCount) latestCount.textContent = '0 รายการ';
+                if (latestStatus) latestStatus.textContent = '-';
+                if (connectionStatus) connectionStatus.textContent = '-';
+            }
+        } else {
+            console.error('API ตอบกลับด้วย error:', response.status);
+            if (latestFile) latestFile.textContent = 'ไม่มีข้อมูล';
+            if (latestCount) latestCount.textContent = '0 รายการ';
+            if (latestStatus) latestStatus.textContent = '-';
+            if (connectionStatus) connectionStatus.textContent = '-';
+        }
+    } catch (error) {
+        console.error('เกิดข้อผิดพลาดในการโหลดข้อมูลล่าสุด:', error);
+        const latestFile = document.getElementById('latestFile');
+        const latestCount = document.getElementById('latestCount');
+        const latestStatus = document.getElementById('latestStatus');
+        const connectionStatus = document.getElementById('connectionStatus');
+        
+        if (latestFile) latestFile.textContent = 'ไม่มีข้อมูล';
+        if (latestCount) latestCount.textContent = '0 รายการ';
+        if (latestStatus) latestStatus.textContent = '-';
+        if (connectionStatus) connectionStatus.textContent = '-';
+    }
+}
+
+// ฟังก์ชันดาวน์โหลดเทมเพลต - Global function
+window.downloadTemplate = function() {
+    // สร้างลิงก์สำหรับดาวน์โหลดเทมเพลต
+    const link = document.createElement('a');
+    link.href = '/static/salary_template.xlsx';
+    link.download = 'salary_template.xlsx';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+// ฟังก์ชันตรวจสอบข้อมูลพนักงาน - Global function
+window.checkEmployeeData = async function() {
+    try {
+        const response = await fetch('/api/content/employee-management');
+        if (response.ok) {
+            alert('ข้อมูลพนักงานพร้อมใช้งาน');
+        } else {
+            alert('ไม่สามารถเข้าถึงข้อมูลพนักงานได้');
+        }
+    } catch (error) {
+        console.error('Error checking employee data:', error);
+        alert('เกิดข้อผิดพลาดในการตรวจสอบข้อมูลพนักงาน');
+    }
+}
+
+// ฟังก์ชันตรวจสอบเรทเงินเดือน - Global function
+window.checkRateData = async function() {
+    try {
+        const response = await fetch('/api/content/spt-piece-rates');
+        if (response.ok) {
+            alert('ข้อมูลเรทเงินเดือนพร้อมใช้งาน');
+        } else {
+            alert('ไม่สามารถเข้าถึงข้อมูลเรทเงินเดือนได้');
+        }
+    } catch (error) {
+        console.error('Error checking rate data:', error);
+        alert('เกิดข้อผิดพลาดในการตรวจสอบข้อมูลเรทเงินเดือน');
+    }
+}
+
+// ฟังก์ชันดูรายละเอียด - Global function
+window.viewDetails = async function(uploadId) {
+    try {
+        const response = await fetch(`/api/upload-results/${uploadId}`);
+        if (response.ok) {
+            const data = await response.json();
+            alert(`รายละเอียดการอัพโหลด:\nไฟล์: ${data.filename}\nจำนวนพนักงาน: ${data.total_employees}\nสถานะ: ${data.status}`);
+        } else {
+            alert('ไม่สามารถดึงรายละเอียดได้');
+        }
+    } catch (error) {
+        console.error('Error viewing details:', error);
+        alert('เกิดข้อผิดพลาดในการดูรายละเอียด');
+    }
+}
+
+// ฟังก์ชันซิงค์กับข้อมูลพนักงาน - Global function
+window.syncWithEmployees = async function(uploadId) {
+    try {
+        const response = await fetch(`/api/upload-results/${uploadId}/sync-employees`, {
+            method: 'POST'
+        });
+        if (response.ok) {
+            alert('ซิงค์กับข้อมูลพนักงานเรียบร้อยแล้ว');
+            window.loadUploadHistory(); // โหลดข้อมูลใหม่
+        } else {
+            alert('ไม่สามารถซิงค์กับข้อมูลพนักงานได้');
+        }
+    } catch (error) {
+        console.error('Error syncing with employees:', error);
+        alert('เกิดข้อผิดพลาดในการซิงค์กับข้อมูลพนักงาน');
+    }
+}
+
+// ฟังก์ชันซิงค์กับเรทเงินเดือน - Global function
+window.syncWithRates = async function(uploadId) {
+    try {
+        const response = await fetch(`/api/upload-results/${uploadId}/sync-rates`, {
+            method: 'POST'
+        });
+        if (response.ok) {
+            alert('ซิงค์กับเรทเงินเดือนเรียบร้อยแล้ว');
+            window.loadUploadHistory(); // โหลดข้อมูลใหม่
+        } else {
+            alert('ไม่สามารถซิงค์กับเรทเงินเดือนได้');
+        }
+    } catch (error) {
+        console.error('Error syncing with rates:', error);
+        alert('เกิดข้อผิดพลาดในการซิงค์กับเรทเงินเดือน');
+    }
+}
+
+// ฟังก์ชันลบการอัพโหลด - Global function
+window.deleteUpload = async function(uploadId) {
+    console.log('deleteUpload called with uploadId:', uploadId);
+    console.log('uploadId type:', typeof uploadId);
+    console.log('uploadId value:', uploadId);
+    
+    if (!uploadId || uploadId === 'undefined' || uploadId === 'null' || uploadId === 'unknown') {
+        alert('ไม่พบ ID ของข้อมูลการอัพโหลด');
+        console.error('Invalid uploadId:', uploadId);
+        return;
+    }
+    
+    if (confirm('คุณต้องการลบข้อมูลการอัพโหลดนี้ใช่หรือไม่?')) {
+        try {
+            console.log('Sending DELETE request to:', `/api/delete-upload/${uploadId}`);
+            const response = await fetch(`/api/delete-upload/${uploadId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+            
+            console.log('Response status:', response.status);
+            console.log('Response headers:', response.headers);
+            
+            // ตรวจสอบ content type
+            const contentType = response.headers.get('content-type');
+            console.log('Content-Type:', contentType);
+            
+            if (response.ok) {
+                // ตรวจสอบว่าเป็น JSON หรือไม่
+                if (contentType && contentType.includes('application/json')) {
+                    const data = await response.json();
+                    console.log('Response data:', data);
+                    if (data.success) {
+                        alert('ลบข้อมูลการอัพโหลดเรียบร้อยแล้ว');
+                        window.loadUploadHistory(); // โหลดข้อมูลใหม่
+                    } else {
+                        alert(`ไม่สามารถลบข้อมูลการอัพโหลดได้: ${data.message}`);
+                    }
+                } else {
+                    const errorText = await response.text();
+                    console.error('Non-JSON response:', errorText);
+                    alert('ไม่สามารถลบข้อมูลการอัพโหลดได้ - เซิร์ฟเวอร์ส่งกลับข้อมูลที่ไม่ถูกต้อง');
+                }
+            } else {
+                // ตรวจสอบว่าเป็น redirect ไปหน้า login หรือไม่
+                if (response.status === 401 || response.status === 403) {
+                    alert('เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่');
+                    window.location.href = '/login';
+                } else {
+                    const errorText = await response.text();
+                    console.error('Server response:', errorText);
+                    alert('ไม่สามารถลบข้อมูลการอัพโหลดได้');
+                }
+            }
+        } catch (error) {
+            console.error('Error deleting upload:', error);
+            alert('เกิดข้อผิดพลาดในการลบข้อมูลการอัพโหลด');
+        }
+    }
+}
+
+// ฟังก์ชันสำหรับตั้งค่า upload form (ถูกเรียกจาก dashboard.html) - Global function
+window.setupSalaryUploadForm = function() {
+    console.log('setupSalaryUploadForm called from upload_salary.html');
+    
+    // รอให้ DOM โหลดเสร็จก่อน
+    setTimeout(() => {
+        // เพิ่ม event listener สำหรับฟอร์มอัพโหลด
+        const uploadForm = document.getElementById('uploadForm');
+        if (uploadForm) {
+            console.log('Found upload form, adding event listener');
+            // ลบ event listener เก่า (ถ้ามี) เพื่อป้องกันการซ้ำ
+            uploadForm.removeEventListener('submit', handleUploadSubmit);
+            uploadForm.addEventListener('submit', handleUploadSubmit);
+            console.log('Upload form event listener added successfully');
+        } else {
+            console.error('Upload form not found');
+        }
+        
+        // เพิ่ม event listeners สำหรับปุ่มค้นหาและรีเซ็ต
+        const searchHistoryBtn = document.getElementById('searchHistoryBtn');
+        const resetHistoryBtn = document.getElementById('resetHistoryBtn');
+        const searchSummaryBtn = document.getElementById('searchSummaryBtn');
+        const resetSummaryBtn = document.getElementById('resetSummaryBtn');
+        
+        if (searchHistoryBtn) {
+            searchHistoryBtn.removeEventListener('click', window.searchUploadHistory);
+            searchHistoryBtn.addEventListener('click', window.searchUploadHistory);
+        }
+        if (resetHistoryBtn) {
+            resetHistoryBtn.removeEventListener('click', window.resetUploadHistory);
+            resetHistoryBtn.addEventListener('click', window.resetUploadHistory);
+        }
+        if (searchSummaryBtn) {
+            searchSummaryBtn.removeEventListener('click', window.searchUploadSummary);
+            searchSummaryBtn.addEventListener('click', window.searchUploadSummary);
+        }
+        if (resetSummaryBtn) {
+            resetSummaryBtn.removeEventListener('click', window.resetUploadSummary);
+            resetSummaryBtn.addEventListener('click', window.resetUploadSummary);
+        }
+        
+        // โหลดข้อมูลเริ่มต้น - ตรวจสอบว่าเราอยู่ในหน้า upload salary หรือไม่
+        const uploadFormElement = document.getElementById('uploadForm');
+        const uploadHistoryTable = document.getElementById('uploadHistoryTable');
+        const uploadSummaryContent = document.getElementById('upload-summary-content');
+        
+        // เรียกใช้ฟังก์ชันเฉพาะเมื่อเราอยู่ในหน้า upload salary
+        if (uploadFormElement || uploadHistoryTable || uploadSummaryContent) {
+            console.log('Detected upload salary page, loading initial data...');
+            if (typeof window.loadUploadHistory === 'function') {
+                window.loadUploadHistory();
+            }
+            if (typeof window.updateLatestInfo === 'function') {
+                window.updateLatestInfo();
+            }
+            if (typeof window.displayUploadSummary === 'function') {
+                window.displayUploadSummary();
+            }
+        } else {
+            console.log('Not on upload salary page, skipping initial data load');
+        }
+        
+        console.log('setupSalaryUploadForm completed');
+    }, 100);
+}
+
+// ฟังก์ชันจัดการการส่งฟอร์มอัพโหลด
+window.handleUploadSubmit = async function(event) {
+    console.log('handleUploadSubmit called');
+    event.preventDefault();
+    
+    const formData = new FormData();
+    const fileInput = document.getElementById('salaryFile');
+    const monthInput = document.getElementById('uploadMonth');
+    const yearInput = document.getElementById('uploadYear');
+    
+    if (!fileInput.files[0]) {
+        alert('กรุณาเลือกไฟล์');
+        return;
+    }
+    
+    if (!monthInput.value || !yearInput.value) {
+        alert('กรุณาเลือกเดือนและปี');
+        return;
+    }
+    
+    formData.append('salary_file', fileInput.files[0]);
+    formData.append('month', monthInput.value);
+    formData.append('year', yearInput.value);
+    
+    const uploadBtn = document.getElementById('uploadBtn');
+    const originalText = uploadBtn.innerHTML;
+    
+    try {
+        uploadBtn.disabled = true;
+        uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> กำลังอัพโหลด...';
+        
+        console.log('Sending upload request...');
+        const response = await fetch('/api/upload-salary', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        console.log('Upload response:', result);
+        
+        if (result.success) {
+            alert('อัพโหลดข้อมูลเรียบร้อยแล้ว');
+            // รีเซ็ตฟอร์ม
+            const uploadForm = document.getElementById('uploadForm');
+            if (uploadForm) {
+                uploadForm.reset();
+            }
+            // โหลดข้อมูลใหม่
+            if (typeof window.loadUploadHistory === 'function') {
+                window.loadUploadHistory();
+            }
+            if (typeof window.updateLatestInfo === 'function') {
+                window.updateLatestInfo();
+            }
+            if (typeof window.displayUploadSummary === 'function') {
+                window.displayUploadSummary();
+            }
+        } else {
+            alert('เกิดข้อผิดพลาด: ' + result.message);
+        }
+    } catch (error) {
+        console.error('Error uploading file:', error);
+        alert('เกิดข้อผิดพลาดในการอัพโหลดไฟล์');
+    } finally {
+        uploadBtn.disabled = false;
+        uploadBtn.innerHTML = originalText;
+    }
+}
+
+// ฟังก์ชันค้นหาประวัติการอัพโหลดตามเดือน/ปี - Global function
+window.searchUploadHistory = async function() {
+    const month = document.getElementById('historyMonth').value;
+    const year = document.getElementById('historyYear').value;
+    
+    if (!month || !year) {
+        alert('กรุณาเลือกเดือนและปี');
+        return;
+    }
+    
+    try {
+        console.log(`ค้นหาประวัติการอัพโหลด: เดือน ${month}, ปี ${year}`);
+        const response = await fetch(`/api/upload-history/${month}/${year}`);
+        
+        if (response.ok) {
+            const data = await response.json();
+            salaryUploadHistory = data.uploads || [];
+            window.updateUploadHistoryTable();
+        } else {
+            console.error('เกิดข้อผิดพลาดในการค้นหาประวัติการอัพโหลด');
+            salaryUploadHistory = [];
+            window.updateUploadHistoryTable();
+        }
+    } catch (error) {
+        console.error('เกิดข้อผิดพลาดในการค้นหาประวัติการอัพโหลด:', error);
+        salaryUploadHistory = [];
+        window.updateUploadHistoryTable();
+    }
+}
+
+// ฟังก์ชันรีเซ็ตประวัติการอัพโหลด - Global function
+window.resetUploadHistory = function() {
+    document.getElementById('historyMonth').value = '';
+    document.getElementById('historyYear').value = '';
+    window.loadUploadHistory(); // โหลดข้อมูลเดือน/ปีปัจจุบัน
+}
+
+// ฟังก์ชันค้นหาสรุปผลการอัพโหลดตามเดือน/ปี - Global function
+window.searchUploadSummary = async function() {
+    const month = document.getElementById('summaryMonth').value;
+    const year = document.getElementById('summaryYear').value;
+    
+    if (!month || !year) {
+        alert('กรุณาเลือกเดือนและปี');
+        return;
+    }
+    
+    try {
+        console.log(`ค้นหาสรุปผลการอัพโหลด: เดือน ${month}, ปี ${year}`);
+        const response = await fetch(`/api/upload-results/${month}/${year}`);
+        
+        if (response.ok) {
+            const data = await response.json();
+            window.displayUploadSummaryData(data);
+        } else {
+            console.error('เกิดข้อผิดพลาดในการค้นหาสรุปผลการอัพโหลด');
+            document.getElementById('upload-summary-content').innerHTML = 
+                '<div class="alert alert-info"><i class="fas fa-info-circle"></i> ไม่พบข้อมูลสรุปผลการอัพโหลดสำหรับเดือน/ปีที่เลือก</div>';
+        }
+    } catch (error) {
+        console.error('เกิดข้อผิดพลาดในการค้นหาสรุปผลการอัพโหลด:', error);
+        document.getElementById('upload-summary-content').innerHTML = 
+            '<div class="alert alert-danger"><i class="fas fa-exclamation-triangle"></i> เกิดข้อผิดพลาดในการค้นหาสรุปผลการอัพโหลด</div>';
+    }
+}
+
+// ฟังก์ชันรีเซ็ตสรุปผลการอัพโหลด - Global function
+window.resetUploadSummary = function() {
+    document.getElementById('summaryMonth').value = '';
+    document.getElementById('summaryYear').value = '';
+    window.displayUploadSummary(); // โหลดข้อมูลเดือน/ปีปัจจุบัน
+}
+
+// ฟังก์ชันแสดงข้อมูลสรุปผลการอัพโหลด - Global function
+window.displayUploadSummaryData = function(data) {
+    const summaryContent = document.getElementById('upload-summary-content');
+    console.log('summaryContent element:', summaryContent);
+    
+    if (!summaryContent) {
+        console.log('upload-summary-content element not found');
+        return;
+    }
+    
+    if (data.success && data.results) {
+        const results = data.results;
+        
+        let html = '';
+        
+        // สรุปข้อมูล
+        html += '<div class="row mb-4">';
+        html += '<div class="col-md-6">';
+        html += '<div class="card bg-primary text-white">';
+        html += '<div class="card-body text-center">';
+        html += '<h5 class="card-title">จำนวนชิ้นทั้งหมด</h5>';
+        html += `<h2 class="mb-0">${results.total_items || 0}</h2>`;
+        html += '<small>ชิ้น</small>';
+        html += '</div>';
+        html += '</div>';
+        html += '</div>';
+        
+        html += '<div class="col-md-6">';
+        html += '<div class="card bg-success text-white">';
+        html += '<div class="card-body text-center">';
+        html += '<h5 class="card-title">จำนวนพนักงาน</h5>';
+        html += `<h2 class="mb-0">${results.total_employees || 0}</h2>`;
+        html += '<small>คน</small>';
+        html += '</div>';
+        html += '</div>';
+        html += '</div>';
+        html += '</div>';
+        
+        // ตารางรายละเอียดพนักงาน
+        if (results.employees && results.employees.length > 0) {
+            html += '<h6 class="mb-3"><i class="fas fa-users"></i> รายละเอียดตามรหัสพนักงาน:</h6>';
+            html += '<div class="table-responsive">';
+            html += '<table class="table table-striped table-hover">';
+            
+            // หัวตาราง
+            html += '<thead class="table-dark">';
+            html += '<tr>';
+            html += '<th class="text-center">รหัสพนักงาน</th>';
+            html += '<th class="text-center">ชื่อ</th>';
+            html += '<th class="text-center">รวมชิ้น</th>';
+            html += '<th class="text-center">0.00-0.50KG</th>';
+            html += '<th class="text-center">0.51-1.00KG</th>';
+            html += '<th class="text-center">1.01-1.50KG</th>';
+            html += '<th class="text-center">1.51-2.00KG</th>';
+            html += '<th class="text-center">2.01-2.50KG</th>';
+            html += '<th class="text-center">2.51-3.00KG</th>';
+            html += '<th class="text-center">3.01-5.00KG</th>';
+            html += '<th class="text-center">5.01-10.00KG</th>';
+            html += '<th class="text-center">10.01-15.00KG</th>';
+            html += '<th class="text-center">15.01KG+</th>';
+            html += '</tr>';
+            html += '</thead>';
+            html += '<tbody>';
+            
+            // ข้อมูลพนักงานแต่ละคน
+            results.employees.forEach(emp => {
+                html += '<tr>';
+                html += `<td class="text-center"><strong class="text-primary">${emp.employee_id}</strong></td>`;
+                html += `<td>${emp.name}</td>`;
+                html += `<td class="text-center"><strong class="text-success">${emp.total_packages}</strong></td>`;
+                html += `<td class="text-center">${emp.weight_ranges && emp.weight_ranges['0.00-0.50KG'] || 0}</td>`;
+                html += `<td class="text-center">${emp.weight_ranges && emp.weight_ranges['0.51-1.00KG'] || 0}</td>`;
+                html += `<td class="text-center">${emp.weight_ranges && emp.weight_ranges['1.01-1.50KG'] || 0}</td>`;
+                html += `<td class="text-center">${emp.weight_ranges && emp.weight_ranges['1.51-2.00KG'] || 0}</td>`;
+                html += `<td class="text-center">${emp.weight_ranges && emp.weight_ranges['2.01-2.50KG'] || 0}</td>`;
+                html += `<td class="text-center">${emp.weight_ranges && emp.weight_ranges['2.51-3.00KG'] || 0}</td>`;
+                html += `<td class="text-center">${emp.weight_ranges && emp.weight_ranges['3.01-5.00KG'] || 0}</td>`;
+                html += `<td class="text-center">${emp.weight_ranges && emp.weight_ranges['5.01-10.00KG'] || 0}</td>`;
+                html += `<td class="text-center">${emp.weight_ranges && emp.weight_ranges['10.01-15.00KG'] || 0}</td>`;
+                html += `<td class="text-center">${emp.weight_ranges && emp.weight_ranges['15.01KG+'] || 0}</td>`;
+                html += '</tr>';
+            });
+            
+            // แสดงข้อมูลที่ไม่ตรงกับฐานข้อมูลพนักงาน
+            if (results.unmatched_records && results.unmatched_records.total_packages > 0) {
+                html += '<tr class="table-warning">';
+                html += '<td class="text-center"><strong class="text-warning">ไม่ตรงกับฐานข้อมูล</strong></td>';
+                html += '<td><strong class="text-warning">รหัสพนักงานไม่พบในระบบ</strong></td>';
+                html += `<td class="text-center"><strong class="text-warning">${results.unmatched_records.total_packages}</strong></td>`;
+                html += `<td class="text-center">${results.unmatched_records.weight_ranges && results.unmatched_records.weight_ranges['0.00-0.50KG'] || 0}</td>`;
+                html += `<td class="text-center">${results.unmatched_records.weight_ranges && results.unmatched_records.weight_ranges['0.51-1.00KG'] || 0}</td>`;
+                html += `<td class="text-center">${results.unmatched_records.weight_ranges && results.unmatched_records.weight_ranges['1.01-1.50KG'] || 0}</td>`;
+                html += `<td class="text-center">${results.unmatched_records.weight_ranges && results.unmatched_records.weight_ranges['1.51-2.00KG'] || 0}</td>`;
+                html += `<td class="text-center">${results.unmatched_records.weight_ranges && results.unmatched_records.weight_ranges['2.01-2.50KG'] || 0}</td>`;
+                html += `<td class="text-center">${results.unmatched_records.weight_ranges && results.unmatched_records.weight_ranges['2.51-3.00KG'] || 0}</td>`;
+                html += `<td class="text-center">${results.unmatched_records.weight_ranges && results.unmatched_records.weight_ranges['3.01-5.00KG'] || 0}</td>`;
+                html += `<td class="text-center">${results.unmatched_records.weight_ranges && results.unmatched_records.weight_ranges['5.01-10.00KG'] || 0}</td>`;
+                html += `<td class="text-center">${results.unmatched_records.weight_ranges && results.unmatched_records.weight_ranges['10.01-15.00KG'] || 0}</td>`;
+                html += `<td class="text-center">${results.unmatched_records.weight_ranges && results.unmatched_records.weight_ranges['15.01KG+'] || 0}</td>`;
+                html += '</tr>';
+            }
+            
+            html += '</tbody>';
+            html += '</table>';
+            html += '</div>';
+        } else {
+            html += '<div class="alert alert-info">';
+            html += '<i class="fas fa-info-circle"></i> ไม่มีข้อมูลสรุปผลการอัพโหลด';
+            html += '</div>';
+        }
+        
+        if (summaryContent) {
+            summaryContent.innerHTML = html;
+        }
+    } else {
+        if (summaryContent) {
+            summaryContent.innerHTML = '<div class="alert alert-info"><i class="fas fa-info-circle"></i> ไม่มีข้อมูลสรุปผลการอัพโหลด</div>';
+        }
+    }
+}
+
+// Event listeners จะถูกตั้งค่าใน setupSalaryUploadForm function
+
+// ฟังก์ชันแสดงสรุปผลการอัพโหลด - Global function
+window.displayUploadSummary = async function() {
+    try {
+        console.log('=== displayUploadSummary function called ===');
+        console.log('Fetching upload summary...');
+        const response = await fetch('/api/upload-results/latest');
+        
+        console.log('Response status:', response.status);
+        console.log('Response ok:', response.ok);
+        
+        const data = await response.json();
+        console.log('Upload summary data:', data);
+        
+        // เรียกใช้ฟังก์ชันแสดงผลข้อมูล
+        window.displayUploadSummaryData(data);
+        
+    } catch (error) {
+        console.error('Error fetching upload summary:', error);
+        let html = '<div class="alert alert-danger">';
+        html += '<i class="fas fa-exclamation-triangle"></i> เกิดข้อผิดพลาดในการดึงข้อมูลสรุป';
+        html += '</div>';
+        const summaryContent = document.getElementById('upload-summary-content');
+        if (summaryContent) {
+            summaryContent.innerHTML = html;
+        }
+    }
+}
+
+// Note: These functions are now called from dashboard.html after AJAX content loading
+// DOMContentLoaded event listener removed to prevent conflicts
+</script> 

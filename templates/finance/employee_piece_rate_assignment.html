@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>กำหนดเรทชิ้นให้พนักงาน SPT - DaEx</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .employee-card {
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        .employee-card:hover {
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
+        .employee-card.selected {
+            border-color: #007bff;
+            background-color: #f8f9ff;
+        }
+        .rate-info {
+            background: #f8f9fa;
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 10px;
+        }
+        .zone-badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+        }
+        .branch-code {
+            font-family: monospace;
+            font-weight: 600;
+        }
+        .weight-range-table {
+            font-size: 0.875rem;
+        }
+        .weight-range-table th {
+            background: #e9ecef;
+            font-weight: 600;
+            text-align: center;
+            padding: 8px 4px;
+        }
+        .weight-range-table td {
+            text-align: center;
+            padding: 6px 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Main Content -->
+            <div class="col-12">
+                <div class="p-4">
+                    <!-- Header -->
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h2 class="mb-1">
+                                <i class="fas fa-user-cog me-2"></i>
+                                กำหนดเรทชิ้นให้พนักงาน SPT
+                            </h2>
+                            <p class="text-muted mb-0">เลือกเรทการคิดเงินตามน้ำหนักและสาขาให้พนักงานแต่ละคน</p>
+                        </div>
+                        <div>
+                            <button class="btn btn-success" onclick="saveAllAssignments()">
+                                <i class="fas fa-save me-2"></i>
+                                บันทึกการกำหนดเรททั้งหมด
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Filter Controls -->
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <label class="form-label">สาขา</label>
+                                    <select class="form-select" id="branchFilter">
+                                        <option value="">ทุกสาขา</option>
+                                        <option value="671180">671180</option>
+                                        <option value="671181">671181</option>
+                                        <option value="871022">871022</option>
+                                        <option value="871023">871023</option>
+                                        <option value="871025">871025</option>
+                                        <option value="671184">671184</option>
+                                        <option value="671189">671189</option>
+                                        <option value="871021">871021</option>
+                                        <option value="871026">871026</option>
+                                        <option value="871027">871027</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">สถานะ</label>
+                                    <select class="form-select" id="statusFilter">
+                                        <option value="">ทุกสถานะ</option>
+                                        <option value="active">ทำงาน</option>
+                                        <option value="inactive">ไม่ทำงาน</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">การกำหนดเรท</label>
+                                    <select class="form-select" id="assignmentFilter">
+                                        <option value="">ทั้งหมด</option>
+                                        <option value="assigned">กำหนดแล้ว</option>
+                                        <option value="not-assigned">ยังไม่กำหนด</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">ค้นหา</label>
+                                    <input type="text" class="form-control" id="searchFilter" placeholder="ค้นหาพนักงาน...">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Employee List -->
+                    <div class="row" id="employeeList">
+                        {% for employee in employees %}
+                        <div class="col-md-6 col-lg-4 mb-4 employee-item" 
+                             data-branch="{{ employee[3] }}" 
+                             data-status="{{ employee[4] }}"
+                             data-assigned="{{ 'assigned' if employee[5] else 'not-assigned' }}">
+                            <div class="card employee-card h-100">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                        <div>
+                                            <h6 class="card-title mb-1">{{ employee[1] }}</h6>
+                                            <p class="text-muted mb-0 small">รหัส: {{ employee[2] }}</p>
+                                            <p class="text-muted mb-0 small">สาขา: <span class="branch-code">{{ employee[3] }}</span></p>
+                                        </div>
+                                        <div class="text-end">
+                                            <span class="badge bg-{{ 'success' if employee[4] == 'active' else 'secondary' }} mb-1">
+                                                {{ 'ทำงาน' if employee[4] == 'active' else 'ไม่ทำงาน' }}
+                                            </span>
+                                            {% if employee[5] %}
+                                            <span class="badge bg-info d-block">กำหนดเรทแล้ว</span>
+                                            {% else %}
+                                            <span class="badge bg-warning d-block">ยังไม่กำหนดเรท</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Current Rate Assignment -->
+                                    {% if employee[5] %}
+                                    <div class="rate-info">
+                                        <h6 class="mb-2">เรทปัจจุบัน:</h6>
+                                        <div class="row">
+                                            <div class="col-6">
+                                                <small class="text-muted">โซน:</small><br>
+                                                <span class="badge bg-primary zone-badge">{{ employee[6] }}</span>
+                                            </div>
+                                            <div class="col-6">
+                                                <small class="text-muted">สาขา:</small><br>
+                                                <span class="branch-code">{{ employee[7] }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    <!-- Rate Selection -->
+                                    <div class="mt-3">
+                                        <h6 class="mb-2">เลือกเรทชิ้น:</h6>
+                                        <div class="row">
+                                            <div class="col-6">
+                                                <label class="form-label small">โซน</label>
+                                                <select class="form-select form-select-sm" id="zone_{{ employee[2] }}" 
+                                                        onchange="updateRatePreview('{{ employee[2] }}')">
+                                                    <option value="">เลือกโซน</option>
+                                                    <option value="1A" {{ 'selected' if employee[6] == '1A' }}>1A</option>
+                                                    <option value="2A" {{ 'selected' if employee[6] == '2A' }}>2A</option>
+                                                    <option value="3A" {{ 'selected' if employee[6] == '3A' }}>3A</option>
+                                                    <option value="1B" {{ 'selected' if employee[6] == '1B' }}>1B</option>
+                                                    <option value="2B" {{ 'selected' if employee[6] == '2B' }}>2B</option>
+                                                    <option value="3B" {{ 'selected' if employee[6] == '3B' }}>3B</option>
+                                                    <option value="1C" {{ 'selected' if employee[6] == '1C' }}>1C</option>
+                                                    <option value="2C" {{ 'selected' if employee[6] == '2C' }}>2C</option>
+                                                    <option value="3C" {{ 'selected' if employee[6] == '3C' }}>3C</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-6">
+                                                <label class="form-label small">สาขา</label>
+                                                <select class="form-select form-select-sm" id="branch_{{ employee[2] }}"
+                                                        onchange="updateRatePreview('{{ employee[2] }}')">
+                                                    <option value="">เลือกสาขา</option>
+                                                    <option value="671180" {{ 'selected' if employee[7] == '671180' }}>671180</option>
+                                                    <option value="671181" {{ 'selected' if employee[7] == '671181' }}>671181</option>
+                                                    <option value="871022" {{ 'selected' if employee[7] == '871022' }}>871022</option>
+                                                    <option value="871023" {{ 'selected' if employee[7] == '871023' }}>871023</option>
+                                                    <option value="871025" {{ 'selected' if employee[7] == '871025' }}>871025</option>
+                                                    <option value="671184" {{ 'selected' if employee[7] == '671184' }}>671184</option>
+                                                    <option value="671189" {{ 'selected' if employee[7] == '671189' }}>671189</option>
+                                                    <option value="871021" {{ 'selected' if employee[7] == '871021' }}>871021</option>
+                                                    <option value="871026" {{ 'selected' if employee[7] == '871026' }}>871026</option>
+                                                    <option value="871027" {{ 'selected' if employee[7] == '871027' }}>871027</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Rate Preview -->
+                                        <div id="ratePreview_{{ employee[2] }}" class="mt-3" style="display: none;">
+                                            <h6 class="mb-2">เรทชิ้นที่เลือก:</h6>
+                                            <div class="table-responsive">
+                                                <table class="table table-sm weight-range-table">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>0-0.5</th>
+                                                            <th>0.51-1</th>
+                                                            <th>1.01-1.5</th>
+                                                            <th>1.51-2</th>
+                                                            <th>2.01-2.5</th>
+                                                            <th>2.51-3</th>
+                                                            <th>3-5</th>
+                                                            <th>5.01-10</th>
+                                                            <th>10.01-15</th>
+                                                            <th>15+</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <tr id="rateValues_{{ employee[2] }}">
+                                                            <td>-</td>
+                                                            <td>-</td>
+                                                            <td>-</td>
+                                                            <td>-</td>
+                                                            <td>-</td>
+                                                            <td>-</td>
+                                                            <td>-</td>
+                                                            <td>-</td>
+                                                            <td>-</td>
+                                                            <td>-</td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    {% if not employees %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">ไม่มีข้อมูลพนักงาน SPT</h5>
+                        <p class="text-muted">ยังไม่มีพนักงานในตำแหน่ง SPT ในระบบ</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> 

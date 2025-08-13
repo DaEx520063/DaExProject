@@ -1,0 +1,283 @@
+{% extends 'index.html' %}
+{% block content %}
+<h2>เงินเดือนของฉัน</h2>
+<p>ฟีเจอร์นี้อยู่ระหว่างพัฒนา</p>
+<div class="excel-interface">
+    <!-- Excel Toolbar -->
+    <div class="excel-toolbar">
+        <div class="d-flex">
+            <button class="btn btn-success btn-sm" onclick="exportToExcel()">
+                <i class="fas fa-file-excel"></i> ส่งออก
+            </button>
+            <button class="btn btn-warning btn-sm" onclick="clearFilters()">
+                <i class="fas fa-eraser"></i> ล้างข้อมูล
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="downloadData()">
+                <i class="fas fa-download"></i> ดาวน์โหลดข้อมูล
+            </button>
+        </div>
+        <button class="btn btn-outline-secondary btn-sm" onclick="toggleFilters()">
+            <i class="fas fa-chevron-up"></i> ย่อ
+        </button>
+    </div>
+
+    <!-- Excel Filter Section -->
+    <div class="excel-filter-section" id="filterSection">
+        <div class="excel-filter-row">
+            <div class="excel-filter-item">
+                <label>เดือน</label>
+                <select id="monthFilter" class="form-select">
+                    <option value="">ทุกเดือน</option>
+                    <option value="January">มกราคม</option>
+                    <option value="February">กุมภาพันธ์</option>
+                    <option value="March">มีนาคม</option>
+                    <option value="April">เมษายน</option>
+                    <option value="May">พฤษภาคม</option>
+                    <option value="June">มิถุนายน</option>
+                    <option value="July">กรกฎาคม</option>
+                    <option value="August">สิงหาคม</option>
+                    <option value="September">กันยายน</option>
+                    <option value="October">ตุลาคม</option>
+                    <option value="November">พฤศจิกายน</option>
+                    <option value="December">ธันวาคม</option>
+                </select>
+            </div>
+            <div class="excel-filter-item">
+                <label>ปี</label>
+                <select id="yearFilter" class="form-select">
+                    <option value="">ทุกปี</option>
+                    <option value="2024" selected>2024</option>
+                    <option value="2023">2023</option>
+                    <option value="2022">2022</option>
+                </select>
+            </div>
+            <div class="excel-filter-item">
+                <label>ประเภทเงิน</label>
+                <select id="salaryTypeFilter" class="form-select">
+                    <option value="">ทุกประเภท</option>
+                    <option value="base_salary">เงินเดือนพื้นฐาน</option>
+                    <option value="incentive">ค่าอินเซ็นทิฟ</option>
+                    <option value="fuel_allowance">ค่าน้ำมัน</option>
+                    <option value="depreciation">ค่าเสื่อม</option>
+                    <option value="penalties">ค่าปรับ</option>
+                </select>
+            </div>
+            <div class="excel-filter-item">
+                <label>จำนวนเงินขั้นต่ำ</label>
+                <input type="number" id="minAmountFilter" class="form-control" placeholder="จำนวนเงินขั้นต่ำ">
+            </div>
+            <div class="excel-filter-item">
+                <label>จำนวนเงินสูงสุด</label>
+                <input type="number" id="maxAmountFilter" class="form-control" placeholder="จำนวนเงินสูงสุด">
+            </div>
+        </div>
+    </div>
+
+    <!-- Excel Table -->
+    <div class="table-responsive">
+        <table class="table table-bordered mb-0" id="salaryTable">
+            <thead class="excel-table-header">
+                <tr>
+                    <th>ลำดับ</th>
+                    <th>เดือน/ปี</th>
+                    <th>เงินเดือนพื้นฐาน</th>
+                    <th>ค่าอินเซ็นทิฟ</th>
+                    <th>ค่าน้ำมัน</th>
+                    <th>ค่าเสื่อม</th>
+                    <th>ค่าปรับ</th>
+                    <th>หักเงิน</th>
+                    <th>เงินสุทธิ</th>
+                    <th>สถานะ</th>
+                    <th>การดำเนินการ</th>
+                </tr>
+            </thead>
+            <tbody class="excel-table-body">
+                {% for salary in salaries %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td><strong>{{ salary[0] }}/{{ salary[1] }}</strong></td>
+                    <td>{{ "{:,.0f}".format(salary[2]) }} บาท</td>
+                    <td>{{ "{:,.0f}".format(salary[3]) }} บาท</td>
+                    <td>{{ "{:,.0f}".format(salary[4]) }} บาท</td>
+                    <td>{{ "{:,.0f}".format(salary[5]) }} บาท</td>
+                    <td>{{ "{:,.0f}".format(salary[6]) }} บาท</td>
+                    <td>{{ "{:,.0f}".format(salary[7]) }} บาท</td>
+                    <td><strong>{{ "{:,.0f}".format(salary[7]) }} บาท</strong></td>
+                    <td>
+                        <span class="status-badge status-approved">จ่ายแล้ว</span>
+                    </td>
+                    <td>
+                        <div class="excel-actions">
+                            <button class="btn btn-sm btn-outline-primary" onclick="viewSalaryDetail('{{ salary[0] }}-{{ salary[1] }}')" title="ดูรายละเอียด">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-info" onclick="downloadPayslip('{{ salary[0] }}-{{ salary[1] }}')" title="ดาวน์โหลดสลิป">
+                                <i class="fas fa-download"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="row mt-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <h5 class="card-title">เงินเดือนรวม</h5>
+                <h3 id="totalBaseSalary">0 บาท</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <h5 class="card-title">ค่าอินเซ็นทิฟรวม</h5>
+                <h3 id="totalIncentive">0 บาท</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <h5 class="card-title">ค่าปรับรวม</h5>
+                <h3 id="totalPenalties">0 บาท</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <h5 class="card-title">เงินสุทธิรวม</h5>
+                <h3 id="totalNetSalary">0 บาท</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Salary Detail Modal -->
+<div class="modal fade" id="salaryModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">รายละเอียดเงินเดือน</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="salaryModalBody">
+                <!-- Content will be loaded here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleFilters() {
+    const filterSection = document.getElementById('filterSection');
+    const toggleBtn = event.target.closest('button');
+    const icon = toggleBtn.querySelector('i');
+    
+    if (filterSection.style.display === 'none') {
+        filterSection.style.display = 'block';
+        icon.className = 'fas fa-chevron-up';
+    } else {
+        filterSection.style.display = 'none';
+        icon.className = 'fas fa-chevron-down';
+    }
+}
+
+function clearFilters() {
+    document.getElementById('monthFilter').value = '';
+    document.getElementById('yearFilter').value = '2024';
+    document.getElementById('salaryTypeFilter').value = '';
+    document.getElementById('minAmountFilter').value = '';
+    document.getElementById('maxAmountFilter').value = '';
+    
+    // Show all rows
+    const rows = document.querySelectorAll('#salaryTable tbody tr');
+    rows.forEach(row => row.style.display = '');
+}
+
+function filterSalaries() {
+    const month = document.getElementById('monthFilter').value;
+    const year = document.getElementById('yearFilter').value;
+    const salaryType = document.getElementById('salaryTypeFilter').value;
+    const minAmount = document.getElementById('minAmountFilter').value;
+    const maxAmount = document.getElementById('maxAmountFilter').value;
+    
+    const rows = document.querySelectorAll('#salaryTable tbody tr');
+    
+    rows.forEach(row => {
+        const salaryMonth = row.cells[1].textContent.split('/')[0];
+        const salaryYear = row.cells[1].textContent.split('/')[1];
+        const netSalary = parseInt(row.cells[8].textContent.replace(/[^\d]/g, ''));
+        
+        const monthMatch = !month || salaryMonth === month;
+        const yearMatch = !year || salaryYear === year;
+        const amountMatch = !minAmount || !maxAmount || (netSalary >= minAmount && netSalary <= maxAmount);
+        
+        if (monthMatch && yearMatch && amountMatch) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+function viewSalaryDetail(period) {
+    // Implement salary detail view functionality
+    alert('ดูรายละเอียดเงินเดือน: ' + period);
+}
+
+function downloadPayslip(period) {
+    // Implement payslip download functionality
+    alert('ดาวน์โหลดสลิปเงินเดือน: ' + period);
+}
+
+function exportToExcel() {
+    // Implement Excel export functionality
+    alert('ส่งออกเป็นไฟล์ Excel');
+}
+
+function downloadData() {
+    // Implement download functionality
+    alert('ดาวน์โหลดข้อมูล');
+}
+
+// Calculate totals
+function calculateTotals() {
+    const rows = document.querySelectorAll('#salaryTable tbody tr');
+    let totalBaseSalary = 0;
+    let totalIncentive = 0;
+    let totalPenalties = 0;
+    let totalNetSalary = 0;
+    
+    rows.forEach(row => {
+        if (row.style.display !== 'none') {
+            totalBaseSalary += parseInt(row.cells[2].textContent.replace(/[^\d]/g, ''));
+            totalIncentive += parseInt(row.cells[3].textContent.replace(/[^\d]/g, ''));
+            totalPenalties += parseInt(row.cells[6].textContent.replace(/[^\d]/g, ''));
+            totalNetSalary += parseInt(row.cells[8].textContent.replace(/[^\d]/g, ''));
+        }
+    });
+    
+    document.getElementById('totalBaseSalary').textContent = totalBaseSalary.toLocaleString() + ' บาท';
+    document.getElementById('totalIncentive').textContent = totalIncentive.toLocaleString() + ' บาท';
+    document.getElementById('totalPenalties').textContent = totalPenalties.toLocaleString() + ' บาท';
+    document.getElementById('totalNetSalary').textContent = totalNetSalary.toLocaleString() + ' บาท';
+}
+
+// Add event listeners for real-time filtering
+document.getElementById('monthFilter').addEventListener('change', filterSalaries);
+document.getElementById('yearFilter').addEventListener('change', filterSalaries);
+document.getElementById('salaryTypeFilter').addEventListener('change', filterSalaries);
+document.getElementById('minAmountFilter').addEventListener('input', filterSalaries);
+document.getElementById('maxAmountFilter').addEventListener('input', filterSalaries);
+
+// Calculate totals on page load
+document.addEventListener('DOMContentLoaded', calculateTotals);
+</script>
+{% endblock %} 

@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DaEx System - ขอเบิกค่าใช้จ่าย</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .sidebar {
+            background: white;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+            height: 100vh;
+            overflow-y: auto;
+        }
+        .menu-item {
+            padding: 12px 20px;
+            border-bottom: 1px solid #eee;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .menu-item:hover {
+            background-color: #f8f9fa;
+            border-left: 4px solid #667eea;
+        }
+        .menu-item.active {
+            background-color: #e3f2fd;
+            border-left: 4px solid #2196f3;
+        }
+        .menu-item i {
+            margin-right: 10px;
+            width: 20px;
+        }
+        .content-area {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin: 20px;
+            padding: 30px;
+        }
+        .card {
+            border: none;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-radius: 8px;
+        }
+        .card-header {
+            border-bottom: 1px solid #eee;
+            font-weight: 600;
+        }
+        .table th {
+            background: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+            font-weight: 600;
+            color: #495057;
+        }
+        .badge {
+            font-size: 12px;
+            padding: 6px 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Main Content -->
+            <div class="col-12">
+                <div class="content-area">
+                    <div class="row">
+                        <div class="col-lg-6">
+                            <div class="card mb-4">
+                                <div class="card-header bg-primary text-white">
+                                    <i class="fas fa-money-bill-wave"></i> ขอเบิกค่าใช้จ่าย
+                                </div>
+                                <div class="card-body">
+                                    <form id="expenseRequestForm" method="post" enctype="multipart/form-data" action="/spv/expense-request">
+                                        <div class="mb-3">
+                                            <label for="expense_type" class="form-label">ประเภทค่าใช้จ่าย</label>
+                                            <select class="form-select" id="expense_type" name="expense_type" required>
+                                                <option value="">-- เลือกประเภท --</option>
+                                                <option value="ค่าน้ำมัน">ค่าน้ำมัน</option>
+                                                <option value="ค่าอุปกรณ์">ค่าอุปกรณ์</option>
+                                            </select>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="amount" class="form-label">จำนวนเงิน (บาท)</label>
+                                            <input type="number" class="form-control" id="amount" name="amount" min="1" step="0.01" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="vehicle_registration" class="form-label">ทะเบียนรถ</label>
+                                            <input type="text" class="form-control" id="vehicle_registration" name="vehicle_registration" placeholder="เช่น 7484">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="mileage_before" class="form-label">ไมล์กิโลก่อนเติม</label>
+                                            <input type="number" class="form-control" id="mileage_before" name="mileage_before" min="0" step="0.1" placeholder="กิโลเมตร">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="description" class="form-label">รายละเอียด</label>
+                                            <textarea class="form-control" id="description" name="description" rows="2" required></textarea>
+                                        </div>
+                                        <button type="submit" class="btn btn-success"><i class="fas fa-paper-plane"></i> ส่งคำขอเบิก</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="card mb-4">
+                                <div class="card-header bg-info text-white">
+                                    <i class="fas fa-history"></i> รายการขอเบิกย้อนหลัง
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-sm table-hover align-middle">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>วันที่</th>
+                                                    <th>ประเภท</th>
+                                                    <th>จำนวนเงิน</th>
+                                                    <th>ทะเบียนรถ</th>
+                                                    <th>ไมล์กิโล</th>
+                                                    <th>สถานะ</th>
+                                                    <th>บิล</th>
+                                                    <th>อัปโหลดบิล</th>
+                                                    <th>การดำเนินการ</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for expense in expenses %}
+                                                <tr>
+                                                    <td>{{ expense.expense_date }}</td>
+                                                    <td>{{ expense.expense_type }}</td>
+                                                    <td class="text-end">฿{{ "{:,.2f}".format(expense.amount) }}</td>
+                                                    <td>{{ expense.vehicle_registration or '-' }}</td>
+                                                    <td>
+                                                        {% if expense.mileage_before and expense.mileage_after %}
+                                                            {{ expense.mileage_before }} → {{ expense.mileage_after }}
+                                                        {% elif expense.mileage_before %}
+                                                            {{ expense.mileage_before }}
+                                                        {% else %}
+                                                            -
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>
+                                                        {% if expense.status == 'pending' %}
+                                                            <span class="badge bg-warning">รออนุมัติ</span>
+                                                        {% elif expense.status == 'approved' %}
+                                                            <span class="badge bg-success">อนุมัติแล้ว</span>
+                                                        {% elif expense.status == 'completed' %}
+                                                            <span class="badge bg-primary">เสร็จสิ้น</span>
+                                                        {% else %}
+                                                            <span class="badge bg-danger">ปฏิเสธ</span>
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>
+                                                        {% if expense.receipt_path %}
+                                                            <a href="{{ url_for('static', filename=expense.receipt_path) }}" target="_blank">ดูบิล</a>
+                                                        {% else %}
+                                                            -
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>
+                                                        {% if expense.status == 'approved' and not expense.receipt_path %}
+                                                        <div class="receipt-upload-form" data-expense-id="{{ expense.id }}">
+                                                            <input type="file" name="receipt" accept="image/*,application/pdf" required style="width:120px;display:inline-block;">
+                                                            <input type="number" name="mileage_after" placeholder="ไมล์กิโลหลังเติม" style="width:100px;display:inline-block;margin:2px;" min="0" step="0.1">
+                                                            <button type="button" class="btn btn-sm btn-outline-primary upload-receipt-btn">อัปโหลด</button>
+                                                        </div>
+                                                        {% elif expense.receipt_path %}
+                                                            <span class="text-success">อัปโหลดแล้ว</span>
+                                                        {% else %}
+                                                            -
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>
+                                                        {% if expense.status == 'pending' %}
+                                                            <button type="button" class="btn btn-sm btn-danger cancel-expense-btn" data-expense-id="{{ expense.id }}">
+                                                                <i class="fas fa-trash"></i> ลบ
+                                                            </button>
+                                                        {% else %}
+                                                            -
+                                                        {% endif %}
+                                                    </td>
+                                                </tr>
+                                                {% else %}
+                                                <tr><td colspan="9" class="text-center text-muted">ไม่มีรายการ</td></tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    document.getElementById('expenseRequestForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        
+        console.log('Submitting form...');
+        
+        fetch('/spv/expense-request', {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: formData
+        })
+        .then(response => {
+            console.log('Response status:', response.status);
+            console.log('Response headers:', response.headers);
+            
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            
+            const contentType = response.headers.get('content-type');
+            console.log('Content-Type:', contentType);
+            
+            if (contentType && contentType.includes('application/json')) {
+                return response.json();
+            } else {
+                return response.text().then(text => {
+                    console.log('Response text:', text);
+                    throw new Error('Expected JSON response but got: ' + text.substring(0, 100));
+                });
+            }
+        })
+        .then(data => {
+            console.log('Response data:', data);
+            if (data.success) {
+                alert('ส่งคำขอเบิกเรียบร้อยแล้ว');
+                window.location.reload();
+            } else {
+                alert('เกิดข้อผิดพลาด: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('เกิดข้อผิดพลาดในการส่งข้อมูล: ' + error.message);
+        });
+    });
+
+    // Handle receipt upload with mileage
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('upload-receipt-btn')) {
+            const formDiv = e.target.closest('.receipt-upload-form');
+            const expenseId = formDiv.dataset.expenseId;
+            const fileInput = formDiv.querySelector('input[type="file"]');
+            const mileageInput = formDiv.querySelector('input[name="mileage_after"]');
+            
+            if (!fileInput.files[0]) {
+                alert('กรุณาเลือกไฟล์บิล');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('receipt', fileInput.files[0]);
+            formData.append('mileage_after', mileageInput.value || '');
+            
+            fetch(`/spv/upload-receipt/${expenseId}`, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    alert('อัปโหลดบิลเรียบร้อยแล้ว');
+                    window.location.reload();
+                } else {
+                    alert('เกิดข้อผิดพลาด: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('เกิดข้อผิดพลาดในการอัปโหลดบิล');
+            });
+        }
+    });
+
+    // Handle cancel expense request
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('cancel-expense-btn')) {
+            const expenseId = e.target.dataset.expenseId;
+            
+            if (confirm('คุณต้องการลบคำขอเบิกค่าใช้จ่ายนี้หรือไม่?')) {
+                fetch(`/spv/cancel-expense/${expenseId}`, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        alert('ลบคำขอเบิกค่าใช้จ่ายเรียบร้อยแล้ว');
+                        window.location.reload();
+                    } else {
+                        alert('เกิดข้อผิดพลาด: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('เกิดข้อผิดพลาดในการลบคำขอ');
+                });
+            }
+        }
+    });
+    </script>
+</body>
+</html> 

@@ -28,9 +28,17 @@ app = Flask(__name__)
 app.secret_key = 'jms_secret_key_2025'
 CORS(app)
 
+# ... existing code ...
 # สร้างโฟลเดอร์ database ถ้ายังไม่มี
 os.makedirs('database', exist_ok=True)
 
+def get_db_connection():
+    """ฟังก์ชันกลางสำหรับเชื่อมต่อฐานข้อมูล"""
+    # ใช้ absolute path สำหรับ Heroku
+    db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'daex_system.db')
+    return sqlite3.connect(db_path)
+
+# ... existing code ...
 def init_db():
     """สร้างตารางฐานข้อมูลสำหรับระบบ JMS"""
     conn = get_db_connection()

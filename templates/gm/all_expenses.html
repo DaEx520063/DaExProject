@@ -1,0 +1,237 @@
+{% extends "dashboard.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-receipt"></i> ค่าใช้จ่ายทั้งหมด</h2>
+                <button class="btn btn-primary" onclick="exportToExcel()">
+                    <i class="fas fa-download"></i> Export Excel
+                </button>
+            </div>
+
+            <!-- Filter Controls -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <label class="form-label">สาขา</label>
+                            <select class="form-select" id="branchFilter">
+                                <option value="">ทุกสาขา</option>
+                                {% for code, name in branches.items() %}
+                                    <option value="{{ code }}">{{ name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">สถานะ</label>
+                            <select class="form-select" id="statusFilter">
+                                <option value="">ทุกสถานะ</option>
+                                <option value="pending">รออนุมัติ</option>
+                                <option value="approved">อนุมัติแล้ว</option>
+                                <option value="rejected">ปฏิเสธ</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">ประเภท</label>
+                            <select class="form-select" id="typeFilter">
+                                <option value="">ทุกประเภท</option>
+                                <option value="ค่าน้ำมัน">ค่าน้ำมัน</option>
+                                <option value="ค่าอาหาร">ค่าอาหาร</option>
+                                <option value="ค่าที่พัก">ค่าที่พัก</option>
+                                <option value="ค่าอุปกรณ์">ค่าอุปกรณ์</option>
+                                <option value="ค่าสื่อสาร">ค่าสื่อสาร</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">ช่วงวันที่</label>
+                            <input type="date" class="form-control" id="dateFilter">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Expenses Table -->
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="expensesTable">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th><input type="checkbox" id="selectAll"></th>
+                                    <th>วันที่</th>
+                                    <th>พนักงาน</th>
+                                    <th>สาขา</th>
+                                    <th>ประเภท</th>
+                                    <th>รายละเอียด</th>
+                                    <th>จำนวนเงิน</th>
+                                    <th>สถานะ</th>
+                                    <th>การดำเนินการ</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for expense in expenses %}
+                                <tr>
+                                    <td><input type="checkbox" class="expense-checkbox" value="{{ expense[0] }}"></td>
+                                    <td>{{ expense[3] }}</td>
+                                    <td>{{ expense[1] }}</td>
+                                    <td>{{ branches[expense[2]] if expense[2] in branches else expense[2] }}</td>
+                                    <td>{{ expense[4] }}</td>
+                                    <td>{{ expense[5] }}</td>
+                                    <td class="text-end">฿{{ "{:,.2f}".format(expense[6]) }}</td>
+                                    <td>
+                                        {% if expense[7] == 'pending' %}
+                                            <span class="badge bg-warning">รออนุมัติ</span>
+                                        {% elif expense[7] == 'approved' %}
+                                            <span class="badge bg-success">อนุมัติแล้ว</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">ปฏิเสธ</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if expense[7] == 'pending' %}
+                                            <button class="btn btn-sm btn-success" onclick="approveExpense({{ expense[0] }})">
+                                                <i class="fas fa-check"></i> อนุมัติ
+                                            </button>
+                                            <button class="btn btn-sm btn-danger" onclick="rejectExpense({{ expense[0] }})">
+                                                <i class="fas fa-times"></i> ปฏิเสธ
+                                            </button>
+                                        {% else %}
+                                            <span class="text-muted">ดำเนินการแล้ว</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary Cards -->
+            <div class="row mt-4">
+                <div class="col-md-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">รวมค่าใช้จ่าย</h5>
+                            <h3 class="card-text">฿{{ "{:,.2f}".format(total_amount) }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-warning text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">รออนุมัติ</h5>
+                            <h3 class="card-text">{{ pending_count }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">อนุมัติแล้ว</h5>
+                            <h3 class="card-text">{{ approved_count }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-danger text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">ปฏิเสธ</h5>
+                            <h3 class="card-text">{{ rejected_count }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Filter functionality
+document.getElementById('branchFilter').addEventListener('change', filterTable);
+document.getElementById('statusFilter').addEventListener('change', filterTable);
+document.getElementById('typeFilter').addEventListener('change', filterTable);
+document.getElementById('dateFilter').addEventListener('change', filterTable);
+
+function filterTable() {
+    const branchFilter = document.getElementById('branchFilter').value;
+    const statusFilter = document.getElementById('statusFilter').value;
+    const typeFilter = document.getElementById('typeFilter').value;
+    const dateFilter = document.getElementById('dateFilter').value;
+    
+    const rows = document.querySelectorAll('#expensesTable tbody tr');
+    
+    rows.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        const branch = cells[2].textContent;
+        const type = cells[4].textContent;
+        const status = cells[7].textContent.trim();
+        const date = cells[1].textContent;
+        
+        let show = true;
+        
+        if (branchFilter && !branch.includes(branchFilter)) show = false;
+        if (statusFilter && !status.includes(statusFilter)) show = false;
+        if (typeFilter && type !== typeFilter) show = false;
+        if (dateFilter && date !== dateFilter) show = false;
+        
+        row.style.display = show ? '' : 'none';
+    });
+}
+
+// Select all functionality
+document.getElementById('selectAll').addEventListener('change', function() {
+    const checkboxes = document.querySelectorAll('.expense-checkbox');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = this.checked;
+    });
+});
+
+function approveExpense(expenseId) {
+    if (confirm('ยืนยันการอนุมัติค่าใช้จ่ายนี้?')) {
+        // API call to approve expense
+        fetch(`/api/expense/${expenseId}/approve`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('เกิดข้อผิดพลาด: ' + data.message);
+            }
+        });
+    }
+}
+
+function rejectExpense(expenseId) {
+    if (confirm('ยืนยันการปฏิเสธค่าใช้จ่ายนี้?')) {
+        // API call to reject expense
+        fetch(`/api/expense/${expenseId}/reject`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('เกิดข้อผิดพลาด: ' + data.message);
+            }
+        });
+    }
+}
+
+function exportToExcel() {
+    // Implementation for Excel export
+    alert('ฟีเจอร์ Export Excel กำลังพัฒนา');
+}
+</script>
+{% endblock %} 

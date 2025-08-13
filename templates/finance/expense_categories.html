@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>จัดการหมวดหมู่ค่าใช้จ่าย - DaEx</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .sidebar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        .sidebar .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+            border-radius: 10px;
+            margin: 2px 0;
+            transition: all 0.3s ease;
+        }
+        .sidebar .nav-link:hover,
+        .sidebar .nav-link.active {
+            color: white;
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .main-content {
+            background: #f8f9fa;
+            min-height: 100vh;
+        }
+        .category-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+            border-left: 4px solid;
+        }
+        .category-card:hover {
+            transform: translateY(-2px);
+        }
+        .color-preview {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-2 px-0">
+                <div class="sidebar p-3">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-building fa-2x mb-2"></i>
+                        <h5 class="mb-0">DaEx</h5>
+                        <small class="text-light">ระบบจัดการบริษัท</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <small class="text-light opacity-75">ยินดีต้อนรับ</small><br>
+                        <strong>{{ session.username }}</strong>
+                    </div>
+
+                    <hr class="my-3">
+
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link" href="/dashboard">
+                                <i class="fas fa-tachometer-alt me-2"></i>
+                                แดชบอร์ด
+                            </a>
+                        </li>
+                        
+                        <li class="nav-item">
+                            <a class="nav-link" href="/finance/salaries">
+                                <i class="fas fa-money-bill-wave me-2"></i>
+                                เงินเดือน
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/finance/expenses">
+                                <i class="fas fa-receipt me-2"></i>
+                                ค่าใช้จ่าย
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" href="/finance/expense-categories">
+                                <i class="fas fa-tags me-2"></i>
+                                หมวดหมู่ค่าใช้จ่าย
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/finance/import-data">
+                                <i class="fas fa-upload me-2"></i>
+                                นำเข้าข้อมูล
+                            </a>
+                        </li>
+                        
+                        <li class="nav-item">
+                            <a class="nav-link" href="/logout">
+                                <i class="fas fa-sign-out-alt me-2"></i>
+                                ออกจากระบบ
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-md-9 col-lg-10">
+                <div class="main-content p-4">
+                    <!-- Header -->
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h2 class="mb-1">จัดการหมวดหมู่ค่าใช้จ่าย</h2>
+                            <p class="text-muted mb-0">จัดการหมวดหมู่ค่าใช้จ่ายของบริษัท</p>
+                        </div>
+                        <a href="/finance/expense-categories/add" class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>
+                            เพิ่มหมวดหมู่ใหม่
+                        </a>
+                    </div>
+
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                                    <i class="fas fa-{{ 'exclamation-triangle' if category == 'error' else 'info-circle' }} me-2"></i>
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+
+                    <!-- Categories Grid -->
+                    <div class="row g-4">
+                        {% for category in categories %}
+                        <div class="col-md-6 col-lg-4">
+                            <div class="category-card p-3" style="border-left-color: {{ category[3] }}">
+                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                    <div class="d-flex align-items-center">
+                                        <div class="color-preview" style="background-color: {{ category[3] }}"></div>
+                                        <div>
+                                            <h6 class="mb-1">{{ category[1] }}</h6>
+                                            <small class="text-muted">{{ category[2] or 'ไม่มีคำอธิบาย' }}</small>
+                                        </div>
+                                    </div>
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                            <i class="fas fa-ellipsis-v"></i>
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                            <li><a class="dropdown-item" href="#" onclick="editCategory({{ category[0] }})">
+                                                <i class="fas fa-edit me-2"></i>แก้ไข
+                                            </a></li>
+                                            <li><a class="dropdown-item text-danger" href="#" onclick="deleteCategory({{ category[0] }})">
+                                                <i class="fas fa-trash me-2"></i>ลบ
+                                            </a></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <small class="text-muted">สถานะ</small><br>
+                                            <span class="badge bg-{{ 'success' if category[4] else 'secondary' }}">
+                                                {{ 'ใช้งาน' if category[4] else 'ไม่ใช้งาน' }}
+                                            </span>
+                                        </div>
+                                        <div class="col-6">
+                                            <small class="text-muted">สี</small><br>
+                                            <code>{{ category[3] }}</code>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <small class="text-muted">สร้างเมื่อ</small><br>
+                                    <strong>{{ category[5] }}</strong>
+                                </div>
+                                
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-sm btn-outline-primary" onclick="viewExpenses({{ category[0] }})">
+                                        <i class="fas fa-eye me-1"></i>ดูค่าใช้จ่าย
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-warning" onclick="toggleStatus({{ category[0] }}, {{ category[4] }})">
+                                        <i class="fas fa-{{ 'pause' if category[4] else 'play' }} me-1"></i>
+                                        {{ 'ปิดใช้งาน' if category[4] else 'เปิดใช้งาน' }}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    {% if not categories %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-tags fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">ไม่มีหมวดหมู่ค่าใช้จ่าย</h5>
+                        <p class="text-muted">ยังไม่มีหมวดหมู่ค่าใช้จ่ายในระบบ</p>
+                        <a href="/finance/expense-categories/add" class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>เพิ่มหมวดหมู่แรก
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function editCategory(categoryId) {
+            // TODO: Implement edit category functionality
+            alert('ฟีเจอร์แก้ไขหมวดหมู่จะเปิดใช้งานเร็วๆ นี้');
+        }
+        
+        function deleteCategory(categoryId) {
+            if (confirm('คุณแน่ใจหรือไม่ที่จะลบหมวดหมู่นี้? การลบจะไม่สามารถกู้คืนได้')) {
+                // TODO: Implement delete category functionality
+                alert('ฟีเจอร์ลบหมวดหมู่จะเปิดใช้งานเร็วๆ นี้');
+            }
+        }
+        
+        function viewExpenses(categoryId) {
+            // TODO: Implement view expenses by category
+            alert('ฟีเจอร์ดูค่าใช้จ่ายตามหมวดหมู่จะเปิดใช้งานเร็วๆ นี้');
+        }
+        
+        function toggleStatus(categoryId, currentStatus) {
+            const action = currentStatus ? 'ปิดใช้งาน' : 'เปิดใช้งาน';
+            if (confirm(`คุณแน่ใจหรือไม่ที่จะ${action}หมวดหมู่นี้?`)) {
+                // TODO: Implement toggle status functionality
+                alert(`ฟีเจอร์${action}หมวดหมู่จะเปิดใช้งานเร็วๆ นี้`);
+            }
+        }
+    </script>
+</body>
+</html> 

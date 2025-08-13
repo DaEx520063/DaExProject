@@ -1,0 +1,349 @@
+{% extends "dashboard.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-chart-line"></i> เมนูสรุป</h2>
+                <div>
+                    <button class="btn btn-success me-2" onclick="showSummary()">
+                        <i class="fas fa-chart-pie"></i> สรุปสถิติ
+                    </button>
+                <button class="btn btn-primary" onclick="exportToExcel()">
+                    <i class="fas fa-download"></i> Export Excel
+                </button>
+                </div>
+            </div>
+
+            <!-- Filter Controls -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <label class="form-label">สาขา</label>
+                            <select class="form-select" id="branchFilter">
+                                <option value="">ทุกสาขา</option>
+                                {% for code, name in branches.items() %}
+                                    <option value="{{ code }}">{{ name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">เดือน</label>
+                            <select class="form-select" id="monthFilter">
+                                <option value="">ทุกเดือน</option>
+                                <option value="January">มกราคม</option>
+                                <option value="February">กุมภาพันธ์</option>
+                                <option value="March">มีนาคม</option>
+                                <option value="April">เมษายน</option>
+                                <option value="May">พฤษภาคม</option>
+                                <option value="June">มิถุนายน</option>
+                                <option value="July">กรกฎาคม</option>
+                                <option value="August">สิงหาคม</option>
+                                <option value="September">กันยายน</option>
+                                <option value="October">ตุลาคม</option>
+                                <option value="November">พฤศจิกายน</option>
+                                <option value="December">ธันวาคม</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">ปี</label>
+                            <select class="form-select" id="yearFilter">
+                                <option value="">ทุกปี</option>
+                                <option value="2024">2024</option>
+                                <option value="2023">2023</option>
+                                <option value="2022">2022</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">สถานะ</label>
+                            <select class="form-select" id="statusFilter">
+                                <option value="">ทุกสถานะ</option>
+                                <option value="paid">จ่ายแล้ว</option>
+                                <option value="pending">รอจ่าย</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Salaries Table -->
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="salariesTable">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th><input type="checkbox" id="selectAll"></th>
+                                    <th>พนักงาน</th>
+                                    <th>สาขา</th>
+                                    <th>เดือน/ปี</th>
+                                    <th>เงินเดือนพื้นฐาน</th>
+                                    <th>โบนัส</th>
+                                    <th>ค่าพาหนะ</th>
+                                    <th>ค่าปรับ</th>
+                                    <th>หักเงิน</th>
+                                    <th>เงินเดือนสุทธิ</th>
+                                    <th>สถานะ</th>
+                                    <th>วันที่จ่าย</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for salary in salaries %}
+                                <tr>
+                                    <td><input type="checkbox" class="salary-checkbox" value="{{ salary[0] }}"></td>
+                                    <td>{{ salary[1] }}</td>
+                                    <td>{{ branches[salary[2]] if salary[2] in branches else salary[2] }}</td>
+                                    <td>{{ salary[3] }}/{{ salary[4] }}</td>
+                                    <td class="text-end">฿{{ "{:,.2f}".format(salary[5]) }}</td>
+                                    <td class="text-end">฿{{ "{:,.2f}".format(salary[6]) }}</td>
+                                    <td class="text-end">฿{{ "{:,.2f}".format(salary[7]) }}</td>
+                                    <td class="text-end">฿{{ "{:,.2f}".format(salary[8]) }}</td>
+                                    <td class="text-end">฿{{ "{:,.2f}".format(salary[9]) }}</td>
+                                    <td class="text-end fw-bold">฿{{ "{:,.2f}".format(salary[10]) }}</td>
+                                    <td>
+                                        {% if salary[11] == 'paid' %}
+                                            <span class="badge bg-success">จ่ายแล้ว</span>
+                                        {% else %}
+                                            <span class="badge bg-warning">รอจ่าย</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ salary[12] if salary[12] else '-' }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary Cards -->
+            <div class="row mt-4">
+                <div class="col-md-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">รวมเงินเดือน</h5>
+                            <h3 class="card-text">฿{{ "{:,.2f}".format(total_salary) }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">จ่ายแล้ว</h5>
+                            <h3 class="card-text">{{ paid_count }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-warning text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">รอจ่าย</h5>
+                            <h3 class="card-text">{{ pending_count }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-info text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">พนักงาน</h5>
+                            <h3 class="card-text">{{ employee_count }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Filter functionality
+document.getElementById('branchFilter').addEventListener('change', filterTable);
+document.getElementById('monthFilter').addEventListener('change', filterTable);
+document.getElementById('yearFilter').addEventListener('change', filterTable);
+document.getElementById('statusFilter').addEventListener('change', filterTable);
+
+function filterTable() {
+    const branchFilter = document.getElementById('branchFilter').value;
+    const monthFilter = document.getElementById('monthFilter').value;
+    const yearFilter = document.getElementById('yearFilter').value;
+    const statusFilter = document.getElementById('statusFilter').value;
+    
+    const rows = document.querySelectorAll('#salariesTable tbody tr');
+    
+    rows.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        const branch = cells[2].textContent;
+        const monthYear = cells[3].textContent;
+        const status = cells[10].textContent.trim();
+        
+        let show = true;
+        
+        if (branchFilter && !branch.includes(branchFilter)) show = false;
+        if (monthFilter && !monthYear.includes(monthFilter)) show = false;
+        if (yearFilter && !monthYear.includes(yearFilter)) show = false;
+        if (statusFilter && !status.includes(statusFilter)) show = false;
+        
+        row.style.display = show ? '' : 'none';
+    });
+}
+
+// Select all functionality
+document.getElementById('selectAll').addEventListener('change', function() {
+    const checkboxes = document.querySelectorAll('.salary-checkbox');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = this.checked;
+    });
+});
+
+function exportToExcel() {
+    // Implementation for Excel export
+    alert('ฟีเจอร์ Export Excel กำลังพัฒนา');
+}
+
+function showSummary() {
+    // สร้าง Modal สำหรับแสดงสรุปสถิติ
+    const modal = document.createElement('div');
+    modal.className = 'modal fade';
+    modal.id = 'summaryModal';
+    modal.innerHTML = `
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-chart-pie"></i> สรุปสถิติเงินเดือน
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>สรุปตามสาขา</h6>
+                            <div id="branchSummary">
+                                <!-- จะถูกเติมด้วย JavaScript -->
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>สรุปตามเดือน</h6>
+                            <div id="monthSummary">
+                                <!-- จะถูกเติมด้วย JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <h6>สถิติเพิ่มเติม</h6>
+                            <div id="additionalStats">
+                                <!-- จะถูกเติมด้วย JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ปิด</button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // แสดง Modal
+    const modalInstance = new bootstrap.Modal(modal);
+    modalInstance.show();
+    
+    // สร้างข้อมูลสรุป
+    generateSummaryData();
+    
+    // ลบ Modal เมื่อปิด
+    modal.addEventListener('hidden.bs.modal', function() {
+        document.body.removeChild(modal);
+    });
+}
+
+function generateSummaryData() {
+    const rows = document.querySelectorAll('#salariesTable tbody tr');
+    const branchSummaryData = {};
+    const monthData = {};
+    let totalSalary = 0;
+    let totalEmployees = 0;
+    
+    rows.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        const branch = cells[2].textContent.trim();
+        const monthYear = cells[3].textContent.trim();
+        const salary = parseFloat(cells[9].textContent.replace('฿', '').replace(',', ''));
+        
+        // สรุปตามสาขา
+        if (!branchSummaryData[branch]) {
+            branchSummaryData[branch] = { count: 0, total: 0 };
+        }
+        branchSummaryData[branch].count++;
+        branchSummaryData[branch].total += salary;
+        
+        // สรุปตามเดือน
+        if (!monthData[monthYear]) {
+            monthData[monthYear] = { count: 0, total: 0 };
+        }
+        monthData[monthYear].count++;
+        monthData[monthYear].total += salary;
+        
+        totalSalary += salary;
+        totalEmployees++;
+    });
+    
+    // แสดงข้อมูลสรุปตามสาขา
+    const branchSummary = document.getElementById('branchSummary');
+    branchSummary.innerHTML = Object.entries(branchSummaryData)
+        .map(([branch, data]) => `
+            <div class="d-flex justify-content-between mb-2">
+                <span>${branch}</span>
+                <span>฿${data.total.toLocaleString()} (${data.count} คน)</span>
+            </div>
+        `).join('');
+    
+    // แสดงข้อมูลสรุปตามเดือน
+    const monthSummary = document.getElementById('monthSummary');
+    monthSummary.innerHTML = Object.entries(monthData)
+        .map(([month, data]) => `
+            <div class="d-flex justify-content-between mb-2">
+                <span>${month}</span>
+                <span>฿${data.total.toLocaleString()} (${data.count} คน)</span>
+            </div>
+        `).join('');
+    
+    // แสดงสถิติเพิ่มเติม
+    const additionalStats = document.getElementById('additionalStats');
+    const avgSalary = totalSalary / totalEmployees;
+    additionalStats.innerHTML = `
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card bg-primary text-white">
+                    <div class="card-body text-center">
+                        <h6>เงินเดือนเฉลี่ย</h6>
+                        <h4>฿${avgSalary.toLocaleString('en-US', {maximumFractionDigits: 2})}</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card bg-success text-white">
+                    <div class="card-body text-center">
+                        <h6>พนักงานทั้งหมด</h6>
+                        <h4>${totalEmployees} คน</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card bg-info text-white">
+                    <div class="card-body text-center">
+                        <h6>รวมเงินเดือน</h6>
+                        <h4>฿${totalSalary.toLocaleString()}</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+</script>
+{% endblock %} 

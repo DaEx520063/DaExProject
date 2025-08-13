@@ -1,0 +1,228 @@
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-users"></i> รายชื่อพนักงานทั้งหมด</h2>
+                <div>
+                    <button class="btn btn-danger me-2" onclick="deleteSelectedEmployees()" id="deleteSelectedBtn" style="display: none;">
+                        <i class="fas fa-trash"></i> ลบที่เลือก
+                    </button>
+                    <button class="btn btn-success me-2" onclick="importExcel()">
+                        <i class="fas fa-upload"></i> Import Excel
+                    </button>
+                    <button class="btn btn-primary" onclick="exportToExcel()">
+                        <i class="fas fa-download"></i> Export Excel
+                    </button>
+                </div>
+            </div>
+
+            <!-- Filter Controls -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <label class="form-label">สาขา</label>
+                            <select class="form-select" id="branchFilter">
+                                <option value="">ทุกสาขา</option>
+                                {% for code, name in branches.items() %}
+                                    <option value="{{ code }}">{{ name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">ตำแหน่ง</label>
+                            <select class="form-select" id="positionFilter">
+                                <option value="">ทุกตำแหน่ง</option>
+                                <option value="SPT">SPT</option>
+                                <option value="SPT/F">SPT/F</option>
+                                <option value="SPTA">SPTA</option>
+                                <option value="SPTA/F">SPTA/F</option>
+                                <option value="SPTB">SPTB</option>
+                                <option value="SPTC">SPTC</option>
+                                <option value="SPTS">SPTS</option>
+                                <option value="SPTS/F">SPTS/F</option>
+                                <option value="HO">HO</option>
+                                <option value="ADM">ADM</option>
+                                <option value="CS">CS</option>
+                                <option value="MD">MD</option>
+                                <option value="OP">OP</option>
+                                <option value="SPV">SPV</option>
+                                <option value="พนักงานขับรถ">พนักงานขับรถ</option>
+                                <option value="หัวหน้าขนส่ง">หัวหน้าขนส่ง</option>
+                                <option value="นักบัญชี">นักบัญชี</option>
+                                <option value="หัวหน้าฝ่ายการเงิน">หัวหน้าฝ่ายการเงิน</option>
+                                <option value="พนักงาน HR">พนักงาน HR</option>
+                                <option value="หัวหน้า HR">หัวหน้า HR</option>
+                                <option value="พนักงานจัดส่งพัสดุ">พนักงานจัดส่งพัสดุ</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">สถานะ</label>
+                            <select class="form-select" id="statusFilter">
+                                <option value="">ทุกสถานะ</option>
+                                <option value="active">ทำงาน</option>
+                                <option value="inactive">ลาออก</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">ค้นหา</label>
+                            <input type="text" class="form-control" id="searchFilter" placeholder="ชื่อ, รหัสพนักงาน, เบอร์โทร">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Employees Table -->
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="employeesTable">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th><input type="checkbox" id="selectAll"></th>
+                                    <th>รหัสพนักงาน</th>
+                                    <th>ชื่อ-นามสกุล</th>
+                                    <th>ตำแหน่ง</th>
+                                    <th>สาขา</th>
+                                    <th>ประเภทการจ้าง</th>
+                                    <th>โซน</th>
+                                    <th>วันที่เริ่มงาน</th>
+                                    <th>เบอร์โทร</th>
+                                    <th>อีเมล</th>
+                                    <th>รหัสผ่าน</th>
+                                    <th>สถานะ</th>
+                                    <th>การดำเนินการ</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for employee in employees %}
+                                <tr>
+                                    <td><input type="checkbox" class="employee-checkbox" value="{{ employee[0] }}"></td>
+                                    <td>{{ employee[0] }}</td>
+                                    <td>{{ employee[1] }}</td>
+                                    <td>{{ employee[2] }}</td>
+                                    <td>{{ branches[employee[3]] if employee[3] in branches else employee[3] }}</td>
+                                    <td>
+                                        {% if employee[8] == 'สัญญาจ้าง' %}
+                                            <span class="badge bg-info">สัญญาจ้าง</span>
+                                        {% elif employee[8] == 'ประจำ' %}
+                                            <span class="badge bg-warning">ประจำ</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ employee[8] }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if employee[9] == 'A' %}
+                                            <span class="badge bg-primary">A</span>
+                                        {% elif employee[9] == 'B' %}
+                                            <span class="badge bg-success">B</span>
+                                        {% elif employee[9] == 'C' %}
+                                            <span class="badge bg-warning">C</span>
+                                        {% elif employee[9] == 'office' %}
+                                            <span class="badge bg-info">Office</span>
+                                        {% else %}
+                                            {{ employee[9] or '-' }}
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ employee[4] }}</td>
+                                    <td>{{ employee[5] }}</td>
+                                    <td>{{ employee[6] }}</td>
+                                    <td>{{ employee[0] }}123</td>
+                                    <td>
+                                        {% if employee[10] == 'active' %}
+                                            <span class="badge bg-success">ทำงาน</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">ลาออก</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-warning" onclick="window.hrEmployeeModalEdit && window.hrEmployeeModalEdit('{{ employee[0] }}', '{{ employee[1] }}', '{{ employee[2] }}', '{{ employee[3] }}', '{{ employee[4] }}', '{{ employee[5] }}', '{{ employee[6] }}', '{{ employee[7] }}', '{{ employee[8] }}')">
+                                            <i class="fas fa-edit"></i> แก้ไข
+                                        </button>
+                                        <button class="btn btn-sm btn-danger delete-btn" data-employee-id="{{ employee[0] }}" data-employee-name="{{ employee[1] }}">
+                                            <i class="fas fa-trash"></i> ลบ
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary Cards -->
+            <div class="row mt-4">
+                <div class="col-md-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">พนักงานทั้งหมด</h5>
+                            <h3 class="card-text">{{ total_employees }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">ทำงาน</h5>
+                            <h3 class="card-text">{{ active_employees }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-secondary text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">ลาออก</h5>
+                            <h3 class="card-text">{{ inactive_employees }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-info text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">สาขา</h5>
+                            <h3 class="card-text">{{ branch_count }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Simple functions for employee management
+function viewEmployee(employeeId) {
+    // Implementation for viewing employee details
+    alert('ดูข้อมูลพนักงาน: ' + employeeId);
+}
+
+function editEmployee(employeeId) {
+    // Implementation for editing employee details
+    alert('แก้ไขข้อมูลพนักงาน: ' + employeeId);
+}
+
+function deleteSelectedEmployees() {
+    // Implementation for deleting selected employees
+    const checkedBoxes = document.querySelectorAll('.employee-checkbox:checked');
+    if (checkedBoxes.length === 0) {
+        alert('กรุณาเลือกพนักงานที่ต้องการลบ');
+        return;
+    }
+    
+    if (confirm(`ต้องการลบพนักงานที่เลือก ${checkedBoxes.length} คนหรือไม่?`)) {
+        // Implementation for bulk delete
+        alert('ลบพนักงานที่เลือกแล้ว');
+    }
+}
+
+function importExcel() {
+    // Implementation for importing Excel file
+    alert('Import Excel');
+}
+
+function exportToExcel() {
+    // Implementation for exporting to Excel
+    alert('Export Excel');
+}
+</script> 

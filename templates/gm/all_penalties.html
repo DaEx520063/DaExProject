@@ -1,0 +1,209 @@
+{% extends "dashboard.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-exclamation-triangle"></i> ค่าปรับทั้งหมด</h2>
+                <button class="btn btn-primary" onclick="exportToExcel()">
+                    <i class="fas fa-download"></i> Export Excel
+                </button>
+            </div>
+
+            <!-- Filter Controls -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <label class="form-label">สาขา</label>
+                            <select class="form-select" id="branchFilter">
+                                <option value="">ทุกสาขา</option>
+                                {% for code, name in branches.items() %}
+                                    <option value="{{ code }}">{{ name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">ประเภท</label>
+                            <select class="form-select" id="typeFilter">
+                                <option value="">ทุกประเภท</option>
+                                <option value="มาสาย">มาสาย</option>
+                                <option value="ขาดงาน">ขาดงาน</option>
+                                <option value="ไม่ปฏิบัติตามกฎ">ไม่ปฏิบัติตามกฎ</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">ช่วงวันที่</label>
+                            <input type="date" class="form-control" id="dateFilter">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">สถานะ</label>
+                            <select class="form-select" id="statusFilter">
+                                <option value="">ทุกสถานะ</option>
+                                <option value="active">ใช้งาน</option>
+                                <option value="inactive">ยกเลิก</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Penalties Table -->
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="penaltiesTable">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th><input type="checkbox" id="selectAll"></th>
+                                    <th>วันที่</th>
+                                    <th>พนักงาน</th>
+                                    <th>สาขา</th>
+                                    <th>ประเภท</th>
+                                    <th>จำนวนเงิน</th>
+                                    <th>เหตุผล</th>
+                                    <th>สถานะ</th>
+                                    <th>การดำเนินการ</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for penalty in penalties %}
+                                <tr>
+                                    <td><input type="checkbox" class="penalty-checkbox" value="{{ penalty[0] }}"></td>
+                                    <td>{{ penalty[1] }}</td>
+                                    <td>{{ penalty[2] }}</td>
+                                    <td>{{ branches[penalty[3]] if penalty[3] in branches else penalty[3] }}</td>
+                                    <td>{{ penalty[4] }}</td>
+                                    <td class="text-end text-danger fw-bold">฿{{ "{:,.2f}".format(penalty[5]) }}</td>
+                                    <td>{{ penalty[6] }}</td>
+                                    <td>
+                                        {% if penalty[7] == 'active' %}
+                                            <span class="badge bg-danger">ใช้งาน</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">ยกเลิก</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if penalty[7] == 'active' %}
+                                            <button class="btn btn-sm btn-warning" onclick="cancelPenalty({{ penalty[0] }})">
+                                                <i class="fas fa-ban"></i> ยกเลิก
+                                            </button>
+                                        {% else %}
+                                            <span class="text-muted">ยกเลิกแล้ว</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary Cards -->
+            <div class="row mt-4">
+                <div class="col-md-3">
+                    <div class="card bg-danger text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">รวมค่าปรับ</h5>
+                            <h3 class="card-text">฿{{ "{:,.2f}".format(total_penalty) }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-warning text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">ใช้งาน</h5>
+                            <h3 class="card-text">{{ active_count }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-secondary text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">ยกเลิก</h5>
+                            <h3 class="card-text">{{ inactive_count }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-info text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">พนักงาน</h5>
+                            <h3 class="card-text">{{ employee_count }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Filter functionality
+document.getElementById('branchFilter').addEventListener('change', filterTable);
+document.getElementById('typeFilter').addEventListener('change', filterTable);
+document.getElementById('dateFilter').addEventListener('change', filterTable);
+document.getElementById('statusFilter').addEventListener('change', filterTable);
+
+function filterTable() {
+    const branchFilter = document.getElementById('branchFilter').value;
+    const typeFilter = document.getElementById('typeFilter').value;
+    const dateFilter = document.getElementById('dateFilter').value;
+    const statusFilter = document.getElementById('statusFilter').value;
+    
+    const rows = document.querySelectorAll('#penaltiesTable tbody tr');
+    
+    rows.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        const branch = cells[3].textContent;
+        const type = cells[4].textContent;
+        const date = cells[1].textContent;
+        const status = cells[7].textContent.trim();
+        
+        let show = true;
+        
+        if (branchFilter && !branch.includes(branchFilter)) show = false;
+        if (typeFilter && type !== typeFilter) show = false;
+        if (dateFilter && date !== dateFilter) show = false;
+        if (statusFilter && !status.includes(statusFilter)) show = false;
+        
+        row.style.display = show ? '' : 'none';
+    });
+}
+
+// Select all functionality
+document.getElementById('selectAll').addEventListener('change', function() {
+    const checkboxes = document.querySelectorAll('.penalty-checkbox');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = this.checked;
+    });
+});
+
+function cancelPenalty(penaltyId) {
+    if (confirm('ยืนยันการยกเลิกค่าปรับนี้?')) {
+        // API call to cancel penalty
+        fetch(`/api/penalty/${penaltyId}/cancel`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('เกิดข้อผิดพลาด: ' + data.message);
+            }
+        });
+    }
+}
+
+function exportToExcel() {
+    // Implementation for Excel export
+    alert('ฟีเจอร์ Export Excel กำลังพัฒนา');
+}
+</script>
+{% endblock %} 

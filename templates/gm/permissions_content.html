@@ -1,0 +1,198 @@
+<h2>จัดการสิทธิ์ผู้ใช้งาน</h2>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4><i class="fas fa-key"></i> มอบสิทธิ์การเข้าถึง</h4>
+    <button class="btn btn-primary" onclick="addNewUser()">
+        <i class="fas fa-plus"></i> เพิ่มผู้ใช้งานใหม่
+    </button>
+</div>
+
+<div class="mb-3">
+    <label class="form-label">ค้นหารหัสผู้ใช้</label>
+    <input type="text" class="form-control" id="userSearchInput" placeholder="ค้นหาชื่อผู้ใช้...">
+</div>
+
+<div class="excel-table">
+    <table class="table table-hover mb-0">
+        <thead>
+            <tr>
+                <th>ชื่อผู้ใช้</th>
+                <th>ตำแหน่ง</th>
+                <th>สาขา</th>
+                <th>อีเมล</th>
+                <th>สถานะ</th>
+                <th>การดำเนินการ</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in users %}
+            <tr>
+                <td>{{ user[0] }}</td>
+                <td>
+                    <span class="badge bg-primary">{{ user[1] }}</span>
+                </td>
+                <td>
+                    {% if user[2] %}
+                        <span class="badge bg-info">{{ branches[user[2]] }}</span>
+                    {% else %}
+                        <span class="text-muted">-</span>
+                    {% endif %}
+                </td>
+                <td>{{ user[3] }}</td>
+                <td>
+                    <span class="status-badge status-approved">ใช้งาน</span>
+                </td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary" onclick="editUser('{{ user[0] }}')">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteUser('{{ user[0] }}')">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Modal for Add/Edit User -->
+<div class="modal fade" id="userModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalTitle">เพิ่มผู้ใช้งานใหม่</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="userForm">
+                    <div class="mb-3">
+                        <label class="form-label">ชื่อผู้ใช้</label>
+                        <input type="text" class="form-control" name="username" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">รหัสผ่าน</label>
+                        <input type="password" class="form-control" name="password" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">ตำแหน่ง</label>
+                        <select class="form-select" name="role" required>
+                            <option value="">เลือกตำแหน่ง</option>
+                            <option value="GM">GM (ผู้จัดการทั่วไป)</option>
+                            <option value="MD">MD (กรรมการผู้จัดการ)</option>
+                            <option value="HR">HR (ฝ่ายบุคคล)</option>
+                            <option value="การเงิน">การเงิน</option>
+                            <option value="SPV">SPV (หัวหน้าสาขา)</option>
+                            <option value="ADM">ADM (แอดมิน)</option>
+                            <option value="CS">CS (ฝ่ายบริการลูกค้า)</option>
+                            <option value="OP">OP (ฝ่ายปฏิบัติการ)</option>
+                                                            <option value="SPT">SPT (พนักงานจัดส่งพัสดุ)</option>
+                                <option value="SPT/F">SPT/F</option>
+                                <option value="SPTA">SPTA</option>
+                                <option value="SPTA/F">SPTA/F</option>
+                                <option value="SPTB">SPTB</option>
+                                <option value="SPTC">SPTC</option>
+                                <option value="SPTS">SPTS</option>
+                                <option value="SPTS/F">SPTS/F</option>
+                            <option value="พนักงานขับรถ">พนักงานขับรถ</option>
+                            <option value="หัวหน้าขนส่ง">หัวหน้าขนส่ง</option>
+                            <option value="นักบัญชี">นักบัญชี</option>
+                            <option value="หัวหน้าฝ่ายการเงิน">หัวหน้าฝ่ายการเงิน</option>
+                            <option value="พนักงาน HR">พนักงาน HR</option>
+                            <option value="หัวหน้า HR">หัวหน้า HR</option>
+                            <option value="พนักงานจัดส่งพัสดุ">พนักงานจัดส่งพัสดุ</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">สาขา</label>
+                        <select class="form-select" name="branch_code">
+                            <option value="">เลือกสาขา</option>
+                            {% for code, name in branches.items() %}
+                                <option value="{{ code }}">{{ name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">อีเมล</label>
+                        <input type="email" class="form-control" name="email">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">สิทธิ์การเข้าถึงเมนู</label>
+                        <div>
+                            <label><input type="checkbox" name="permissions" value="employee_management"> จัดการพนักงาน</label><br>
+                            <label><input type="checkbox" name="permissions" value="salary_upload"> อัพโหลดเงินเดือน</label><br>
+                            <label><input type="checkbox" name="permissions" value="spt_rate"> การจัดการเรท SPT</label><br>
+                            <label><input type="checkbox" name="permissions" value="all_employees"> รายชื่อพนักงานทั้งหมด</label><br>
+                            <label><input type="checkbox" name="permissions" value="all_salaries"> เงินเดือนทั้งหมด</label><br>
+                            <label><input type="checkbox" name="permissions" value="all_expenses"> ค่าใช้จ่ายทั้งหมด</label><br>
+                            <label><input type="checkbox" name="permissions" value="all_leaves"> การลาทั้งหมด</label><br>
+                            <label><input type="checkbox" name="permissions" value="all_penalties"> ค่าปรับทั้งหมด</label><br>
+                            <label><input type="checkbox" name="permissions" value="finance"> การเงิน</label><br>
+                            <label><input type="checkbox" name="permissions" value="hr"> HR</label><br>
+                            <label><input type="checkbox" name="permissions" value="gm"> GM</label><br>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+                <button type="button" class="btn btn-primary" onclick="saveUser()">บันทึก</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+window.addNewUser = function() {
+    document.getElementById('modalTitle').textContent = 'เพิ่มผู้ใช้งานใหม่';
+    document.getElementById('userForm').reset();
+    new bootstrap.Modal(document.getElementById('userModal')).show();
+}
+
+window.editUser = function(username) {
+    document.getElementById('modalTitle').textContent = 'แก้ไขผู้ใช้งาน';
+    // หาแถว user ในตาราง
+    const row = Array.from(document.querySelectorAll('tbody tr')).find(tr => tr.children[0].textContent === username);
+    if (row) {
+        document.querySelector('input[name="username"]').value = row.children[0].textContent;
+        document.querySelector('select[name="role"]').value = row.children[1].textContent.trim();
+        document.querySelector('select[name="branch_code"]').value = row.children[2].querySelector('span')?.textContent.replace('สาขา ', '') || '';
+        document.querySelector('input[name="email"]').value = row.children[3].textContent;
+        document.querySelector('input[name="password"]').value = '';
+    }
+    new bootstrap.Modal(document.getElementById('userModal')).show();
+}
+
+window.deleteUser = function(username) {
+    if (confirm('คุณต้องการลบผู้ใช้งาน ' + username + ' ใช่หรือไม่?')) {
+        fetch('/api/users/' + username, {
+            method: 'DELETE'
+        }).then(response => {
+            if (response.ok) {
+                location.reload();
+            }
+        });
+    }
+}
+
+window.saveUser = function() {
+    const formData = new FormData(document.getElementById('userForm'));
+    fetch('/api/users', {
+        method: 'POST',
+        body: formData
+    }).then(response => {
+        if (response.ok) {
+            location.reload();
+        }
+    });
+}
+
+// ฟังก์ชันกรองตารางผู้ใช้ตามรหัส
+window.filterUserTable = function() {
+    const search = document.getElementById('userSearchInput').value.trim().toLowerCase();
+    document.querySelectorAll('tbody tr').forEach(row => {
+        const username = row.children[0].textContent.trim().toLowerCase();
+        row.style.display = (!search || username.includes(search)) ? '' : 'none';
+    });
+}
+document.getElementById('userSearchInput').addEventListener('input', window.filterUserTable);
+</script> 

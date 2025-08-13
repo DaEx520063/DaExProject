@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>จัดการเรทเงินเดือน - DaEx</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .excel-table {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        .excel-table-header {
+            background: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+        }
+        .excel-table-header th {
+            border: none;
+            padding: 12px 8px;
+            font-weight: 600;
+            color: #495057;
+            text-align: center;
+            vertical-align: middle;
+        }
+        .excel-table-body td {
+            border: 1px solid #e9ecef;
+            padding: 8px;
+            text-align: center;
+            vertical-align: middle;
+        }
+        .excel-table-body tr:hover {
+            background-color: #f8f9fa;
+        }
+        .rate-type-badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+        }
+        .editable-cell {
+            cursor: pointer;
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+        }
+        .editable-cell:hover {
+            background-color: #ffeaa7;
+        }
+        .editable-cell input {
+            border: none;
+            background: transparent;
+            text-align: center;
+            width: 100%;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+            justify-content: center;
+        }
+        .btn-sm {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Main Content -->
+            <div class="col-12">
+                <div class="p-4">
+                    <!-- Header -->
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h2 class="mb-1">
+                                <i class="fas fa-calculator me-2"></i>
+                                จัดการเรทเงินเดือน
+                            </h2>
+                            <p class="text-muted mb-0">ตั้งค่าเรทการคำนวณเงินเดือนตามตำแหน่งและประเภท</p>
+                        </div>
+                        <div>
+                            <button class="btn btn-success me-2" onclick="exportToExcel()">
+                                <i class="fas fa-file-excel me-2"></i>
+                                ส่งออก Excel
+                            </button>
+                            <button class="btn btn-primary" onclick="addRate()">
+                                <i class="fas fa-plus me-2"></i>
+                                เพิ่มเรทใหม่
+                            </button>
+                        </div>
+                    </div>
+
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                                    <i class="fas fa-{{ 'exclamation-triangle' if category == 'error' else 'info-circle' }} me-2"></i>
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+
+                    <!-- Filter Controls -->
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <label class="form-label">ตำแหน่ง</label>
+                                    <select class="form-select" id="positionFilter">
+                                        <option value="">ทุกตำแหน่ง</option>
+                                        <option value="SPT">SPT</option>
+                                        <option value="SPTC">SPTC</option>
+                                        <option value="SPTS">SPTS</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">ประเภทเรท</label>
+                                    <select class="form-select" id="rateTypeFilter">
+                                        <option value="">ทุกประเภท</option>
+                                        <option value="piece_rate">เรทชิ้น</option>
+                                        <option value="base_salary">เรทฐานเงินเดือน</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">ระดับสาขา</label>
+                                    <select class="form-select" id="branchLevelFilter">
+                                        <option value="">ทุกระดับ</option>
+                                        <option value="1A">1A</option>
+                                        <option value="2A">2A</option>
+                                        <option value="3A">3A</option>
+                                        <option value="1B">1B</option>
+                                        <option value="2B">2B</option>
+                                        <option value="3B">3B</option>
+                                        <option value="1C">1C</option>
+                                        <option value="2C">2C</option>
+                                        <option value="3C">3C</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">โซน</label>
+                                    <select class="form-select" id="zoneFilter">
+                                        <option value="">ทุกโซน</option>
+                                        <option value="1A">1A</option>
+                                        <option value="2A">2A</option>
+                                        <option value="3A">3A</option>
+                                        <option value="1B">1B</option>
+                                        <option value="2B">2B</option>
+                                        <option value="3B">3B</option>
+                                        <option value="1C">1C</option>
+                                        <option value="2C">2C</option>
+                                        <option value="3C">3C</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Excel Table -->
+                    <div class="excel-table">
+                        <div class="table-responsive">
+                            <table class="table table-bordered mb-0" id="ratesTable">
+                                <thead class="excel-table-header">
+                                    <tr>
+                                        <th>ลำดับ</th>
+                                        <th>ตำแหน่ง</th>
+                                        <th>ประเภทเรท</th>
+                                        <th>ระดับสาขา</th>
+                                        <th>โซน</th>
+                                        <th>ฐานเงินเดือน (บาท)</th>
+                                        <th>เรทชิ้น (บาท/ชิ้น)</th>
+                                        <th>ค่าอินเซนทิฟ (บาท)</th>
+                                        <th>ค่าน้ำมัน (บาท)</th>
+                                        <th>ค่าเสื่อม (บาท)</th>
+                                        <th>เป้าหมายชิ้น</th>
+                                        <th>สูงสุดชิ้น</th>
+                                        <th>หมายเหตุ</th>
+                                        <th>การดำเนินการ</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="excel-table-body">
+                                    {% for rate in rates %}
+                                    <tr data-rate-id="{{ rate[0] }}" 
+                                        data-position="{{ rate[1] }}" 
+                                        data-rate-type="{{ rate[2] }}" 
+                                        data-branch-level="{{ rate[3] }}" 
+                                        data-zone-level="{{ rate[4] }}">
+                                        <td>{{ loop.index }}</td>
+                                        <td>
+                                            <span class="badge bg-primary">{{ rate[1] }}</span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-{{ 'primary' if rate[2] == 'piece_rate' else 'success' }} rate-type-badge">
+                                                {{ 'เรทชิ้น' if rate[2] == 'piece_rate' else 'เรทฐานเงินเดือน' }}
+                                            </span>
+                                        </td>
+                                        <td>{{ rate[3] or '-' }}</td>
+                                        <td>{{ rate[4] or '-' }}</td>
+                                        <td class="editable-cell" data-field="base_salary" data-value="{{ rate[5] }}">
+                                            {{ "{:,.0f}".format(rate[5]) }}
+                                        </td>
+                                        <td class="editable-cell" data-field="piece_rate" data-value="{{ rate[6] }}">
+                                            {{ "{:,.2f}".format(rate[6]) }}
+                                        </td>
+                                        <td class="editable-cell" data-field="incentive_rate" data-value="{{ rate[7] }}">
+                                            {{ "{:,.0f}".format(rate[7]) }}
+                                        </td>
+                                        <td class="editable-cell" data-field="fuel_allowance" data-value="{{ rate[8] }}">
+                                            {{ "{:,.0f}".format(rate[8]) }}
+                                        </td>
+                                        <td class="editable-cell" data-field="depreciation_rate" data-value="{{ rate[9] }}">
+                                            {{ "{:,.0f}".format(rate[9]) }}
+                                        </td>
+                                        <td class="editable-cell" data-field="target_pieces" data-value="{{ rate[10] }}">
+                                            {{ "{:,}".format(rate[10]) }}
+                                        </td>
+                                        <td class="editable-cell" data-field="max_pieces" data-value="{{ rate[11] }}">
+                                            {{ "{:,}".format(rate[11]) }}
+                                        </td>
+                                        <td>
+                                            <div class="action-buttons">
+                                                <button class="btn btn-sm btn-outline-primary" onclick="editRate({{ rate[0] }})" title="แก้ไข">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button class="btn btn-sm btn-outline-danger" onclick="deleteRate({{ rate[0] }})" title="ลบ">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                                <button class="btn btn-sm btn-outline-success" onclick="saveRow({{ rate[0] }})" title="บันทึก" style="display: none;">
+                                                    <i class="fas fa-save"></i>
+                                                </button>
+                                                <button class="btn btn-sm btn-outline-secondary" onclick="cancelEdit({{ rate[0] }})" title="ยกเลิก" style="display: none;">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    {% if not rates %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-calculator fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">ไม่มีข้อมูลเรท</h5>
+                        <p class="text-muted">ยังไม่มีข้อมูลเรทการคำนวณเงินเดือนในระบบ</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Rate Modal -->
+    <div class="modal fade" id="rateModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="rateModalTitle">เพิ่มเรทใหม่</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="rateForm">
+                        <input type="hidden" id="rateId" name="rate_id">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">ตำแหน่ง *</label>
+                                    <select class="form-select" id="position" name="position" required>
+                                        <option value="">เลือกตำแหน่ง</option>
+                                        <option value="SPT">SPT</option>
+                                        <option value="SPTC">SPTC</option>
+                                        <option value="SPTS">SPTS</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">ประเภทเรท *</label>
+                                    <select class="form-select" id="rateType" name="rate_type" required>
+                                        <option value="">เลือกประเภท</option>
+                                        <option value="piece_rate">เรทชิ้น</option>
+                                        <option value="base_salary">เรทฐานเงินเดือน</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">ระดับสาขา</label>
+                                    <select class="form-select" id="branchLevel" name="branch_level">
+                                        <option value="">ไม่ระบุ</option>
+                                        <option value="1A">1A</option>
+                                        <option value="2A">2A</option>
+                                        <option value="3A">3A</option>
+                                        <option value="1B">1B</option>
+                                        <option value="2B">2B</option>
+                                        <option value="3B">3B</option>
+                                        <option value="1C">1C</option>
+                                        <option value="2C">2C</option>
+                                        <option value="3C">3C</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">โซน</label>
+                                    <select class="form-select" id="zoneLevel" name="zone_level">
+                                        <option value="">ไม่ระบุ</option>
+                                        <option value="1A">1A</option>
+                                        <option value="2A">2A</option>
+                                        <option value="3A">3A</option>
+                                        <option value="1B">1B</option>
+                                        <option value="2B">2B</option>
+                                        <option value="3B">3B</option>
+                                        <option value="1C">1C</option>
+                                        <option value="2C">2C</option>
+                                        <option value="3C">3C</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">ฐานเงินเดือน (บาท)</label>
+                                    <input type="number" class="form-control" id="baseSalary" name="base_salary" value="0" step="0.01">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">เรทชิ้น (บาท/ชิ้น)</label>
+                                    <input type="number" class="form-control" id="pieceRate" name="piece_rate" value="0" step="0.01">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">ค่าอินเซนทิฟ (บาท)</label>
+                                    <input type="number" class="form-control" id="incentiveRate" name="incentive_rate" value="0" step="0.01">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">ค่าน้ำมัน (บาท)</label>
+                                    <input type="number" class="form-control" id="fuelAllowance" name="fuel_allowance" value="0" step="0.01">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">ค่าเสื่อม (บาท)</label>
+                                    <input type="number" class="form-control" id="depreciationRate" name="depreciation_rate" value="0" step="0.01">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">เป้าหมายชิ้น</label>
+                                    <input type="number" class="form-control" id="targetPieces" name="target_pieces" value="2800">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">สูงสุดชิ้น</label>
+                                    <input type="number" class="form-control" id="maxPieces" name="max_pieces" value="3000">
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+                    <button type="button" class="btn btn-primary" onclick="saveRate()">บันทึก</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> 

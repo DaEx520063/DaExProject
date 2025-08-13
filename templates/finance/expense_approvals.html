@@ -1,0 +1,157 @@
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-check-circle"></i> อนุมัติการเบิกค่าใช้จ่าย</h2>
+                <div>
+                    <button class="btn btn-success me-2" onclick="bulkApproveExpenses()">
+                        <i class="fas fa-check"></i> อนุมัติรายการที่เลือก
+                    </button>
+                    <button class="btn btn-danger me-2" onclick="bulkRejectExpenses()">
+                        <i class="fas fa-times"></i> ปฏิเสธรายการที่เลือก
+                    </button>
+                    <button class="btn btn-warning me-2" onclick="bulkDeleteExpenses()">
+                        <i class="fas fa-trash"></i> ยกเลิกรายการที่เลือก
+                    </button>
+                    <button class="btn btn-primary" onclick="exportToExcel()">
+                        <i class="fas fa-download"></i> Export Excel
+                    </button>
+                </div>
+            </div>
+
+            <!-- Filter Controls -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <label class="form-label">ประเภท</label>
+                            <select class="form-select" id="typeFilter">
+                                <option value="">ทุกประเภท</option>
+                                <option value="ค่าน้ำมัน">ค่าน้ำมัน</option>
+                                <option value="ค่าอุปกรณ์">ค่าอุปกรณ์</option>
+                                <option value="ค่าอาหาร">ค่าอาหาร</option>
+                                <option value="ค่าที่พัก">ค่าที่พัก</option>
+                                <option value="ค่าสื่อสาร">ค่าสื่อสาร</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">สถานะ</label>
+                            <select class="form-select" id="statusFilter">
+                                <option value="">ทุกสถานะ</option>
+                                <option value="pending" selected>รออนุมัติ</option>
+                                <option value="approved">อนุมัติแล้ว</option>
+                                <option value="rejected">ปฏิเสธ</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">ช่วงวันที่</label>
+                            <input type="date" class="form-control" id="dateFilter">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">ค้นหา</label>
+                            <input type="text" class="form-control" id="searchFilter" placeholder="ชื่อพนักงาน">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Expenses Table -->
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="expensesTable">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th><input type="checkbox" id="selectAll"></th>
+                                    <th>รหัส</th>
+                                    <th>วันที่</th>
+                                    <th>พนักงาน</th>
+                                    <th>ประเภท</th>
+                                    <th>รายละเอียด</th>
+                                    <th>จำนวนเงิน</th>
+                                    <th>สถานะ</th>
+                                    <th>การดำเนินการ</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for expense in expenses %}
+                                <tr>
+                                    <td><input type="checkbox" class="expense-checkbox" value="{{ expense[0] }}"></td>
+                                    <td>{{ expense[0] }}</td>
+                                    <td>{{ expense[2] }}</td>
+                                    <td>{{ expense[1] }}</td>
+                                    <td>{{ expense[3] }}</td>
+                                    <td>{{ expense[4] }}</td>
+                                    <td class="text-end">฿{{ "{:,.2f}".format(expense[5]) }}</td>
+                                    <td>
+                                        {% if expense[6] == 'pending' %}
+                                            <span class="badge bg-warning">รออนุมัติ</span>
+                                        {% elif expense[6] == 'approved' %}
+                                            <span class="badge bg-success">อนุมัติแล้ว</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">ปฏิเสธ</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if expense[6] == 'pending' %}
+                                            <button type="button" class="btn btn-sm btn-success approve-btn" data-expense-id="{{ expense[0] }}">
+                                                <i class="fas fa-check"></i> อนุมัติ
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-danger reject-btn" data-expense-id="{{ expense[0] }}">
+                                                <i class="fas fa-times"></i> ปฏิเสธ
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-warning cancel-btn" data-expense-id="{{ expense[0] }}">
+                                                <i class="fas fa-trash"></i> ยกเลิก
+                                            </button>
+                                        {% else %}
+                                            <span class="text-muted">ดำเนินการแล้ว</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr><td colspan="9" class="text-center text-muted">ไม่มีรายการขอเบิกค่าใช้จ่าย</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary Cards -->
+            <div class="row mt-4">
+                <div class="col-md-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">รายการทั้งหมด</h5>
+                            <h3 class="card-text">{{ expenses|length }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-warning text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">รออนุมัติ</h5>
+                            <h3 class="card-text">{{ expenses|selectattr('6', 'equalto', 'pending')|list|length }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">อนุมัติแล้ว</h5>
+                            <h3 class="card-text">{{ expenses|selectattr('6', 'equalto', 'approved')|list|length }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-danger text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">ปฏิเสธ</h5>
+                            <h3 class="card-text">{{ expenses|selectattr('6', 'equalto', 'rejected')|list|length }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div> 

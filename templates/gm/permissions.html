@@ -1,0 +1,669 @@
+
+<style>
+.table-filters {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 5px;
+    border: 1px solid #dee2e6;
+}
+
+.table-filters .form-control,
+.table-filters .form-select {
+    font-size: 0.875rem;
+}
+
+.table-filters .btn {
+    font-size: 0.875rem;
+}
+
+#filterInfo {
+    color: #6c757d;
+    font-size: 0.875rem;
+    margin-top: 10px;
+}
+
+.table-filters .row {
+    align-items: center;
+}
+</style>
+
+<h2>จัดการสิทธิ์ผู้ใช้งาน</h2>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4><i class="fas fa-key"></i> มอบสิทธิ์การเข้าถึง</h4>
+    <button class="btn btn-primary" onclick="addNewUser()">
+        <i class="fas fa-plus"></i> เพิ่มผู้ใช้งานใหม่
+    </button>
+</div>
+
+<div class="excel-table">
+    <!-- Filter Row -->
+    <div class="table-filters mb-3">
+        <div class="row">
+            <div class="col-md-2">
+                <input type="text" class="form-control form-control-sm" id="filterUsername" placeholder="กรองชื่อผู้ใช้...">
+            </div>
+            <div class="col-md-2">
+                <select class="form-select form-select-sm" id="filterRole">
+                    <option value="">ทุกตำแหน่ง</option>
+                    <option value="GM">GM</option>
+                    <option value="HR">HR</option>
+                    <option value="การเงิน">การเงิน</option>
+                    <option value="SPV">SPV</option>
+                    <option value="ADM">ADM</option>
+                    <option value="SPT">SPT</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select class="form-select form-select-sm" id="filterBranch">
+                    <option value="">ทุกสาขา</option>
+                    {% for code, name in branches.items() %}
+                        <option value="{{ code }}">{{ name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <input type="text" class="form-control form-control-sm" id="filterEmail" placeholder="กรองอีเมล...">
+            </div>
+            <div class="col-md-2">
+                <select class="form-select form-select-sm" id="filterStatus">
+                    <option value="">ทุกสถานะ</option>
+                    <option value="ใช้งาน">ใช้งาน</option>
+                    <option value="ไม่ใช้งาน">ไม่ใช้งาน</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button class="btn btn-sm btn-outline-secondary" onclick="clearFilters()">
+                    <i class="fas fa-times"></i> ล้างตัวกรอง
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <table class="table table-hover mb-0" id="usersTable">
+        <thead>
+            <tr>
+                <th>ชื่อผู้ใช้</th>
+                <th>ตำแหน่ง</th>
+                <th>สาขา</th>
+                <th>อีเมล</th>
+                <th>สถานะ</th>
+                <th>สิทธิ์การเข้าถึง</th>
+                <th>การดำเนินการ</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in users %}
+            <tr>
+                <td>{{ user[1] }}</td>
+                <td>
+                    <span class="badge bg-primary">{{ user[2] }}</span>
+                </td>
+                <td>
+                    {% if user[3] %}
+                        <span class="badge bg-info">{{ branches[user[3]] }}</span>
+                    {% else %}
+                        <span class="text-muted">-</span>
+                    {% endif %}
+                </td>
+                <td>{{ user[4] or '-' }}</td>
+                <td>
+                    <span class="status-badge status-approved">ใช้งาน</span>
+                </td>
+                <td>
+                    <button class="btn btn-sm btn-outline-info" onclick="managePermissions({{ user[0] }}, '{{ user[1] }}')">
+                        <i class="fas fa-key"></i> จัดการสิทธิ์
+                    </button>
+                </td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary" onclick="editUser('{{ user[1] }}')">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteUser('{{ user[1] }}')">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Modal for Add/Edit User -->
+<div class="modal fade" id="userModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalTitle">เพิ่มผู้ใช้งานใหม่</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="userForm">
+                    <div class="mb-3">
+                        <label class="form-label">ชื่อผู้ใช้</label>
+                        <input type="text" class="form-control" name="username" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">รหัสผ่าน</label>
+                        <input type="password" class="form-control" name="password" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">ตำแหน่ง</label>
+                        <select class="form-select" name="role" required>
+                            <option value="">เลือกตำแหน่ง</option>
+                            <option value="GM">GM</option>
+                            <option value="HR">HR</option>
+                            <option value="การเงิน">การเงิน</option>
+                            <option value="SPV">SPV (หัวหน้าสาขา)</option>
+                            <option value="ADM">ADM</option>
+                            <option value="SPT">SPT (พนักงานจัดส่งพัสดุ)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">สาขา</label>
+                        <select class="form-select" name="branch_code">
+                            <option value="">เลือกสาขา</option>
+                            {% for code, name in branches.items() %}
+                                <option value="{{ code }}">{{ name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">อีเมล</label>
+                        <input type="email" class="form-control" name="email">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+                <button type="button" class="btn btn-primary" onclick="saveUser()">บันทึก</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Manage Permissions -->
+<div class="modal fade" id="permissionsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="permissionsModalTitle">จัดการสิทธิ์การเข้าถึงเมนู</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <h6 id="permissionsUserName"></h6>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>เมนู GM/MD</h6>
+                        <div id="gmMenus"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>เมนู HR</h6>
+                        <div id="hrMenus"></div>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <h6>เมนู การเงิน</h6>
+                        <div id="financeMenus"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>เมนู SPV</h6>
+                        <div id="spvMenus"></div>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <h6>เมนู SPT</h6>
+                        <div id="sptMenus"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+                <button type="button" class="btn btn-primary" onclick="savePermissions()">บันทึกสิทธิ์</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ฟังก์ชันเพิ่มผู้ใช้ใหม่
+window.addNewUser = function() {
+    // ล้างฟอร์ม
+    document.getElementById('userForm').reset();
+    
+    // เปลี่ยนหัวข้อ modal
+    document.getElementById('modalTitle').textContent = 'เพิ่มผู้ใช้งานใหม่';
+    
+    // แสดง modal
+    const modal = new bootstrap.Modal(document.getElementById('userModal'));
+    modal.show();
+}
+
+// ฟังก์ชันแก้ไขผู้ใช้
+window.editUser = function(username) {
+    console.log('editUser called for username:', username);
+    
+    // ดึงข้อมูลผู้ใช้
+    fetch(`/api/users/${username}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const user = data.user;
+                
+                // เติมข้อมูลในฟอร์ม
+                document.querySelector('#userForm input[name="username"]').value = user.username;
+                document.querySelector('#userForm input[name="password"]').value = '';
+                document.querySelector('#userForm select[name="role"]').value = user.role;
+                document.querySelector('#userForm select[name="branch_code"]').value = user.branch_code || '';
+                document.querySelector('#userForm input[name="email"]').value = user.email || '';
+                
+                // เปลี่ยนหัวข้อ modal
+                document.getElementById('modalTitle').textContent = 'แก้ไขผู้ใช้งาน';
+                
+                // แสดง modal
+                const modal = new bootstrap.Modal(document.getElementById('userModal'));
+                modal.show();
+            } else {
+                alert('ไม่พบข้อมูลผู้ใช้');
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching user data:', error);
+            alert('เกิดข้อผิดพลาดในการดึงข้อมูลผู้ใช้');
+        });
+}
+
+// ฟังก์ชันลบผู้ใช้
+window.deleteUser = function(username) {
+    if (confirm(`คุณต้องการลบผู้ใช้ ${username} หรือไม่?`)) {
+        fetch(`/api/users/${username}/delete`, {
+            method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('ลบผู้ใช้เรียบร้อยแล้ว');
+                location.reload();
+            } else {
+                alert('เกิดข้อผิดพลาดในการลบผู้ใช้');
+            }
+        })
+        .catch(error => {
+            console.error('Error deleting user:', error);
+            alert('เกิดข้อผิดพลาดในการลบผู้ใช้');
+        });
+    }
+}
+
+// ฟังก์ชันบันทึกผู้ใช้
+window.saveUser = function() {
+    const form = document.getElementById('userForm');
+    const formData = new FormData(form);
+    
+    fetch('/api/users', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('บันทึกผู้ใช้เรียบร้อยแล้ว');
+            bootstrap.Modal.getInstance(document.getElementById('userModal')).hide();
+            location.reload();
+        } else {
+            alert(data.message || 'เกิดข้อผิดพลาดในการบันทึกผู้ใช้');
+        }
+    })
+    .catch(error => {
+        console.error('Error saving user:', error);
+        alert('เกิดข้อผิดพลาดในการบันทึกผู้ใช้');
+    });
+}
+
+// ฟังก์ชันจัดการสิทธิ์
+window.managePermissions = function(userId, username) {
+    console.log('managePermissions called for user:', userId, username);
+    
+    // แสดง modal
+    const modal = new bootstrap.Modal(document.getElementById('permissionsModal'));
+    document.getElementById('permissionsModalTitle').textContent = `จัดการสิทธิ์การเข้าถึงเมนู - ${username}`;
+    document.getElementById('permissionsUserName').textContent = `ผู้ใช้: ${username}`;
+    
+    // ดึงข้อมูลสิทธิ์ของผู้ใช้
+    fetch(`/api/permissions/${userId}`)
+        .then(response => response.json())
+        .then(data => {
+            console.log('Permissions data:', data);
+            
+            // แสดงเมนู GM/MD
+            const gmMenus = document.getElementById('gmMenus');
+            gmMenus.innerHTML = '';
+            
+            if (data.menus && data.menus.length > 0) {
+                data.menus.forEach(menu => {
+                    if (menu.category === 'GM/MD') {
+                        const div = document.createElement('div');
+                        div.className = 'form-check mb-2';
+                        div.innerHTML = `
+                            <input class="form-check-input" type="checkbox" 
+                                   id="menu_${menu.id}" 
+                                   value="${menu.id}"
+                                   ${menu.can_access ? 'checked' : ''}>
+                            <label class="form-check-label" for="menu_${menu.id}">
+                                ${menu.display_name}
+                            </label>
+                        `;
+                        gmMenus.appendChild(div);
+                    }
+                });
+            }
+            
+            // แสดงเมนู HR
+            const hrMenus = document.getElementById('hrMenus');
+            hrMenus.innerHTML = '';
+            
+            if (data.menus && data.menus.length > 0) {
+                data.menus.forEach(menu => {
+                    if (menu.category === 'HR') {
+                        const div = document.createElement('div');
+                        div.className = 'form-check mb-2';
+                        div.innerHTML = `
+                            <input class="form-check-input" type="checkbox" 
+                                   id="menu_${menu.id}" 
+                                   value="${menu.id}"
+                                   ${menu.can_access ? 'checked' : ''}>
+                            <label class="form-check-label" for="menu_${menu.id}">
+                                ${menu.display_name}
+                            </label>
+                        `;
+                        hrMenus.appendChild(div);
+                    }
+                });
+            }
+            
+            // แสดงเมนู การเงิน
+            const financeMenus = document.getElementById('financeMenus');
+            financeMenus.innerHTML = '';
+            
+            if (data.menus && data.menus.length > 0) {
+                data.menus.forEach(menu => {
+                    if (menu.category === 'การเงิน') {
+                        const div = document.createElement('div');
+                        div.className = 'form-check mb-2';
+                        div.innerHTML = `
+                            <input class="form-check-input" type="checkbox" 
+                                   id="menu_${menu.id}" 
+                                   value="${menu.id}"
+                                   ${menu.can_access ? 'checked' : ''}>
+                            <label class="form-check-label" for="menu_${menu.id}">
+                                ${menu.display_name}
+                            </label>
+                        `;
+                        financeMenus.appendChild(div);
+                    }
+                });
+            }
+            
+            // แสดงเมนู SPV
+            const spvMenus = document.getElementById('spvMenus');
+            spvMenus.innerHTML = '';
+            
+            if (data.menus && data.menus.length > 0) {
+                data.menus.forEach(menu => {
+                    if (menu.category === 'SPV') {
+                        const div = document.createElement('div');
+                        div.className = 'form-check mb-2';
+                        div.innerHTML = `
+                            <input class="form-check-input" type="checkbox" 
+                                   id="menu_${menu.id}" 
+                                   value="${menu.id}"
+                                   ${menu.can_access ? 'checked' : ''}>
+                            <label class="form-check-label" for="menu_${menu.id}">
+                                ${menu.display_name}
+                            </label>
+                        `;
+                        spvMenus.appendChild(div);
+                    }
+                });
+            }
+            
+            // แสดงเมนู SPT
+            const sptMenus = document.getElementById('sptMenus');
+            sptMenus.innerHTML = '';
+            
+            if (data.menus && data.menus.length > 0) {
+                data.menus.forEach(menu => {
+                    if (menu.category === 'SPT') {
+                        const div = document.createElement('div');
+                        div.className = 'form-check mb-2';
+                        div.innerHTML = `
+                            <input class="form-check-input" type="checkbox" 
+                                   id="menu_${menu.id}" 
+                                   value="${menu.id}"
+                                   ${menu.can_access ? 'checked' : ''}>
+                            <label class="form-check-label" for="menu_${menu.id}">
+                                ${menu.display_name}
+                            </label>
+                        `;
+                        sptMenus.appendChild(div);
+                    }
+                });
+            }
+            
+            // เก็บ user_id สำหรับการบันทึก
+            document.getElementById('permissionsModal').setAttribute('data-user-id', userId);
+        })
+        .catch(error => {
+            console.error('Error fetching permissions:', error);
+            alert('เกิดข้อผิดพลาดในการดึงข้อมูลสิทธิ์');
+        });
+    
+    modal.show();
+}
+
+// ฟังก์ชันบันทึกสิทธิ์
+window.savePermissions = function() {
+    const userId = document.getElementById('permissionsModal').getAttribute('data-user-id');
+    const checkboxes = document.querySelectorAll('#permissionsModal input[type="checkbox"]');
+    
+    const permissions = [];
+    checkboxes.forEach(checkbox => {
+        permissions.push({
+            menu_id: checkbox.value,
+            can_access: checkbox.checked
+        });
+    });
+    
+    fetch(`/api/permissions/${userId}/update`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ permissions: permissions })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('บันทึกสิทธิ์เรียบร้อยแล้ว');
+            bootstrap.Modal.getInstance(document.getElementById('permissionsModal')).hide();
+        } else {
+            alert('เกิดข้อผิดพลาดในการบันทึกสิทธิ์');
+        }
+    })
+    .catch(error => {
+        console.error('Error saving permissions:', error);
+        alert('เกิดข้อผิดพลาดในการบันทึกสิทธิ์');
+    });
+}
+
+// Filter functions
+window.filterTable = function() {
+    const usernameFilter = document.getElementById('filterUsername').value.toLowerCase();
+    const roleFilter = document.getElementById('filterRole').value;
+    const branchFilter = document.getElementById('filterBranch').value;
+    const emailFilter = document.getElementById('filterEmail').value.toLowerCase();
+    const statusFilter = document.getElementById('filterStatus').value;
+    
+    const table = document.getElementById('usersTable');
+    if (!table) {
+        return;
+    }
+    
+    const tbody = table.getElementsByTagName('tbody')[0];
+    if (!tbody) {
+        return;
+    }
+    
+    const rows = tbody.getElementsByTagName('tr');
+    let visibleCount = 0;
+    
+    for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        const cells = row.getElementsByTagName('td');
+        
+        if (cells.length < 5) {
+            continue;
+        }
+        
+        const username = cells[0].textContent.toLowerCase();
+        const role = cells[1].textContent.trim();
+        const branch = cells[2].textContent.trim();
+        const email = cells[3].textContent.toLowerCase();
+        const status = cells[4].textContent.trim();
+        
+        let showRow = true;
+        
+        // Username filter
+        if (usernameFilter && !username.includes(usernameFilter)) {
+            showRow = false;
+        }
+        
+        // Role filter
+        if (roleFilter && role !== roleFilter) {
+            showRow = false;
+        }
+        
+        // Branch filter
+        if (branchFilter && branch !== branchFilter && branch !== '-') {
+            showRow = false;
+        }
+        
+        // Email filter
+        if (emailFilter && !email.includes(emailFilter)) {
+            showRow = false;
+        }
+        
+        // Status filter
+        if (statusFilter && status !== statusFilter) {
+            showRow = false;
+        }
+        
+        if (showRow) {
+            row.style.display = '';
+            visibleCount++;
+        } else {
+            row.style.display = 'none';
+        }
+    }
+    
+    // Update filter info
+    updateFilterInfo(visibleCount, rows.length);
+}
+
+window.clearFilters = function() {
+    document.getElementById('filterUsername').value = '';
+    document.getElementById('filterRole').value = '';
+    document.getElementById('filterBranch').value = '';
+    document.getElementById('filterEmail').value = '';
+    document.getElementById('filterStatus').value = '';
+    
+    // Show all rows
+    const table = document.getElementById('usersTable');
+    const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+    
+    for (let i = 0; i < rows.length; i++) {
+        rows[i].style.display = '';
+    }
+    
+    updateFilterInfo(rows.length, rows.length);
+}
+
+function updateFilterInfo(visible, total) {
+    // Create or update filter info element
+    let filterInfo = document.getElementById('filterInfo');
+    if (!filterInfo) {
+        filterInfo = document.createElement('div');
+        filterInfo.id = 'filterInfo';
+        filterInfo.className = 'text-muted small mt-2';
+        document.querySelector('.table-filters').appendChild(filterInfo);
+    }
+    
+    if (visible === total) {
+        filterInfo.textContent = `แสดงทั้งหมด ${total} รายการ`;
+    } else {
+        filterInfo.textContent = `แสดง ${visible} จาก ${total} รายการ`;
+    }
+}
+
+// Add event listeners for filters
+function initializeFilters() {
+    const filterUsername = document.getElementById('filterUsername');
+    const filterRole = document.getElementById('filterRole');
+    const filterBranch = document.getElementById('filterBranch');
+    const filterEmail = document.getElementById('filterEmail');
+    const filterStatus = document.getElementById('filterStatus');
+    
+    if (filterUsername) {
+        filterUsername.addEventListener('input', function() {
+            filterTable();
+        });
+    }
+    
+    if (filterRole) {
+        filterRole.addEventListener('change', function() {
+            filterTable();
+        });
+    }
+    
+    if (filterBranch) {
+        filterBranch.addEventListener('change', function() {
+            filterTable();
+        });
+    }
+    
+    if (filterEmail) {
+        filterEmail.addEventListener('input', function() {
+            filterTable();
+        });
+    }
+    
+    if (filterStatus) {
+        filterStatus.addEventListener('change', function() {
+            filterTable();
+        });
+    }
+    
+    // Initialize filter info
+    const table = document.getElementById('usersTable');
+    if (table) {
+        const tbody = table.getElementsByTagName('tbody')[0];
+        if (tbody) {
+            const rows = tbody.getElementsByTagName('tr');
+            updateFilterInfo(rows.length, rows.length);
+        }
+    }
+}
+
+// Try to initialize filters when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeFilters);
+} else {
+    initializeFilters();
+}
+
+// Also try to initialize after a short delay to ensure content is loaded
+setTimeout(initializeFilters, 1000);
+</script> 

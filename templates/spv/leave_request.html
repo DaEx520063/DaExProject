@@ -1,0 +1,111 @@
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-calendar-plus me-2"></i>ขออนุมัติการลา
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form id="leaveRequestForm">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">ประเภทการลา</label>
+                                    <select class="form-select" id="leave_type" name="leave_type" required>
+                                        <option value="">เลือกประเภทการลา</option>
+                                        <option value="ลาป่วย">ลาป่วย</option>
+                                        <option value="ลาพักร้อน">ลาพักร้อน</option>
+                                        <option value="ลากิจ">ลากิจ</option>
+                                        <option value="ลาคลอด">ลาคลอด</option>
+                                        <option value="ลาอุปสมบท">ลาอุปสมบท</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">จำนวนวัน</label>
+                                    <input type="number" class="form-control" id="days_requested" name="days_requested" min="1" max="30" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">วันที่เริ่ม</label>
+                                    <input type="date" class="form-control" id="start_date" name="start_date" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">วันที่สิ้นสุด</label>
+                                    <input type="date" class="form-control" id="end_date" name="end_date" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">เหตุผล</label>
+                            <textarea class="form-control" id="reason" name="reason" rows="4" placeholder="ระบุเหตุผลในการลา" required></textarea>
+                        </div>
+                        <div class="mb-3" id="medical_certificate_section" style="display: none;">
+                            <label class="form-label">
+                                <i class="fas fa-file-medical me-1"></i>ใบรับรองแพทย์ (สำหรับการลาป่วย)
+                            </label>
+                            <input type="file" class="form-control" id="medical_certificate" name="medical_certificate" accept=".pdf,.jpg,.jpeg,.png">
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle me-1"></i>รองรับไฟล์ PDF, JPG, JPEG, PNG ขนาดไม่เกิน 5MB
+                            </small>
+                        </div>
+                        <div class="text-end">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane me-1"></i>ส่งคำขอ
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ประวัติการลาของฉัน -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-history me-2"></i>ประวัติการลาของฉัน
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>ประเภทการลา</th>
+                                    <th>วันที่เริ่ม</th>
+                                    <th>วันที่สิ้นสุด</th>
+                                    <th>จำนวนวัน</th>
+                                    <th>เหตุผล</th>
+                                    <th>สถานะ</th>
+                                    <th>ผู้อนุมัติ</th>
+                                    <th>ใบรับรองแพทย์</th>
+                                </tr>
+                            </thead>
+                            <tbody id="leaveHistory">
+                                <tr>
+                                    <td colspan="8" class="text-center text-muted">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        ยังไม่มีประวัติการลา
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/leave_request.js') }}"></script> 

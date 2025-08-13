@@ -1,0 +1,67 @@
+{% extends "dashboard.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-bar me-2"></i>
+                        รายงานการมาทำงาน
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>ลำดับ</th>
+                                    <th>ชื่อพนักงาน</th>
+                                    <th>จำนวนวันทำงาน</th>
+                                    <th>ชั่วโมงทำงานรวม</th>
+                                    <th>โอทีรวม</th>
+                                    <th>ชั่วโมงเฉลี่ยต่อวัน</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for summary in attendance_summary %}
+                                <tr>
+                                    <td>{{ loop.index }}</td>
+                                    <td>{{ summary[0] }}</td>
+                                    <td>{{ summary[1] or 0 }} วัน</td>
+                                    <td>{{ "{:.1f}".format(summary[2] or 0) }} ชม.</td>
+                                    <td>{{ "{:.1f}".format(summary[3] or 0) }} ชม.</td>
+                                    <td>{{ "{:.1f}".format((summary[2] or 0) / (summary[1] or 1)) }} ชม./วัน</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    {% if not attendance_summary %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-chart-bar fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">ไม่มีข้อมูลรายงาน</h5>
+                        <p class="text-muted">ยังไม่มีข้อมูลการมาทำงานในระบบ</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// เพิ่มฟังก์ชันสำหรับ export ข้อมูล
+function exportToExcel() {
+    // TODO: Implement Excel export
+    alert('ฟีเจอร์ export จะเปิดใช้งานเร็วๆ นี้');
+}
+
+// เพิ่มฟังก์ชันสำหรับพิมพ์รายงาน
+function printReport() {
+    window.print();
+}
+</script>
+{% endblock %} 

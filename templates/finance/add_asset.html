@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>เพิ่มสินทรัพย์ - DaEx</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .main-content {
+            background: #f8f9fa;
+            min-height: 100vh;
+        }
+        .form-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-3 col-lg-2 px-0">
+                <div class="sidebar p-3">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-building fa-2x mb-2"></i>
+                        <h5 class="mb-0">DaEx</h5>
+                        <small class="text-light">ระบบจัดการบริษัท</small>
+                    </div>
+                    <ul class="nav flex-column">
+                        <li class="nav-item"><a class="nav-link" href="/dashboard"><i class="fas fa-tachometer-alt me-2"></i>แดชบอร์ด</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/finance/salaries"><i class="fas fa-money-bill-wave me-2"></i>เงินเดือน</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/finance/expenses"><i class="fas fa-receipt me-2"></i>ค่าใช้จ่าย</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/finance/expense-categories"><i class="fas fa-tags me-2"></i>หมวดหมู่ค่าใช้จ่าย</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/finance/import-data"><i class="fas fa-upload me-2"></i>นำเข้าข้อมูล</a></li>
+                        <li class="nav-item"><a class="nav-link active" href="/finance/assets"><i class="fas fa-boxes-stacked me-2"></i>สินทรัพย์บริษัท</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/logout"><i class="fas fa-sign-out-alt me-2"></i>ออกจากระบบ</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-md-9 col-lg-10">
+                <div class="main-content p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h2 class="mb-1">เพิ่มสินทรัพย์ใหม่</h2>
+                            <p class="text-muted mb-0">เพิ่มสินทรัพย์ใหม่เข้าสู่ระบบ</p>
+                        </div>
+                        <a href="/finance/assets" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-2"></i>กลับ</a>
+                    </div>
+                    
+                    <div class="row justify-content-center">
+                        <div class="col-md-8 col-lg-6">
+                            <div class="form-card p-4">
+                                <form method="POST">
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="asset_code" class="form-label">รหัสสินทรัพย์ <span class="text-danger">*</span></label>
+                                            <input type="text" class="form-control" id="asset_code" name="asset_code" required>
+                                            <div class="form-text">เช่น AST001, AST002</div>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label for="asset_name" class="form-label">ชื่อสินทรัพย์ <span class="text-danger">*</span></label>
+                                            <input type="text" class="form-control" id="asset_name" name="asset_name" required>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="asset_type" class="form-label">ประเภทสินทรัพย์ <span class="text-danger">*</span></label>
+                                            <select class="form-select" id="asset_type" name="asset_type" required>
+                                                <option value="">เลือกประเภท</option>
+                                                <option value="ยานพาหนะ">ยานพาหนะ</option>
+                                                <option value="อุปกรณ์คอมพิวเตอร์">อุปกรณ์คอมพิวเตอร์</option>
+                                                <option value="อุปกรณ์สำนักงาน">อุปกรณ์สำนักงาน</option>
+                                                <option value="อุปกรณ์ปรับอากาศ">อุปกรณ์ปรับอากาศ</option>
+                                                <option value="เฟอร์นิเจอร์">เฟอร์นิเจอร์</option>
+                                                <option value="อุปกรณ์ไฟฟ้า">อุปกรณ์ไฟฟ้า</option>
+                                                <option value="เครื่องจักร">เครื่องจักร</option>
+                                                <option value="อื่นๆ">อื่นๆ</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label for="purchase_date" class="form-label">วันที่ซื้อ <span class="text-danger">*</span></label>
+                                            <input type="date" class="form-control" id="purchase_date" name="purchase_date" required>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="value" class="form-label">มูลค่า (บาท) <span class="text-danger">*</span></label>
+                                            <input type="number" class="form-control" id="value" name="value" step="0.01" min="0" required>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label for="useful_life" class="form-label">อายุการใช้งาน (ปี) <span class="text-danger">*</span></label>
+                                            <input type="number" class="form-control" id="useful_life" name="useful_life" min="1" max="50" required>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                        <a href="/finance/assets" class="btn btn-outline-secondary me-md-2">ยกเลิก</a>
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-save me-2"></i>บันทึก
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> 

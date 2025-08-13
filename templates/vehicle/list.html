@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>รายการรถบริษัท - ระบบจัดการรถบริษัท</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .vehicle-card {
+            transition: transform 0.2s;
+            border-left: 4px solid #007bff;
+        }
+        .vehicle-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .vehicle-card.maintenance {
+            border-left-color: #ffc107;
+        }
+        .vehicle-card.inactive {
+            border-left-color: #dc3545;
+        }
+        .status-badge {
+            font-size: 0.8rem;
+        }
+        .vehicle-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+        .stats-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .maintenance-timeline {
+            position: relative;
+            padding-left: 30px;
+        }
+        .maintenance-timeline::before {
+            content: '';
+            position: absolute;
+            left: 15px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #dee2e6;
+        }
+        .maintenance-item {
+            position: relative;
+            margin-bottom: 20px;
+        }
+        .maintenance-item::before {
+            content: '';
+            position: absolute;
+            left: -22px;
+            top: 5px;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #007bff;
+            border: 2px solid white;
+        }
+        .maintenance-item.completed::before {
+            background: #28a745;
+        }
+        .maintenance-item.pending::before {
+            background: #ffc107;
+        }
+        .maintenance-item.urgent::before {
+            background: #dc3545;
+        }
+        .filter-section {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2><i class="fas fa-car text-primary"></i> รายการรถบริษัท</h2>
+                        <p class="text-muted">จัดการและติดตามรถบริษัททั้งหมด พร้อมประวัติการซ่อมบำรุง</p>
+                    </div>
+                    <div>
+                        <button class="btn btn-primary" onclick="addVehicle()">
+                            <i class="fas fa-plus"></i> เพิ่มรถใหม่
+                        </button>
+                        <button class="btn btn-outline-secondary" onclick="exportVehicleData()">
+                            <i class="fas fa-download"></i> ส่งออกข้อมูล
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="stats-card">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="mb-0">รถทั้งหมด</h6>
+                            <h3 class="mb-0" id="totalVehicles">0 คัน</h3>
+                        </div>
+                        <i class="fas fa-car fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stats-card">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="mb-0">รถใช้งาน</h6>
+                            <h3 class="mb-0" id="activeVehicles">0 คัน</h3>
+                        </div>
+                        <i class="fas fa-check-circle fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stats-card">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="mb-0">รอซ่อม</h6>
+                            <h3 class="mb-0" id="maintenanceVehicles">0 คัน</h3>
+                        </div>
+                        <i class="fas fa-tools fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stats-card">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="mb-0">ไมล์รวม</h6>
+                            <h3 class="mb-0" id="totalMileage">0 กม.</h3>
+                        </div>
+                        <i class="fas fa-tachometer-alt fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="filter-section">
+            <div class="row">
+                <div class="col-md-3">
+                    <label class="form-label">สถานะ</label>
+                    <select class="form-select" id="statusFilter">
+                        <option value="">ทั้งหมด</option>
+                        <option value="active">ใช้งาน</option>
+                        <option value="maintenance">รอซ่อม</option>
+                        <option value="inactive">ไม่ใช้งาน</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">สาขา</label>
+                    <select class="form-select" id="branchFilter">
+                        <option value="">ทั้งหมด</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">ยี่ห้อ</label>
+                    <select class="form-select" id="brandFilter">
+                        <option value="">ทั้งหมด</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">ประเภทเชื้อเพลิง</label>
+                    <select class="form-select" id="fuelTypeFilter">
+                        <option value="">ทั้งหมด</option>
+                        <option value="gasoline">เบนซิน</option>
+                        <option value="diesel">ดีเซล</option>
+                        <option value="electric">ไฟฟ้า</option>
+                        <option value="hybrid">ไฮบริด</option>
+                    </select>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-md-6">
+                    <label class="form-label">ค้นหา</label>
+                    <input type="text" class="form-control" id="searchFilter" placeholder="ค้นหาจากเลขทะเบียน, ยี่ห้อ, รุ่น...">
+                </div>
+                <div class="col-md-6 d-flex align-items-end">
+                    <button class="btn btn-primary me-2" onclick="applyFilters()">
+                        <i class="fas fa-search"></i> ค้นหา
+                    </button>
+                    <button class="btn btn-outline-secondary" onclick="clearFilters()">
+                        <i class="fas fa-times"></i> ล้างตัวกรอง
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Vehicle List -->
+        <div class="row" id="vehicleList">
+            <!-- Vehicles will be loaded here -->
+        </div>
+
+        <div id="loadingSpinner" class="text-center d-none">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">กำลังโหลด...</span>
+            </div>
+        </div>
+
+        <div id="noVehicles" class="text-center d-none">
+            <i class="fas fa-car fa-3x text-muted mb-3"></i>
+            <p class="text-muted">ไม่พบข้อมูลรถบริษัท</p>
+        </div>
+    </div>
+
+    <!-- Vehicle Details Modal -->
+    <div class="modal fade" id="vehicleDetailsModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-car"></i> รายละเอียดรถ</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="vehicleDetailsContent">
+                        <!-- Vehicle details will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Vehicle Modal -->
+    <div class="modal fade" id="addVehicleModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-plus"></i> เพิ่มรถใหม่</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addVehicleForm">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">รหัสรถ <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="vehicleId" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">เลขทะเบียน <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="licensePlate" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">ยี่ห้อ <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="brand" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">รุ่น <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="model" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">ปีที่ผลิต <span class="text-danger">*</span></label>
+                                    <input type="number" class="form-control" id="year" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">สี</label>
+                                    <input type="text" class="form-control" id="color">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">ขนาดเครื่องยนต์</label>
+                                    <input type="text" class="form-control" id="engineSize">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">ประเภทเชื้อเพลิง</label>
+                                    <select class="form-select" id="fuelType">
+                                        <option value="gasoline">เบนซิน</option>
+                                        <option value="diesel">ดีเซล</option>
+                                        <option value="electric">ไฟฟ้า</option>
+                                        <option value="hybrid">ไฮบริด</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">ระบบเกียร์</label>
+                                    <select class="form-select" id="transmission">
+                                        <option value="manual">เกียร์ธรรมดา</option>
+                                        <option value="automatic">เกียร์อัตโนมัติ</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">ไมล์ปัจจุบัน</label>
+                                    <input type="number" class="form-control" id="mileage" step="0.1">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">สาขา <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="branchCode" required>
+                                        <option value="">เลือกสาขา</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">คนขับที่ได้รับมอบหมาย</label>
+                                    <select class="form-select" id="assignedDriver">
+                                        <option value="">ไม่ระบุ</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">วันที่ซื้อ</label>
+                                    <input type="date" class="form-control" id="purchaseDate">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">ราคาซื้อ (บาท)</label>
+                                    <input type="number" class="form-control" id="purchasePrice" step="0.01">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">วันหมดอายุประกัน</label>
+                                    <input type="date" class="form-control" id="insuranceExpiry">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">วันหมดอายุทะเบียน</label>
+                                    <input type="date" class="form-control" id="registrationExpiry">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">สถานะ</label>
+                                    <select class="form-select" id="status">
+                                        <option value="active">ใช้งาน</option>
+                                        <option value="maintenance">รอซ่อม</option>
+                                        <option value="inactive">ไม่ใช้งาน</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+                    <button type="button" class="btn btn-primary" onclick="submitVehicle()">
+                        <i class="fas fa-save"></i> บันทึก
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let currentVehicles = [];
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            loadVehicleStatistics();
+            loadVehicles();
+            loadBranches();
+            loadDrivers();
+        });
+
+        function loadVehicleStatistics() {
+            fetch('/api/vehicle/statistics')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('totalVehicles').textContent = data.totalVehicles + ' คัน';
+                    document.getElementById('activeVehicles').textContent = data.activeVehicles + ' คัน';
+                    document.getElementById('maintenanceVehicles').textContent = data.maintenanceVehicles + ' คัน';
+                    document.getElementById('totalMileage').textContent = data.totalMileage + ' กม.';
+                })
+                .catch(error => {
+                    console.error('Error loading vehicle statistics:', error);
+                });
+        }
+
+        function loadVehicles() {
+            showLoading(true);
+            fetch('/api/vehicle/list')
+                .then(response => response.json())
+                .then(data => {
+                    currentVehicles = data;
+                    displayVehicles(data);
+                    updateFilters(data);
+                    showLoading(false);
+                })
+                .catch(error => {
+                    console.error('Error loading vehicles:', error);
+                    showLoading(false);
+                });
+        }
+
+        function displayVehicles(vehicles) {
+            const container = document.getElementById('vehicleList');
+            
+            if (vehicles.length === 0) {
+                document.getElementById('noVehicles').classList.remove('d-none');
+                container.innerHTML = '';
+                return;
+            }
+
+            document.getElementById('noVehicles').classList.add('d-none');
+            
+            container.innerHTML = vehicles.map(vehicle => `
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card vehicle-card ${getVehicleCardClass(vehicle.status)}">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div>
+                                    <h5 class="card-title mb-1">${vehicle.license_plate}</h5>
+                                    <p class="text-muted mb-0">${vehicle.brand} ${vehicle.model} (${vehicle.year})</p>
+                                </div>
+                                <span class="badge ${getStatusBadgeClass(vehicle.status)} status-badge">
+                                    ${getStatusName(vehicle.status)}
+                                </span>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-6">
+                                    <small class="text-muted">ไมล์ปัจจุบัน</small>
+                                    <div><strong>${vehicle.mileage} กม.</strong></div>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted">คนขับ</small>
+                                    <div><strong>${vehicle.assigned_driver_name || 'ไม่ระบุ'}</strong></div>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-6">
+                                    <small class="text-muted">เชื้อเพลิง</small>
+                                    <div><strong>${getFuelTypeName(vehicle.fuel_type)}</strong></div>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted">สาขา</small>
+                                    <div><strong>${vehicle.branch_code}</strong></div>
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-between">
+                                <button class="btn btn-sm btn-outline-primary" onclick="viewVehicleDetails('${vehicle.vehicle_id}')">
+                                    <i class="fas fa-eye"></i> ดูรายละเอียด
+                                </button>
+                                <div>
+                                    <button class="btn btn-sm btn-outline-warning me-1" onclick="editVehicle('${vehicle.vehicle_id}')">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteVehicle('${vehicle.vehicle_id}')">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function getVehicleCardClass(status) {
+            switch(status) {
+                case 'maintenance': return 'maintenance';
+                case 'inactive': return 'inactive';
+                default: return '';
+            }
+        }
+
+        function getStatusBadgeClass(status) {
+            switch(status) {
+                case 'active': return 'bg-success';
+                case 'maintenance': return 'bg-warning';
+                case 'inactive': return 'bg-danger';
+                default: return 'bg-secondary';
+            }
+        }
+
+        function getStatusName(status) {
+            const statuses = {
+                'active': 'ใช้งาน',
+                'maintenance': 'รอซ่อม',
+                'inactive': 'ไม่ใช้งาน'
+            };
+            return statuses[status] || status;
+        }
+
+        function getFuelTypeName(type) {
+            const types = {
+                'gasoline': 'เบนซิน',
+                'diesel': 'ดีเซล',
+                'electric': 'ไฟฟ้า',
+                'hybrid': 'ไฮบริด'
+            };
+            return types[type] || type;
+        }
+
+        function updateFilters(vehicles) {
+            // Update brand filter
+            const brands = [...new Set(vehicles.map(v => v.brand))];
+            const brandFilter = document.getElementById('brandFilter');
+            brandFilter.innerHTML = '<option value="">ทั้งหมด</option>';
+            brands.forEach(brand => {
+                brandFilter.innerHTML += `<option value="${brand}">${brand}</option>`;
+            });
+
+            // Update branch filter
+            const branches = [...new Set(vehicles.map(v => v.branch_code))];
+            const branchFilter = document.getElementById('branchFilter');
+            branchFilter.innerHTML = '<option value="">ทั้งหมด</option>';
+            branches.forEach(branch => {
+                branchFilter.innerHTML += `<option value="${branch}">${branch}</option>`;
+            });
+        }
+
+        function loadBranches() {
+            fetch('/api/branches')
+                .then(response => response.json())
+                .then(data => {
+                    const branchCode = document.getElementById('branchCode');
+                    data.forEach(branch => {
+                        branchCode.innerHTML += `<option value="${branch.branch_code}">${branch.branch_name}</option>`;
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading branches:', error);
+                });
+        }
+
+        function loadDrivers() {
+            fetch('/api/vehicle/drivers')
+                .then(response => response.json())
+                .then(data => {
+                    const assignedDriver = document.getElementById('assignedDriver');
+                    data.forEach(driver => {
+                        assignedDriver.innerHTML += `<option value="${driver.employee_id}">${driver.name} (${driver.employee_id})</option>`;
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading drivers:', error);
+                });
+        }
+
+        function viewVehicleDetails(vehicleId) {
+            fetch(`/api/vehicle/details/${vehicleId}`)
+                .then(response => response.json())
+                .then(data => {
+                    const modal = document.getElementById('vehicleDetailsModal');
+                    const content = document.getElementById('vehicleDetailsContent');
+                    
+                    content.innerHTML = `
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6><i class="fas fa-info-circle"></i> ข้อมูลรถ</h6>
+                                <table class="table table-sm">
+                                    <tr><td>รหัสรถ:</td><td>${data.vehicle_id}</td></tr>
+                                    <tr><td>เลขทะเบียน:</td><td>${data.license_plate}</td></tr>
+                                    <tr><td>ยี่ห้อ:</td><td>${data.brand}</td></tr>
+                                    <tr><td>รุ่น:</td><td>${data.model}</td></tr>
+                                    <tr><td>ปีที่ผลิต:</td><td>${data.year}</td></tr>
+                                    <tr><td>สี:</td><td>${data.color || '-'}</td></tr>
+                                    <tr><td>ขนาดเครื่องยนต์:</td><td>${data.engine_size || '-'}</td></tr>
+                                    <tr><td>เชื้อเพลิง:</td><td>${getFuelTypeName(data.fuel_type)}</td></tr>
+                                    <tr><td>เกียร์:</td><td>${data.transmission === 'manual' ? 'เกียร์ธรรมดา' : 'เกียร์อัตโนมัติ'}</td></tr>
+                                    <tr><td>ไมล์ปัจจุบัน:</td><td>${data.mileage} กม.</td></tr>
+                                </table>
+                            </div>
+                            <div class="col-md-6">
+                                <h6><i class="fas fa-building"></i> ข้อมูลการใช้งาน</h6>
+                                <table class="table table-sm">
+                                    <tr><td>สาขา:</td><td>${data.branch_code}</td></tr>
+                                    <tr><td>คนขับ:</td><td>${data.assigned_driver_name || 'ไม่ระบุ'}</td></tr>
+                                    <tr><td>สถานะ:</td><td><span class="badge ${getStatusBadgeClass(data.status)}">${getStatusName(data.status)}</span></td></tr>
+                                    <tr><td>วันที่ซื้อ:</td><td>${data.purchase_date || '-'}</td></tr>
+                                    <tr><td>ราคาซื้อ:</td><td>${data.purchase_price ? data.purchase_price + ' บาท' : '-'}</td></tr>
+                                    <tr><td>ประกันหมด:</td><td>${data.insurance_expiry || '-'}</td></tr>
+                                    <tr><td>ทะเบียนหมด:</td><td>${data.registration_expiry || '-'}</td></tr>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <hr>
+                        
+                        <div class="row">
+                            <div class="col-12">
+                                <h6><i class="fas fa-tools"></i> ประวัติการซ่อมบำรุง</h6>
+                                <div class="maintenance-timeline">
+                                    ${data.maintenance_records.map(record => `
+                                        <div class="maintenance-item ${record.status}">
+                                            <div class="d-flex justify-content-between">
+                                                <div>
+                                                    <strong>${record.maintenance_type}</strong>
+                                                    <br>
+                                                    <small class="text-muted">${record.maintenance_date}</small>
+                                                </div>
+                                                <span class="badge ${getMaintenanceStatusBadgeClass(record.status)}">
+                                                    ${getMaintenanceStatusName(record.status)}
+                                                </span>
+                                            </div>
+                                            <p class="mb-1">${record.description}</p>
+                                            <small class="text-muted">
+                                                ไมล์: ${record.mileage_at_service} กม. | 
+                                                ราคา: ${record.total_cost} บาท
+                                            </small>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    new bootstrap.Modal(modal).show();
+                })
+                .catch(error => {
+                    console.error('Error loading vehicle details:', error);
+                });
+        }
+
+        function getMaintenanceStatusBadgeClass(status) {
+            switch(status) {
+                case 'completed': return 'bg-success';
+                case 'pending': return 'bg-warning';
+                case 'urgent': return 'bg-danger';
+                default: return 'bg-secondary';
+            }
+        }
+
+        function getMaintenanceStatusName(status) {
+            const statuses = {
+                'completed': 'เสร็จสิ้น',
+                'pending': 'รอดำเนินการ',
+                'urgent': 'เร่งด่วน'
+            };
+            return statuses[status] || status;
+        }
+
+        function addVehicle() {
+            new bootstrap.Modal(document.getElementById('addVehicleModal')).show();
+        }
+
+        function submitVehicle() {
+            const form = document.getElementById('addVehicleForm');
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
+            const formData = {
+                vehicle_id: document.getElementById('vehicleId').value,
+                license_plate: document.getElementById('licensePlate').value,
+                brand: document.getElementById('brand').value,
+                model: document.getElementById('model').value,
+                year: parseInt(document.getElementById('year').value),
+                color: document.getElementById('color').value,
+                engine_size: document.getElementById('engineSize').value,
+                fuel_type: document.getElementById('fuelType').value,
+                transmission: document.getElementById('transmission').value,
+                mileage: parseFloat(document.getElementById('mileage').value) || 0,
+                status: document.getElementById('status').value,
+                branch_code: document.getElementById('branchCode').value,
+                assigned_driver_id: document.getElementById('assignedDriver').value || null,
+                purchase_date: document.getElementById('purchaseDate').value,
+                purchase_price: parseFloat(document.getElementById('purchasePrice').value) || null,
+                insurance_expiry: document.getElementById('insuranceExpiry').value,
+                registration_expiry: document.getElementById('registrationExpiry').value
+            };
+
+            fetch('/api/vehicle/add', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    bootstrap.Modal.getInstance(document.getElementById('addVehicleModal')).hide();
+                    form.reset();
+                    loadVehicles();
+                    loadVehicleStatistics();
+                    showAlert('เพิ่มรถใหม่สำเร็จ', 'success');
+                } else {
+                    showAlert('เกิดข้อผิดพลาด: ' + data.message, 'danger');
+                }
+            })
+            .catch(error => {
+                console.error('Error adding vehicle:', error);
+                showAlert('เกิดข้อผิดพลาดในการเพิ่มรถใหม่', 'danger');
+            });
+        }
+
+        function applyFilters() {
+            const filters = {
+                status: document.getElementById('statusFilter').value,
+                branch_code: document.getElementById('branchFilter').value,
+                brand: document.getElementById('brandFilter').value,
+                fuel_type: document.getElementById('fuelTypeFilter').value,
+                search: document.getElementById('searchFilter').value
+            };
+
+            fetch('/api/vehicle/list?' + new URLSearchParams(filters))
+                .then(response => response.json())
+                .then(data => {
+                    currentVehicles = data;
+                    displayVehicles(data);
+                })
+                .catch(error => {
+                    console.error('Error applying filters:', error);
+                });
+        }
+
+        function clearFilters() {
+            document.getElementById('statusFilter').value = '';
+            document.getElementById('branchFilter').value = '';
+            document.getElementById('brandFilter').value = '';
+            document.getElementById('fuelTypeFilter').value = '';
+            document.getElementById('searchFilter').value = '';
+            loadVehicles();
+        }
+
+        function exportVehicleData() {
+            const filters = {
+                status: document.getElementById('statusFilter').value,
+                branch_code: document.getElementById('branchFilter').value,
+                brand: document.getElementById('brandFilter').value,
+                fuel_type: document.getElementById('fuelTypeFilter').value,
+                search: document.getElementById('searchFilter').value
+            };
+
+            const queryString = new URLSearchParams(filters).toString();
+            window.open(`/api/vehicle/export?${queryString}`, '_blank');
+        }
+
+        function editVehicle(vehicleId) {
+            // Implement edit functionality
+            console.log('Edit vehicle:', vehicleId);
+        }
+
+        function deleteVehicle(vehicleId) {
+            if (confirm('คุณต้องการลบรถคันนี้หรือไม่?')) {
+                fetch(`/api/vehicle/delete/${vehicleId}`, {
+                    method: 'DELETE'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        loadVehicles();
+                        loadVehicleStatistics();
+                        showAlert('ลบรถสำเร็จ', 'success');
+                    } else {
+                        showAlert('เกิดข้อผิดพลาด: ' + data.message, 'danger');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error deleting vehicle:', error);
+                    showAlert('เกิดข้อผิดพลาดในการลบรถ', 'danger');
+                });
+            }
+        }
+
+        function showLoading(show) {
+            const spinner = document.getElementById('loadingSpinner');
+            const noVehicles = document.getElementById('noVehicles');
+            
+            if (show) {
+                spinner.classList.remove('d-none');
+                noVehicles.classList.add('d-none');
+            } else {
+                spinner.classList.add('d-none');
+            }
+        }
+
+        function showAlert(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+            alertDiv.style.top = '20px';
+            alertDiv.style.right = '20px';
+            alertDiv.style.zIndex = '9999';
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.body.appendChild(alertDiv);
+            
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

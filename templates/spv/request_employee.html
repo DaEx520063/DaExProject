@@ -1,0 +1,1046 @@
+{% if standalone %}
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ขอเปิดรหัสพนักงาน - SPV</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .excel-interface { background: white; border: 1px solid #ccc; border-radius: 4px; overflow: hidden; }
+        .excel-toolbar { background: #f8f9fa; border-bottom: 1px solid #dee2e6; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; }
+        .excel-filter-section { background: #f8f9fa; border-bottom: 1px solid #dee2e6; padding: 15px; }
+        .excel-filter-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 10px; }
+        .excel-filter-item { display: flex; flex-direction: column; }
+        .excel-filter-item label { font-size: 12px; font-weight: 600; margin-bottom: 4px; color: #495057; }
+        .excel-filter-item input, .excel-filter-item select { font-size: 12px; padding: 6px 8px; border: 1px solid #ced4da; border-radius: 3px; }
+        .excel-table-header { background: #e9ecef; border-bottom: 2px solid #dee2e6; font-weight: 600; font-size: 12px; color: #495057; }
+        .excel-table-body td { padding: 8px; border-right: 1px solid #dee2e6; border-bottom: 1px solid #dee2e6; font-size: 12px; }
+        .excel-table-body tr:nth-child(even) { background-color: #f8f9fa; }
+        .excel-table-body tr:hover { background-color: #e3f2fd; }
+        .excel-actions { 
+            display: flex; 
+            gap: 5px; 
+            justify-content: center; 
+            align-items: center;
+        }
+        .excel-actions .btn {
+            display: inline-block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            margin: 0 2px;
+            position: relative !important;
+            z-index: 10 !important;
+        }
+
+        .excel-actions .btn-outline-warning {
+            color: #ffc107 !important;
+            border-color: #ffc107 !important;
+        }
+        .excel-actions .btn-outline-primary {
+            color: #0d6efd !important;
+            border-color: #0d6efd !important;
+        }
+        /* ซ่อนปุ่มที่อยู่นอกตาราง */
+        .excel-interface .btn:not(.excel-actions .btn):not(.excel-toolbar .btn):not(.excel-filter-section .btn) {
+            display: none !important;
+        }
+        /* ป้องกันปุ่มแปลกๆแสดงผิดที่ */
+        .excel-interface {
+            position: relative !important;
+            overflow: hidden !important;
+        }
+        .excel-actions {
+            position: relative !important;
+            z-index: 1 !important;
+        }
+        /* บังคับให้ปุ่มในตารางแสดง */
+        .excel-table-body .excel-actions .btn {
+            display: inline-block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+        /* ป้องกันปุ่มแปลกๆจาก navbar */
+        .navbar .btn {
+            display: none !important;
+        }
+        /* ป้องกันปุ่มแปลกๆจาก navbar - ครอบคลุมมากขึ้น */
+        .navbar .btn,
+        .navbar button,
+        .navbar a.btn,
+        .navbar a[onclick*="logout"],
+        .navbar button[onclick*="logout"] {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+            position: absolute !important;
+            left: -9999px !important;
+            top: -9999px !important;
+            z-index: -9999 !important;
+        }
+        /* ป้องกันปุ่มแปลกๆจากส่วนอื่น */
+        body > .btn:not(.excel-interface .btn) {
+            display: none !important;
+        }
+        /* บังคับให้ปุ่มในตารางเท่านั้นแสดง */
+        .excel-table-body td:last-child .excel-actions .btn {
+            display: inline-block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+        /* ป้องกันปุ่มแปลกๆจากส่วนอื่นทั้งหมด */
+        .container-fluid .btn:not(.excel-interface .btn),
+        .main-content .btn:not(.excel-interface .btn),
+        .content-wrapper .btn:not(.excel-interface .btn) {
+            display: none !important;
+        }
+        /* ป้องกันปุ่มแปลกๆจาก header */
+        .header .btn,
+        .top-header .btn,
+        .main-header .btn {
+            display: none !important;
+        }
+        /* ป้องกันปุ่มแปลกๆจากส่วนบน */
+        .top-bar .btn,
+        .header-bar .btn,
+        .title-bar .btn {
+            display: none !important;
+        }
+        /* บังคับให้ปุ่มในตารางเท่านั้น */
+        .excel-table-body .excel-actions .btn {
+            display: inline-block !important;
+        }
+        /* ป้องกันปุ่มแปลกๆทั้งหมด */
+        .btn:not(.excel-table-body .excel-actions .btn):not(.excel-toolbar .btn):not(.excel-filter-section .btn) {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+        }
+        /* ป้องกันปุ่มแปลกๆจากส่วนบนสุด */
+        .top-bar .btn,
+        .header .btn,
+        .navbar .btn,
+        .main-header .btn,
+        .title-bar .btn,
+        .header-bar .btn {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+        }
+        /* ป้องกันปุ่มแปลกๆจากส่วนขวาบน */
+        .btn[onclick*="viewRequest"]:not(.excel-table-body .excel-actions .btn),
+        .btn[onclick*="editRequest"]:not(.excel-table-body .excel-actions .btn),
+        .btn[onclick*="deleteRequest"]:not(.excel-table-body .excel-actions .btn) {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+            position: absolute !important;
+            left: -9999px !important;
+        }
+        /* ป้องกันปุ่มแปลกๆจากส่วนอื่นทั้งหมด */
+        .btn:not(.excel-table-body .excel-actions .btn):not(.excel-toolbar .btn):not(.excel-filter-section .btn) {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+            position: absolute !important;
+            left: -9999px !important;
+        }
+        /* ป้องกันปุ่มแปลกๆจากส่วนขวาบนสุด */
+        .btn[onclick*="viewRequest"]:not(.excel-table-body .excel-actions .btn),
+        .btn[onclick*="editRequest"]:not(.excel-table-body .excel-actions .btn),
+        .btn[onclick*="deleteRequest"]:not(.excel-table-body .excel-actions .btn),
+        .btn[onclick*="logout"]:not(.excel-toolbar .btn),
+        .btn[onclick*="logout"]:not(.excel-filter-section .btn) {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+            position: absolute !important;
+            left: -9999px !important;
+            top: -9999px !important;
+        }
+        /* ป้องกันปุ่มแปลกๆจากส่วนขวาบนสุด - ครอบคลุมมากขึ้น */
+        .btn:not(.excel-table-body .excel-actions .btn):not(.excel-toolbar .btn):not(.excel-filter-section .btn) {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+            position: absolute !important;
+            left: -9999px !important;
+            top: -9999px !important;
+            z-index: -9999 !important;
+        }
+        /* ป้องกันปุ่มแปลกๆจากส่วนขวาบนสุด - ครอบคลุมมากขึ้น */
+        .btn[onclick*="viewRequest"]:not(.excel-table-body .excel-actions .btn),
+        .btn[onclick*="editRequest"]:not(.excel-table-body .excel-actions .btn),
+        .btn[onclick*="deleteRequest"]:not(.excel-table-body .excel-actions .btn),
+        .btn[onclick*="logout"]:not(.excel-toolbar .btn),
+        .btn[onclick*="logout"]:not(.excel-filter-section .btn),
+        .btn[onclick*="view"]:not(.excel-table-body .excel-actions .btn),
+        .btn[onclick*="edit"]:not(.excel-table-body .excel-actions .btn),
+        .btn[onclick*="delete"]:not(.excel-table-body .excel-actions .btn) {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+            position: absolute !important;
+            left: -9999px !important;
+            top: -9999px !important;
+            z-index: -9999 !important;
+        }
+        /* ป้องกันปุ่มแปลกๆจากส่วนขวาบนสุด - ครอบคลุมมากขึ้น */
+        .btn:not(.excel-table-body .excel-actions .btn):not(.excel-toolbar .btn):not(.excel-filter-section .btn) {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+            position: absolute !important;
+            left: -9999px !important;
+            top: -9999px !important;
+            z-index: -9999 !important;
+        }
+        /* ป้องกันปุ่มแปลกๆจาก navbar และ header */
+        .navbar .btn,
+        .navbar button,
+        .navbar a.btn,
+        .header .btn,
+        .header button,
+        .header a.btn {
+            display: none !important;
+        }
+        
+        /* บังคับให้ปุ่มในตารางแสดง */
+        .excel-table-body .excel-actions {
+            display: flex !important;
+            gap: 5px !important;
+            justify-content: center !important;
+            align-items: center !important;
+        }
+        /* บังคับให้ปุ่มลูกตาแสดงในตาราง */
+        .excel-table-body .excel-actions .btn-outline-primary {
+            display: inline-block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            color: #0d6efd !important;
+            border-color: #0d6efd !important;
+        }
+        /* บังคับให้ปุ่มลบแสดงในตาราง */
+        .excel-table-body .excel-actions .btn-outline-danger {
+            display: inline-block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            color: #dc3545 !important;
+            border-color: #dc3545 !important;
+        }
+        /* ป้องกันปุ่มแปลกๆจาก header */
+        .header .btn,
+        .header button,
+        .header a.btn {
+            display: none !important;
+        }
+        /* ป้องกันปุ่มแปลกๆจาก navbar - ครอบคลุมมากขึ้น */
+        .navbar .btn,
+        .navbar button,
+        .navbar a.btn,
+        .navbar a[onclick*="logout"],
+        .navbar button[onclick*="logout"],
+        .navbar a[onclick*="viewRequest"],
+        .navbar button[onclick*="viewRequest"],
+        .navbar a[onclick*="editRequest"],
+        .navbar button[onclick*="editRequest"],
+        .navbar a[onclick*="deleteRequest"],
+        .navbar button[onclick*="deleteRequest"] {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+            position: absolute !important;
+            left: -9999px !important;
+            top: -9999px !important;
+            z-index: -9999 !important;
+        }
+        .status-badge { padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: 500; }
+        .status-pending { background: #fff3cd; color: #856404; }
+        .status-approved { background: #d4edda; color: #155724; }
+        .status-rejected { background: #f8d7da; color: #721c24; }
+        
+        /* ป้องกันปุ่มแปลกๆจาก navbar และ header */
+        .navbar .btn,
+        .navbar button,
+        .navbar a.btn,
+        .header .btn,
+        .header button,
+        .header a.btn {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid p-4">
+{% endif %}
+<div class="excel-interface">
+    <!-- Excel Toolbar -->
+    <div class="excel-toolbar">
+        <div class="d-flex">
+            <button class="btn btn-primary btn-sm" onclick="submitRequest()">
+                <i class="fas fa-paper-plane"></i> ส่งคำขอ
+            </button>
+            <button class="btn btn-success btn-sm" onclick="exportToExcel()">
+                <i class="fas fa-file-excel"></i> ส่งออก
+            </button>
+            <button class="btn btn-warning btn-sm" onclick="clearForm()">
+                <i class="fas fa-eraser"></i> ล้างข้อมูล
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="downloadData()">
+                <i class="fas fa-download"></i> ดาวน์โหลดข้อมูล
+            </button>
+        </div>
+    </div>
+
+    <!-- Excel Form Section -->
+    <div class="excel-filter-section" id="formSection">
+        <div class="excel-filter-row">
+            <div class="excel-filter-item">
+                <label>รหัสพนักงาน *</label>
+                <input type="text" id="employeeId" class="form-control" placeholder="รหัสพนักงาน" required>
+            </div>
+            <div class="excel-filter-item">
+                <label>ชื่อ-นามสกุล *</label>
+                <input type="text" id="employeeName" class="form-control" placeholder="ชื่อ-นามสกุล" required>
+            </div>
+            <div class="excel-filter-item">
+                <label>ตำแหน่ง *</label>
+                <select id="position" class="form-select" required>
+                    <option value="">เลือกตำแหน่ง</option>
+                    <option value="ADM">ADM - ผู้ดูแลระบบสาขา</option>
+                    <option value="SPT">SPT - พนักงานขนส่ง</option>
+                    <option value="SPTB">SPTB - พนักงานขนส่ง B</option>
+                    <option value="SPTC">SPTC - พนักงานขนส่ง C</option>
+                    <option value="พนักงานขับรถ">พนักงานขับรถ</option>
+                    <option value="พนักงานจัดส่งพัสดุ">พนักงานจัดส่งพัสดุ</option>
+                    <option value="หัวหน้าขนส่ง">หัวหน้าขนส่ง</option>
+                    <option value="นักบัญชี">นักบัญชี</option>
+                    <option value="พนักงาน HR">พนักงาน HR</option>
+                </select>
+            </div>
+            <div class="excel-filter-item">
+                <label>สาขา *</label>
+                <select id="branchCode" class="form-select" required>
+                    <option value="">เลือกสาขา</option>
+                    {% for code, name in branches.items() %}
+                        <option value="{{ code }}">{{ name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="excel-filter-item">
+                <label>โซน *</label>
+                <select id="zone" class="form-select" required>
+                    <option value="">เลือกโซน</option>
+                    <option value="office">Office</option>
+                    <option value="field">Field</option>
+                    <option value="warehouse">Warehouse</option>
+                </select>
+            </div>
+            <div class="excel-filter-item">
+                <label>ประเภทการจ้าง *</label>
+                <select id="employmentType" class="form-select" required>
+                    <option value="">เลือกประเภทการจ้าง</option>
+                    <option value="ประจำ">ประจำ</option>
+                    <option value="ชั่วคราว">ชั่วคราว</option>
+                    <option value="ทดลองงาน">ทดลองงาน</option>
+                    <option value="piece_rate">Piece Rate</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="excel-filter-row">
+            <div class="excel-filter-item">
+                <label>เบอร์โทรศัพท์</label>
+                <input type="tel" id="phone" class="form-control" placeholder="เบอร์โทรศัพท์">
+            </div>
+            <div class="excel-filter-item">
+                <label>อีเมล</label>
+                <input type="email" id="email" class="form-control" placeholder="อีเมล">
+            </div>
+            <div class="excel-filter-item">
+                <label>วันที่เริ่มงาน *</label>
+                <input type="date" id="startDate" class="form-control" required>
+            </div>
+            <div class="excel-filter-item">
+                <label>เรทการจ้าง *</label>
+                <select id="rateType" class="form-select" required>
+                    <option value="">เลือกเรทการจ้าง</option>
+                    <option value="base_salary">Base Salary</option>
+                    <option value="piece_rate">Piece Rate</option>
+                    <option value="commission">Commission</option>
+                    <option value="hourly">Hourly</option>
+                </select>
+            </div>
+            <div class="excel-filter-item">
+                <label>เงินเดือนพื้นฐาน</label>
+                <input type="number" id="baseSalary" class="form-control" placeholder="เงินเดือนพื้นฐาน">
+            </div>
+        </div>
+        
+        <div class="excel-filter-row">
+            <div class="excel-filter-item" style="grid-column: span 3;">
+                <label>เหตุผลในการขอเปิดรหัส *</label>
+                <textarea id="reason" class="form-control" rows="3" placeholder="ระบุเหตุผลในการขอเปิดรหัสพนักงาน..." required></textarea>
+            </div>
+        </div>
+        
+        <div class="text-end mt-3">
+            <button type="button" class="btn btn-secondary btn-sm me-2" onclick="clearForm()">
+                <i class="fas fa-eraser"></i> ล้างฟอร์ม
+            </button>
+            <button type="button" class="btn btn-primary btn-sm" onclick="submitRequest()">
+                <i class="fas fa-paper-plane"></i> ส่งคำขอ
+            </button>
+        </div>
+    </div>
+
+    <!-- Excel Table -->
+    <div class="table-responsive">
+        <table class="table table-bordered mb-0" id="requestsTable">
+            <thead class="excel-table-header">
+                <tr>
+                    <th>ลำดับ</th>
+                    <th>วันที่ขอ</th>
+                    <th>ชื่อ-นามสกุล</th>
+                    <th>ตำแหน่ง</th>
+                    <th>สาขา</th>
+                    <th>เบอร์โทร</th>
+                    <th>อีเมล</th>
+                    <th>สถานะ</th>
+                    <th>ดูรายละเอียด</th>
+                    <th>แก้ไข</th>
+                    <th>ลบรายการ</th>
+                </tr>
+            </thead>
+            <tbody class="excel-table-body">
+                <!-- ข้อมูลจะถูกโหลดจาก API -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Request Detail Modal -->
+<div class="modal fade" id="requestModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">รายละเอียดคำขอ</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="requestModalBody">
+                <!-- Content will be loaded here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Debug: ตรวจสอบว่า template โหลดแล้ว
+console.log('SPV Request Employee Template loaded');
+
+// โหลดข้อมูลคำขอทันทีเมื่อ template โหลด
+console.log('About to call loadEmployeeRequests()');
+try {
+    loadEmployeeRequests();
+    console.log('loadEmployeeRequests() called successfully');
+} catch (error) {
+    console.error('Error calling loadEmployeeRequests():', error);
+}
+
+// โหลดข้อมูลคำขอเมื่อหน้าโหลดเสร็จ (backup)
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM Content Loaded - SPV Request Employee');
+    console.log('About to call loadEmployeeRequests()');
+    try {
+    loadEmployeeRequests();
+        console.log('loadEmployeeRequests() called successfully');
+    } catch (error) {
+        console.error('Error calling loadEmployeeRequests():', error);
+    }
+});
+
+function loadEmployeeRequests() {
+    // โหลดข้อมูลคำขอจาก API
+    console.log('=== loadEmployeeRequests() START ===');
+    console.log('Loading employee requests...');
+    
+    fetch('/api/employee-requests')
+        .then(response => {
+            console.log('Response status:', response.status);
+            return response.json();
+        })
+        .then(data => {
+            console.log('API response:', data);
+            if (data.success) {
+                console.log('Calling updateRequestsTable with', data.requests.length, 'requests');
+                updateRequestsTable(data.requests);
+            } else {
+                console.error('เกิดข้อผิดพลาดในการโหลดข้อมูล:', data.message);
+                // แสดงข้อความแจ้งเตือน
+                const tbody = document.querySelector('#requestsTable tbody');
+                tbody.innerHTML = '<tr><td colspan="9" class="text-center text-danger">เกิดข้อผิดพลาดในการโหลดข้อมูล: ' + data.message + '</td></tr>';
+            }
+        })
+        .catch(error => {
+            console.error('เกิดข้อผิดพลาด:', error);
+            // แสดงข้อความแจ้งเตือน
+            const tbody = document.querySelector('#requestsTable tbody');
+            tbody.innerHTML = '<tr><td colspan="9" class="text-center text-danger">เกิดข้อผิดพลาดในการเชื่อมต่อ</td></tr>';
+        })
+        .finally(() => {
+            console.log('=== loadEmployeeRequests() END ===');
+        });
+}
+
+function updateRequestsTable(requests) {
+    console.log('Updating table with requests:', requests);
+    const tbody = document.querySelector('#requestsTable tbody');
+    tbody.innerHTML = '';
+    
+    if (!requests || requests.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="11" class="text-center text-muted">ไม่มีข้อมูลคำขอ</td></tr>';
+        return;
+    }
+    
+    requests.forEach((request, index) => {
+        console.log(`Request ${index + 1}:`, request);
+        console.log(`Status: '${request.status}', Is pending: ${request.status === 'pending'}`);
+        
+        // สร้าง HTML สำหรับปุ่มลบ
+        const isPending = request.status === 'pending';
+        console.log(`Request ${index + 1} - Status: '${request.status}', Is pending: ${isPending}`);
+        
+        const viewButtonHtml = `
+            <button class="btn btn-sm btn-outline-primary" onclick="viewRequest(${request.id})" title="ดูรายละเอียด">
+                <i class="fas fa-eye"></i>
+            </button>
+        `;
+        
+        const editButtonHtml = isPending ? `
+            <button class="btn btn-sm btn-outline-warning" onclick="editRequest(${request.id})" title="แก้ไข">
+                <i class="fas fa-edit"></i>
+            </button>
+        ` : '';
+        
+        const deleteButtonHtml = `
+            <button class="btn btn-sm btn-outline-danger" onclick="deleteRequest(${request.id}, '${request.employee_name}')" title="ลบรายการ">
+                <i class="fas fa-trash"></i>
+            </button>
+        `;
+        
+        console.log(`Request ${index + 1} - Status: '${request.status}', Is pending: ${isPending}`);
+        console.log(`View button HTML:`, viewButtonHtml);
+        console.log(`Edit button HTML:`, editButtonHtml);
+        console.log(`Delete button HTML:`, deleteButtonHtml);
+        
+        console.log(`Request ${index + 1} - Status: '${request.status}', Is pending: ${isPending}`);
+        console.log(`Is pending check: ${request.status === 'pending'}`);
+        console.log(`Status comparison: '${request.status}' === 'pending' = ${request.status === 'pending'}`);
+        
+        const row = document.createElement('tr');
+        const rowHtml = `
+            <td>${index + 1}</td>
+            <td>${request.created_at || '-'}</td>
+            <td><strong>${request.employee_name || '-'}</strong></td>
+            <td><span class="badge bg-secondary">${request.position || '-'}</span></td>
+            <td><span class="badge bg-info">สาขา ${request.branch_code || '-'}</span></td>
+            <td>${request.phone || '-'}</td>
+            <td>${request.email || '-'}</td>
+            <td><span class="status-badge status-${request.status}">${getStatusText(request.status)}</span></td>
+            <td>
+                ${viewButtonHtml}
+            </td>
+            <td>
+                ${editButtonHtml}
+            </td>
+            <td>
+                ${deleteButtonHtml}
+            </td>
+        `;
+        
+        console.log(`Row HTML for request ${index + 1}:`, rowHtml);
+        row.innerHTML = rowHtml;
+        tbody.appendChild(row);
+        
+        console.log(`Row ${index + 1} added to table. Total rows:`, tbody.children.length);
+    });
+}
+
+
+
+function deleteRequest(requestId, employeeName) {
+    if (confirm(`คุณต้องการลบคำขอของ "${employeeName}" ใช่หรือไม่?\n\nการดำเนินการนี้ไม่สามารถยกเลิกได้!`)) {
+        fetch(`/api/employee-requests/${requestId}/delete`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('ลบคำขอเรียบร้อยแล้ว');
+                loadEmployeeRequests(); // โหลดข้อมูลใหม่
+            } else {
+                alert('เกิดข้อผิดพลาด: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('เกิดข้อผิดพลาดในการลบคำขอ');
+        });
+    }
+}
+
+function getStatusText(status) {
+    const statusMap = {
+        'pending': 'รออนุมัติ',
+        'approved': 'อนุมัติแล้ว',
+        'rejected': 'ปฏิเสธแล้ว'
+    };
+    return statusMap[status] || status;
+}
+
+function toggleForm() {
+    const formSection = document.getElementById('formSection');
+    const toggleBtn = event.target.closest('button');
+    const icon = toggleBtn.querySelector('i');
+    
+    if (formSection.style.display === 'none') {
+        formSection.style.display = 'block';
+        icon.className = 'fas fa-chevron-up';
+    } else {
+        formSection.style.display = 'none';
+        icon.className = 'fas fa-chevron-down';
+    }
+}
+
+function clearForm() {
+    document.getElementById('employeeId').value = '';
+    document.getElementById('employeeName').value = '';
+    document.getElementById('position').value = '';
+    document.getElementById('branchCode').value = '';
+    document.getElementById('zone').value = '';
+    document.getElementById('employmentType').value = '';
+    document.getElementById('phone').value = '';
+    document.getElementById('email').value = '';
+    document.getElementById('startDate').value = '';
+    document.getElementById('rateType').value = '';
+    document.getElementById('baseSalary').value = '';
+    document.getElementById('reason').value = ''; // Clear reason field
+}
+
+function submitRequest() {
+    const employeeId = document.getElementById('employeeId').value;
+    const employeeName = document.getElementById('employeeName').value;
+    const position = document.getElementById('position').value;
+    const branchCode = document.getElementById('branchCode').value;
+    const phone = document.getElementById('phone').value;
+    const email = document.getElementById('email').value;
+    const startDate = document.getElementById('startDate').value;
+    const reason = document.getElementById('reason').value;
+    const baseSalary = document.getElementById('baseSalary').value;
+    const employeeType = document.getElementById('employmentType').value; // Changed from employeeType to employmentType
+    const zone = document.getElementById('zone').value;
+    const employmentType = document.getElementById('employmentType').value;
+    const rateType = document.getElementById('rateType').value;
+    
+    if (!employeeId || !employeeName || !position || !branchCode || !startDate || !reason) {
+        alert('กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('employee_id', employeeId);
+    formData.append('employee_name', employeeName);
+    formData.append('position', position);
+    formData.append('branch_code', branchCode);
+    formData.append('phone', phone);
+    formData.append('email', email);
+    formData.append('start_date', startDate);
+    formData.append('reason', reason);
+    formData.append('base_salary', baseSalary);
+    formData.append('employee_type', employeeType);
+    formData.append('zone', zone);
+    formData.append('employment_type', employmentType);
+    formData.append('rate_type', rateType);
+    
+    console.log('Submitting request...');
+    fetch('/api/employee-requests', {
+        method: 'POST',
+        body: formData
+    }).then(response => {
+        console.log('Submit response status:', response.status);
+        return response.json();
+    })
+    .then(data => {
+        console.log('Submit response:', data);
+        if (data.success) {
+            alert('ส่งคำขอเรียบร้อยแล้ว');
+            clearForm();
+            loadEmployeeRequests(); // โหลดข้อมูลใหม่
+        } else {
+            alert('เกิดข้อผิดพลาดในการส่งคำขอ: ' + data.message);
+        }
+    })
+    .catch(error => {
+        alert('เกิดข้อผิดพลาดในการส่งคำขอ');
+        console.error('Error:', error);
+    });
+}
+
+function viewRequest(requestId) {
+    console.log('Viewing request:', requestId);
+    
+    // ดึงข้อมูลคำขอจาก API
+    fetch(`/api/employee-requests/${requestId}`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('View request data:', data);
+        if (data.success) {
+            const request = data.request;
+            
+            // สร้าง Modal HTML
+            const modalHtml = `
+                <div class="modal fade" id="viewRequestModal" tabindex="-1" aria-labelledby="viewRequestModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="viewRequestModalLabel">รายละเอียดคำขอเปิดรหัสพนักงาน</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h6 class="text-primary">ข้อมูลพนักงาน</h6>
+                                        <table class="table table-borderless">
+                                            <tr>
+                                                <td><strong>รหัสพนักงาน:</strong></td>
+                                                <td>${request.employee_id || '-'}</td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>ชื่อ-นามสกุล:</strong></td>
+                                                <td>${request.employee_name || '-'}</td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>ตำแหน่ง:</strong></td>
+                                                <td><span class="badge bg-secondary">${request.position || '-'}</span></td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>สาขา:</strong></td>
+                                                <td><span class="badge bg-info">สาขา ${request.branch_code || '-'}</span></td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>โซน:</strong></td>
+                                                <td>${request.zone || '-'}</td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h6 class="text-primary">ข้อมูลการจ้างงาน</h6>
+                                        <table class="table table-borderless">
+                                            <tr>
+                                                <td><strong>ประเภทการจ้าง:</strong></td>
+                                                <td>${request.employment_type || '-'}</td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>เรทการจ้าง:</strong></td>
+                                                <td>${request.rate_type || '-'}</td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>เงินเดือนพื้นฐาน:</strong></td>
+                                                <td>${request.base_salary ? request.base_salary.toLocaleString() + ' บาท' : '-'}</td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>วันที่เริ่มงาน:</strong></td>
+                                                <td>${request.start_date || '-'}</td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>สถานะ:</strong></td>
+                                                <td><span class="status-badge status-${request.status}">${getStatusText(request.status)}</span></td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                </div>
+                                <div class="row mt-3">
+                                    <div class="col-md-6">
+                                        <h6 class="text-primary">ข้อมูลติดต่อ</h6>
+                                        <table class="table table-borderless">
+                                            <tr>
+                                                <td><strong>เบอร์โทรศัพท์:</strong></td>
+                                                <td>${request.phone || '-'}</td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>อีเมล:</strong></td>
+                                                <td>${request.email || '-'}</td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h6 class="text-primary">ข้อมูลคำขอ</h6>
+                                        <table class="table table-borderless">
+                                            <tr>
+                                                <td><strong>วันที่ขอ:</strong></td>
+                                                <td>${request.created_at || '-'}</td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>ผู้ขอ:</strong></td>
+                                                <td>${session.get('username') || '-'}</td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                </div>
+                                <div class="row mt-3">
+                                    <div class="col-12">
+                                        <h6 class="text-primary">เหตุผลในการขอเปิดรหัส</h6>
+                                        <div class="alert alert-info">
+                                            ${request.reason || '-'}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ปิด</button>
+                                ${request.status === 'pending' ? `
+                                    <button type="button" class="btn btn-warning" onclick="editRequest(${request.id}); $('#viewRequestModal').modal('hide');">
+                                        <i class="fas fa-edit"></i> แก้ไข
+                                    </button>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // ลบ Modal เก่าถ้ามี
+            const existingModal = document.getElementById('viewRequestModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+            
+            // เพิ่ม Modal ใหม่
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            
+            // แสดง Modal
+            const modal = new bootstrap.Modal(document.getElementById('viewRequestModal'));
+            modal.show();
+            
+        } else {
+            alert('เกิดข้อผิดพลาดในการดึงข้อมูล: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error fetching request data:', error);
+        alert('เกิดข้อผิดพลาดในการดึงข้อมูลคำขอ');
+    });
+}
+
+function editRequest(requestId) {
+    console.log('Editing request:', requestId);
+    
+    // ดึงข้อมูลคำขอจาก API
+    fetch(`/api/employee-requests/${requestId}`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Edit request data:', data);
+        if (data.success) {
+            const request = data.request;
+            
+            // กรอกข้อมูลลงในฟอร์ม
+            document.getElementById('employeeId').value = request.employee_id || '';
+            document.getElementById('employeeName').value = request.employee_name || '';
+            document.getElementById('position').value = request.position || '';
+            document.getElementById('branchCode').value = request.branch_code || '';
+            document.getElementById('zone').value = request.zone || '';
+            document.getElementById('employmentType').value = request.employment_type || '';
+            document.getElementById('phone').value = request.phone || '';
+            document.getElementById('email').value = request.email || '';
+            document.getElementById('startDate').value = request.start_date || '';
+            document.getElementById('rateType').value = request.rate_type || '';
+            document.getElementById('baseSalary').value = request.base_salary || '';
+            document.getElementById('reason').value = request.reason || '';
+            
+            // แสดงฟอร์ม
+            const formSection = document.getElementById('formSection');
+            formSection.style.display = 'block';
+            
+            // เปลี่ยนปุ่มส่งคำขอเป็นปุ่มอัปเดต
+            const submitBtn = document.querySelector('button[onclick="submitRequest()"]');
+            if (submitBtn) {
+                submitBtn.textContent = 'อัปเดตคำขอ';
+                submitBtn.onclick = () => updateRequest(requestId);
+            }
+            
+            // เลื่อนไปที่ฟอร์ม
+            formSection.scrollIntoView({ behavior: 'smooth' });
+            
+        } else {
+            alert('เกิดข้อผิดพลาดในการดึงข้อมูล: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error fetching request data:', error);
+        alert('เกิดข้อผิดพลาดในการดึงข้อมูลคำขอ');
+    });
+}
+
+function updateRequest(requestId) {
+    const employeeId = document.getElementById('employeeId').value;
+    const employeeName = document.getElementById('employeeName').value;
+    const position = document.getElementById('position').value;
+    const branchCode = document.getElementById('branchCode').value;
+    const phone = document.getElementById('phone').value;
+    const email = document.getElementById('email').value;
+    const startDate = document.getElementById('startDate').value;
+    const reason = document.getElementById('reason').value;
+    const baseSalary = document.getElementById('baseSalary').value;
+    const employeeType = document.getElementById('employmentType').value;
+    const zone = document.getElementById('zone').value;
+    const employmentType = document.getElementById('employmentType').value;
+    const rateType = document.getElementById('rateType').value;
+    
+    if (!employeeId || !employeeName || !position || !branchCode || !startDate || !reason) {
+        alert('กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('employee_id', employeeId);
+    formData.append('employee_name', employeeName);
+    formData.append('position', position);
+    formData.append('branch_code', branchCode);
+    formData.append('phone', phone);
+    formData.append('email', email);
+    formData.append('start_date', startDate);
+    formData.append('reason', reason);
+    formData.append('base_salary', baseSalary);
+    formData.append('employee_type', employeeType);
+    formData.append('zone', zone);
+    formData.append('employment_type', employmentType);
+    formData.append('rate_type', rateType);
+    
+    console.log('Updating request...');
+    fetch(`/api/employee-requests/${requestId}/update`, {
+        method: 'POST',
+        body: formData
+    }).then(response => {
+        console.log('Update response status:', response.status);
+        return response.json();
+    })
+    .then(data => {
+        console.log('Update response:', data);
+        if (data.success) {
+            alert('อัปเดตคำขอเรียบร้อยแล้ว');
+            clearForm();
+            loadEmployeeRequests(); // โหลดข้อมูลใหม่
+            
+            // เปลี่ยนปุ่มกลับเป็นส่งคำขอ
+            const submitBtn = document.querySelector('button[onclick="updateRequest(' + requestId + ')"]');
+            if (submitBtn) {
+                submitBtn.textContent = 'ส่งคำขอ';
+                submitBtn.onclick = submitRequest;
+            }
+        } else {
+            alert('เกิดข้อผิดพลาดในการอัปเดตคำขอ: ' + data.message);
+        }
+    })
+    .catch(error => {
+        alert('เกิดข้อผิดพลาดในการอัปเดตคำขอ');
+        console.error('Error:', error);
+    });
+}
+
+function loadEmployeeRequests() {
+    console.log('Loading employee requests...');
+    fetch('/api/employee-requests', {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => {
+        console.log('Load response status:', response.status);
+        return response.json();
+    })
+    .then(data => {
+        console.log('Load response:', data);
+        if (data.success) {
+            updateRequestsTable(data.requests);
+        } else {
+            console.error('Failed to load requests:', data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error loading requests:', error);
+    });
+}
+
+function exportToExcel() {
+    // Implement Excel export functionality
+    alert('ส่งออกเป็นไฟล์ Excel');
+}
+
+function downloadData() {
+    // Implement download functionality
+    alert('ดาวน์โหลดข้อมูล');
+}
+
+// Initialize when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('SPV Request Employee Template loaded');
+    loadEmployeeRequests(); // โหลดข้อมูลเมื่อหน้าโหลด
+    
+    // ซ่อนปุ่มแปลกๆจาก navbar และ header
+    function hideStrangeButtons() {
+        const navbarButtons = document.querySelectorAll('.navbar .btn, .navbar button, .navbar a.btn');
+        navbarButtons.forEach(btn => {
+            console.log('Hiding navbar button:', btn.outerHTML);
+            btn.style.display = 'none';
+            btn.style.visibility = 'hidden';
+            btn.style.opacity = '0';
+            btn.style.position = 'absolute';
+            btn.style.left = '-9999px';
+            btn.style.top = '-9999px';
+            btn.style.zIndex = '-9999';
+        });
+        
+        // ซ่อนปุ่มแปลกๆจาก header
+        const headerButtons = document.querySelectorAll('.header .btn, .header button, .header a.btn');
+        headerButtons.forEach(btn => {
+            console.log('Hiding header button:', btn.outerHTML);
+            btn.style.display = 'none';
+            btn.style.visibility = 'hidden';
+            btn.style.opacity = '0';
+            btn.style.position = 'absolute';
+            btn.style.left = '-9999px';
+            btn.style.top = '-9999px';
+            btn.style.zIndex = '-9999';
+        });
+        
+
+        
+        console.log('Hiding strange buttons from navbar and header');
+    }
+    
+    // เรียกใช้ทันที
+    hideStrangeButtons();
+});
+</script>
+{% if standalone %}
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+{% endif %} 

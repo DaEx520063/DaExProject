@@ -1,0 +1,431 @@
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-bar me-2"></i>
+                        รายงานเงินเดือน
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-3">
+                            <label for="monthFilter" class="form-label">เดือน</label>
+                            <select class="form-select" id="monthFilter">
+                                <option value="">เลือกเดือน</option>
+                                <option value="1">มกราคม</option>
+                                <option value="2">กุมภาพันธ์</option>
+                                <option value="3">มีนาคม</option>
+                                <option value="4">เมษายน</option>
+                                <option value="5">พฤษภาคม</option>
+                                <option value="6">มิถุนายน</option>
+                                <option value="7">กรกฎาคม</option>
+                                <option value="8">สิงหาคม</option>
+                                <option value="9">กันยายน</option>
+                                <option value="10">ตุลาคม</option>
+                                <option value="11">พฤศจิกายน</option>
+                                <option value="12">ธันวาคม</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="yearFilter" class="form-label">ปี</label>
+                            <select class="form-select" id="yearFilter">
+                                <option value="">เลือกปี</option>
+                                <option value="2024">2024</option>
+                                <option value="2025" selected>2025</option>
+                                <option value="2026">2026</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="branchFilter" class="form-label">สาขา</label>
+                            <select class="form-select" id="branchFilter">
+                                <option value="">ทุกสาขา</option>
+                                {% for code, name in branches.items() %}
+                                <option value="{{ code }}">{{ name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <button class="btn btn-primary me-2" onclick="loadMonthlyData()">
+                                <i class="fas fa-search me-1"></i>ค้นหา
+                            </button>
+                            <button class="btn btn-secondary" onclick="resetFilters()">
+                                <i class="fas fa-refresh me-1"></i>รีเซ็ต
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Loading Spinner -->
+                    <div id="loadingSpinner" class="text-center d-none">
+                        <i class="fas fa-spinner fa-spin fa-3x text-primary"></i>
+                        <p class="mt-2">กำลังโหลดข้อมูล...</p>
+                    </div>
+
+                    <!-- No Data Message -->
+                    <div id="noDataMessage" class="text-center d-none">
+                        <i class="fas fa-info-circle fa-3x text-muted"></i>
+                        <p class="mt-2 text-muted">ไม่พบข้อมูล</p>
+                    </div>
+
+                    <!-- Summary Section -->
+                    <div id="summarySection" class="mb-4">
+                        <!-- สรุปข้อมูลจะถูกเพิ่มด้วย JavaScript -->
+                    </div>
+
+                    <!-- Employee Summary Table -->
+                    <div id="employeeSummaryTable" class="d-none">
+                        <!-- ตารางข้อมูลพนักงานจะถูกเพิ่มด้วย JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+window.loadMonthlyData = function() {
+    const month = document.getElementById('monthFilter').value;
+    const year = document.getElementById('yearFilter').value;
+    const branch = document.getElementById('branchFilter').value;
+    const employeeId = document.getElementById('employeeIdFilter')?.value;
+    
+    if (!month || !year) {
+        alert('กรุณาเลือกเดือนและปี');
+        return;
+    }
+    
+    // แสดง loading
+    const loadingSpinner = document.getElementById('loadingSpinner');
+    const noDataMessage = document.getElementById('noDataMessage');
+    const employeeSummaryTable = document.getElementById('employeeSummaryTable');
+    
+    if (loadingSpinner) loadingSpinner.classList.remove('d-none');
+    if (noDataMessage) noDataMessage.classList.add('d-none');
+    if (employeeSummaryTable) employeeSummaryTable.classList.add('d-none');
+    
+    // สร้าง URL ส่ง parameters
+    let url = `/api/salary/monthly-data?month=${month}&year=${year}`;
+    if (branch) url += `&branch=${branch}`;
+    if (employeeId) url += `&employee_id=${employeeId}`;
+    
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            if (loadingSpinner) loadingSpinner.classList.add('d-none');
+            
+            if (data.error) {
+                alert('เกิดข้อผิดพลาด: ' + data.error);
+                return;
+            }
+            
+            displayEmployeeData(data);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('เกิดข้อผิดพลาดในการโหลดเนื้อหา: ' + error);
+            if (loadingSpinner) loadingSpinner.classList.add('d-none');
+        });
+}
+
+window.displayEmployeeData = function(data) {
+    console.log('displayEmployeeData called with:', data);
+    
+    const employeeSummaryTable = document.getElementById('employeeSummaryTable');
+    const noDataMessage = document.getElementById('noDataMessage');
+    
+    if (!employeeSummaryTable || !noDataMessage) {
+        console.error('Required elements not found');
+        return;
+    }
+    
+    if (!data.employees || data.employees.length === 0) {
+        noDataMessage.classList.remove('d-none');
+        employeeSummaryTable.classList.add('d-none');
+        return;
+    }
+    
+    noDataMessage.classList.add('d-none');
+    employeeSummaryTable.classList.remove('d-none');
+    
+    // แสดงสรุปข้อมูล
+    const summarySection = document.getElementById('summarySection');
+    if (data.summary && summarySection) {
+        const summaryHtml = `
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body text-center">
+                            <h5>พนักงานทั้งหมด</h5>
+                            <h3>${data.summary.total_employees || 0}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body text-center">
+                            <h5>จำนวนชิ้นรวม</h5>
+                            <h3>${(data.summary.total_pieces || 0).toLocaleString()}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-warning text-white">
+                        <div class="card-body text-center">
+                            <h5>เงินเดือนรวม</h5>
+                            <h3>฿${(data.summary.total_salary || 0).toLocaleString()}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-info text-white">
+                        <div class="card-body text-center">
+                            <h5>เงินสมทบรวม</h5>
+                            <h3>฿${(data.summary.total_allowance || 0).toLocaleString()}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        summarySection.innerHTML = summaryHtml;
+    }
+    
+    // สร้างตารางแสดงข้อมูลพนักงาน
+    let tableHtml = `
+        <div class="table-responsive">
+            <table class="table table-striped table-hover" style="min-width: 1200px;">
+                <thead class="table-dark">
+                    <tr>
+                        <th>รหัสพนักงาน</th>
+                        <th>ชื่อ-นามสกุล</th>
+                        <th>ตำแหน่ง</th>
+                        <th>สาขา</th>
+                        <th>โซน</th>
+                                                 <th>เรทการจ้าง</th>
+                        <th>จำนวนชิ้นรวม</th>
+                        <th>เงินเดือนฐาน</th>
+                        <th>เงินชิ้น</th>
+                        <th>เงินสมทบ</th>
+                        <th>รวมทั้งหมด</th>
+                        <th>รายละเอียด</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+    
+    data.employees.forEach(emp => {
+        const totalSalary = (emp.base_salary || 0) + (emp.piece_rate_bonus || 0) + (emp.allowance || 0);
+        tableHtml += `
+            <tr>
+                <td><strong class="text-primary">${emp.employee_id}</strong></td>
+                <td>${emp.name || 'ไม่ระบุชื่อ'}</td>
+                <td><span class="badge bg-secondary">${emp.position || '-'}</span></td>
+                <td>${emp.branch_code || '-'}</td>
+                <td><span class="badge bg-info">${emp.zone || '-'}</span></td>
+                                 <td><span class="badge bg-warning">${emp.piece_rate || '-'}</span></td>
+                <td class="text-center"><strong class="text-success">${(emp.total_pieces || 0).toLocaleString()}</strong></td>
+                <td class="text-end">฿${(emp.base_salary || 0).toLocaleString()}</td>
+                <td class="text-end">฿${(emp.piece_rate_bonus || 0).toLocaleString()}</td>
+                <td class="text-end">฿${(emp.allowance || 0).toLocaleString()}</td>
+                <td class="text-end"><strong class="text-primary">฿${totalSalary.toLocaleString()}</strong></td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary" onclick="showEmployeeDetails('${emp.employee_id}')">
+                        <i class="fas fa-eye"></i> ดูรายละเอียด
+                    </button>
+                </td>
+            </tr>
+        `;
+    });
+    
+    tableHtml += `
+                </tbody>
+            </table>
+        </div>
+    `;
+    
+    employeeSummaryTable.innerHTML = tableHtml;
+}
+
+window.showEmployeeDetails = function(employeeId) {
+    console.log('showEmployeeDetails called for:', employeeId);
+    
+         // สร้าง modal
+     const modalHtml = `
+         <div class="modal fade" id="employeeDetailsModal" tabindex="-1">
+             <div class="modal-dialog modal-xl">
+                 <div class="modal-content">
+                     <div class="modal-header">
+                         <h5 class="modal-title">รายละเอียดเงินเดือน - ${employeeId}</h5>
+                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                     </div>
+                     <div class="modal-body" id="employeeDetailsContent">
+                         <div class="text-center">
+                             <i class="fas fa-spinner fa-spin fa-2x"></i>
+                             <p>กำลังโหลดข้อมูล...</p>
+                         </div>
+                     </div>
+                 </div>
+             </div>
+         </div>
+     `;
+    
+    // ลบ modal เก่าถ้ามี
+    const existingModal = document.getElementById('employeeDetailsModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    // เพิ่ม modal ใหม่
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    
+    // แสดง modal
+    const modal = new bootstrap.Modal(document.getElementById('employeeDetailsModal'));
+    modal.show();
+    
+         // โหลดข้อมูล
+     fetch(`/api/salary/employee-details/${employeeId}`)
+         .then(response => response.json())
+         .then(data => {
+             console.log('Employee details API response:', data); // Debug log
+             
+             if (data.error) {
+                 document.getElementById('employeeDetailsContent').innerHTML = `
+                     <div class="alert alert-danger">
+                         <i class="fas fa-exclamation-triangle"></i>
+                         ${data.error}
+                     </div>
+                 `;
+                 return;
+             }
+             
+             document.getElementById('employeeDetailsContent').innerHTML = createEmployeeDetailsHtml(data);
+         })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('employeeDetailsContent').innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    เกิดข้อผิดพลาดในการโหลดข้อมูล
+                </div>
+            `;
+        });
+}
+
+ window.createEmployeeDetailsHtml = function(data) {
+     console.log('createEmployeeDetailsHtml data:', data); // Debug log
+     const emp = data.employee;
+     const weightRanges = data.weight_ranges || [];
+     console.log('weightRanges:', weightRanges); // Debug log
+     console.log('weightRanges type:', typeof weightRanges);
+     console.log('weightRanges is array:', Array.isArray(weightRanges));
+     
+     // Validate data
+     if (!emp) {
+         return '<div class="alert alert-danger">ไม่พบข้อมูลพนักงาน</div>';
+     }
+    
+         const weightRangesHtml = createWeightRangesHtml(weightRanges);
+     console.log('Weight ranges HTML generated:', weightRangesHtml.length > 0);
+     
+     return `
+         <div class="row">
+             <div class="col-md-6">
+                 <h6 class="text-primary">ข้อมูลพนักงาน</h6>
+                 <table class="table table-sm">
+                     <tr><td><strong>รหัสพนักงาน:</strong></td><td>${emp.employee_id}</td></tr>
+                     <tr><td><strong>ชื่อ-นามสกุล:</strong></td><td>${emp.name}</td></tr>
+                     <tr><td><strong>ตำแหน่ง:</strong></td><td><span class="badge bg-secondary">${emp.position}</span></td></tr>
+                     <tr><td><strong>สาขา:</strong></td><td>${emp.branch_code}</td></tr>
+                     <tr><td><strong>โซน:</strong></td><td><span class="badge bg-info">${emp.zone}</span></td></tr>
+                     <tr><td><strong>เรทการจ้าง:</strong></td><td><span class="badge bg-warning">${emp.piece_rate || '-'}</span></td></tr>
+                 </table>
+             </div>
+             <div class="col-md-6">
+                 <h6 class="text-success">สรุปเงินเดือน</h6>
+                 <table class="table table-sm">
+                     <tr><td><strong>จำนวนชิ้นรวม:</strong></td><td class="text-end"><strong class="text-success">${data.total_pieces.toLocaleString()}</strong></td></tr>
+                     <tr><td><strong>เงินเดือนฐาน:</strong></td><td class="text-end">฿${data.base_salary.toLocaleString()}</td></tr>
+                     <tr><td><strong>เงินชิ้น:</strong></td><td class="text-end">฿${data.piece_rate_bonus.toLocaleString()}</td></tr>
+                     <tr><td><strong>เงินสมทบ:</strong></td><td class="text-end">฿${data.allowance.toLocaleString()}</td></tr>
+                     <tr class="table-primary"><td><strong>รวมทั้งหมด:</strong></td><td class="text-end"><strong>฿${data.total_salary.toLocaleString()}</strong></td></tr>
+                 </table>
+             </div>
+         </div>
+         
+         <hr>
+         
+         <h6 class="text-info">รายละเอียดช่วงน้ำหนัก</h6>
+         <div class="table-responsive">
+             <table class="table table-sm table-striped" style="min-width: 800px;">
+                 <thead class="table-light">
+                     <tr>
+                         <th>ช่วงน้ำหนัก</th>
+                         <th class="text-center">จำนวนชิ้น</th>
+                         <th class="text-center">อัตรา (บาท)</th>
+                         <th class="text-end">เงิน (บาท)</th>
+                     </tr>
+                 </thead>
+                 <tbody>
+                     ${weightRangesHtml}
+                 </tbody>
+             </table>
+         </div>
+         
+         ${!data.has_rate ? '<div class="alert alert-warning mt-3"><i class="fas fa-exclamation-triangle"></i> ไม่พบเรทที่ตรงกับข้อมูลพนักงาน</div>' : ''}
+     `;
+}
+
+ window.createWeightRangesHtml = function(weightRanges) {
+     console.log('createWeightRangesHtml input:', weightRanges);
+     console.log('weightRanges type:', typeof weightRanges);
+     console.log('weightRanges length:', weightRanges ? weightRanges.length : 'undefined');
+     
+     // Check if weightRanges is valid
+     if (!weightRanges || !Array.isArray(weightRanges)) {
+         console.error('weightRanges is not a valid array:', weightRanges);
+         return '<tr><td colspan="4" class="text-center text-muted">ไม่พบข้อมูลช่วงน้ำหนัก</td></tr>';
+     }
+     
+     const ranges = [
+         '0.00-0.50KG', '0.51-1.00KG', '1.01-2.00KG', '2.01-3.00KG', '3.01-5.00KG',
+         '5.01-7.00KG', '7.01-10.00KG', '10.01-12.00KG', '12.01-15.00KG', '15.01KG+'
+     ];
+     
+     let html = '';
+     ranges.forEach((range, index) => {
+         const rangeData = weightRanges[index] || { count: 0, amount: 0, rate: 0 };
+         console.log(`Range ${range}:`, rangeData); // Debug log
+         
+         // Handle different possible data structures
+         const count = rangeData.count || rangeData.pieces || 0;
+         const rate = rangeData.rate || 0;
+         const amount = rangeData.amount || 0;
+         
+         html += `
+             <tr>
+                 <td><strong>${range}</strong></td>
+                 <td class="text-center">${count.toLocaleString()}</td>
+                 <td class="text-center">฿${rate.toLocaleString()}</td>
+                 <td class="text-end">฿${amount.toLocaleString()}</td>
+             </tr>
+         `;
+     });
+     
+     console.log('Generated HTML length:', html.length);
+     return html;
+ }
+
+window.resetFilters = function() {
+    document.getElementById('monthFilter').value = '';
+    document.getElementById('yearFilter').value = '2025';
+    document.getElementById('branchFilter').value = '';
+    
+    const loadingSpinner = document.getElementById('loadingSpinner');
+    const noDataMessage = document.getElementById('noDataMessage');
+    const employeeSummaryTable = document.getElementById('employeeSummaryTable');
+    
+    if (loadingSpinner) loadingSpinner.classList.add('d-none');
+    if (noDataMessage) noDataMessage.classList.add('d-none');
+    if (employeeSummaryTable) employeeSummaryTable.classList.add('d-none');
+}
+</script> 

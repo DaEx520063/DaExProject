@@ -1,0 +1,232 @@
+{% extends "dashboard.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-calendar-check"></i> อนุมัติการขาด/ลา/มาสาย</h2>
+                <button class="btn btn-primary" onclick="exportToExcel()">
+                    <i class="fas fa-download"></i> Export Excel
+                </button>
+            </div>
+
+            <!-- Filter Controls -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <label class="form-label">พนักงาน</label>
+                            <input type="text" class="form-control" id="employeeFilter" placeholder="ชื่อพนักงาน">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">ประเภทการลา</label>
+                            <select class="form-select" id="leaveTypeFilter">
+                                <option value="">ทุกประเภท</option>
+                                <option value="ลาป่วย">ลาป่วย</option>
+                                <option value="ลากิจ">ลากิจ</option>
+                                <option value="ลาพักร้อน">ลาพักร้อน</option>
+                                <option value="ลาคลอด">ลาคลอด</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">สถานะ</label>
+                            <select class="form-select" id="statusFilter">
+                                <option value="">ทุกสถานะ</option>
+                                <option value="pending">รออนุมัติ</option>
+                                <option value="approved">อนุมัติแล้ว</option>
+                                <option value="rejected">ปฏิเสธ</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">ค้นหา</label>
+                            <input type="text" class="form-control" id="searchFilter" placeholder="ค้นหา...">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Leave Requests Table -->
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="leaveRequestsTable">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th><input type="checkbox" id="selectAll"></th>
+                                    <th>รหัส</th>
+                                    <th>พนักงาน</th>
+                                    <th>ประเภท</th>
+                                    <th>วันที่เริ่ม</th>
+                                    <th>วันที่สิ้นสุด</th>
+                                    <th>จำนวนวัน</th>
+                                    <th>เหตุผล</th>
+                                    <th>สถานะ</th>
+                                    <th>การดำเนินการ</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for request in leave_requests %}
+                                <tr>
+                                    <td><input type="checkbox" class="request-checkbox" value="{{ request[0] }}"></td>
+                                    <td>{{ request[0] }}</td>
+                                    <td>{{ request[1] }}</td>
+                                    <td>{{ request[2] }}</td>
+                                    <td>{{ request[3] }}</td>
+                                    <td>{{ request[4] }}</td>
+                                    <td class="text-center">{{ request[5] }} วัน</td>
+                                    <td>{{ request[6] }}</td>
+                                    <td>
+                                        {% if request[7] == 'pending' %}
+                                            <span class="badge bg-warning">รออนุมัติ</span>
+                                        {% elif request[7] == 'approved' %}
+                                            <span class="badge bg-success">อนุมัติแล้ว</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">ปฏิเสธ</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if request[7] == 'pending' %}
+                                            <button class="btn btn-sm btn-success" onclick="approveLeave({{ request[0] }})">
+                                                <i class="fas fa-check"></i> อนุมัติ
+                                            </button>
+                                            <button class="btn btn-sm btn-danger" onclick="rejectLeave({{ request[0] }})">
+                                                <i class="fas fa-times"></i> ปฏิเสธ
+                                            </button>
+                                        {% else %}
+                                            <span class="text-muted">ดำเนินการแล้ว</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary Cards -->
+            <div class="row mt-4">
+                <div class="col-md-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">คำขอทั้งหมด</h5>
+                            <h3 class="card-text">{{ total_requests }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-warning text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">รออนุมัติ</h5>
+                            <h3 class="card-text">{{ pending_count }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">อนุมัติแล้ว</h5>
+                            <h3 class="card-text">{{ approved_count }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-danger text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">ปฏิเสธ</h5>
+                            <h3 class="card-text">{{ rejected_count }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Filter functionality
+document.getElementById('employeeFilter').addEventListener('input', filterTable);
+document.getElementById('leaveTypeFilter').addEventListener('change', filterTable);
+document.getElementById('statusFilter').addEventListener('change', filterTable);
+document.getElementById('searchFilter').addEventListener('input', filterTable);
+
+function filterTable() {
+    const employeeFilter = document.getElementById('employeeFilter').value.toLowerCase();
+    const leaveTypeFilter = document.getElementById('leaveTypeFilter').value;
+    const statusFilter = document.getElementById('statusFilter').value;
+    const searchFilter = document.getElementById('searchFilter').value.toLowerCase();
+    
+    const rows = document.querySelectorAll('#leaveRequestsTable tbody tr');
+    
+    rows.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        const employee = cells[2].textContent.toLowerCase();
+        const leaveType = cells[3].textContent;
+        const status = cells[8].textContent.trim();
+        
+        let show = true;
+        
+        if (employeeFilter && !employee.includes(employeeFilter)) show = false;
+        if (leaveTypeFilter && leaveType !== leaveTypeFilter) show = false;
+        if (statusFilter && !status.includes(statusFilter)) show = false;
+        if (searchFilter && !employee.includes(searchFilter)) show = false;
+        
+        row.style.display = show ? '' : 'none';
+    });
+}
+
+// Select all functionality
+document.getElementById('selectAll').addEventListener('change', function() {
+    const checkboxes = document.querySelectorAll('.request-checkbox');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = this.checked;
+    });
+});
+
+function approveLeave(requestId) {
+    if (confirm('ยืนยันการอนุมัติการลานี้?')) {
+        // API call to approve leave
+        fetch(`/api/leave/${requestId}/approve`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('เกิดข้อผิดพลาด: ' + data.message);
+            }
+        });
+    }
+}
+
+function rejectLeave(requestId) {
+    if (confirm('ยืนยันการปฏิเสธการลานี้?')) {
+        // API call to reject leave
+        fetch(`/api/leave/${requestId}/reject`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('เกิดข้อผิดพลาด: ' + data.message);
+            }
+        });
+    }
+}
+
+function exportToExcel() {
+    // Implementation for Excel export
+    alert('ฟีเจอร์ Export Excel กำลังพัฒนา');
+}
+</script>
+{% endblock %} 

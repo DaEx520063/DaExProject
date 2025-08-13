@@ -1,0 +1,582 @@
+    <!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>การจัดการข้อมูลการมาทำงาน - DaEx</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .attendance-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        .stats-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .stats-card h3 {
+            margin: 0;
+            font-size: 2rem;
+            font-weight: bold;
+        }
+        .stats-card p {
+            margin: 5px 0 0 0;
+            opacity: 0.9;
+        }
+        .attendance-table {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .attendance-table th {
+            background: #f8f9fa;
+            border: none;
+            padding: 15px 12px;
+            font-weight: 600;
+            color: #495057;
+        }
+        .attendance-table td {
+            padding: 12px;
+            border: none;
+            border-bottom: 1px solid #eee;
+        }
+        .attendance-table tbody tr:hover {
+            background-color: #f8f9ff;
+        }
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .status-present { background: #d4edda; color: #155724; }
+        .status-absent { background: #f8d7da; color: #721c24; }
+        .status-late { background: #fff3cd; color: #856404; }
+        .status-leave { background: #cce5ff; color: #004085; }
+        .time-badge {
+            background: #e9ecef;
+            color: #495057;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+        .filter-section {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .quick-actions {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .action-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 15px 20px;
+            margin: 5px;
+            transition: all 0.3s ease;
+        }
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            color: white;
+        }
+        .calendar-view {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .calendar-day {
+            border: 1px solid #eee;
+            padding: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .calendar-day:hover {
+            background-color: #f8f9ff;
+        }
+        .calendar-day.today {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .calendar-day.has-data {
+            background: #e3f2fd;
+            border-color: #2196f3;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1">
+                <i class="fas fa-clock me-2"></i>
+                การจัดการข้อมูลการมาทำงาน
+            </h2>
+            <p class="text-muted mb-0">จัดการและติดตามการมาทำงานของพนักงาน</p>
+        </div>
+        <div>
+            <button class="btn btn-success me-2" onclick="exportAttendanceData()">
+                <i class="fas fa-file-excel me-2"></i>
+                ส่งออก Excel
+            </button>
+            <button class="btn btn-primary" onclick="addAttendanceRecord()">
+                <i class="fas fa-plus me-2"></i>
+                เพิ่มข้อมูลการมาทำงาน
+            </button>
+        </div>
+    </div>
+
+    <!-- Summary Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="stats-card">
+                <h3>{{ attendance_stats.total_employees }}</h3>
+                <p><i class="fas fa-users"></i> พนักงานทั้งหมด</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card">
+                <h3>{{ attendance_stats.present_today }}</h3>
+                <p><i class="fas fa-check-circle"></i> มาทำงานวันนี้</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card">
+                <h3>{{ attendance_stats.absent_today }}</h3>
+                <p><i class="fas fa-times-circle"></i> ขาดงานวันนี้</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card">
+                <h3>{{ attendance_stats.late_today }}</h3>
+                <p><i class="fas fa-exclamation-triangle"></i> มาสายวันนี้</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+        <h5 class="mb-3">
+            <i class="fas fa-bolt me-2"></i>
+            การดำเนินการด่วน
+        </h5>
+        <div class="row">
+            <div class="col-md-3">
+                <button class="action-btn w-100" onclick="bulkImportAttendance()">
+                    <i class="fas fa-upload me-2"></i>
+                    นำเข้าข้อมูล
+                </button>
+            </div>
+            <div class="col-md-3">
+                <button class="action-btn w-100" onclick="generateAttendanceReport()">
+                    <i class="fas fa-chart-bar me-2"></i>
+                    สร้างรายงาน
+                </button>
+            </div>
+            <div class="col-md-3">
+                <button class="action-btn w-100" onclick="sendAttendanceReminder()">
+                    <i class="fas fa-bell me-2"></i>
+                    ส่งการแจ้งเตือน
+                </button>
+            </div>
+            <div class="col-md-3">
+                <button class="action-btn w-100" onclick="viewAttendanceCalendar()">
+                    <i class="fas fa-calendar-alt me-2"></i>
+                    ดูปฏิทิน
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Section -->
+    <div class="filter-section">
+        <h5 class="mb-3">
+            <i class="fas fa-filter me-2"></i>
+            กรองข้อมูล
+        </h5>
+        <div class="row">
+            <div class="col-md-3">
+                <label class="form-label">สาขา</label>
+                <select class="form-select" id="branchFilter">
+                    <option value="">ทุกสาขา</option>
+                    {% for code, name in branches.items() %}
+                        <option value="{{ code }}">{{ name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">ตำแหน่ง</label>
+                <select class="form-select" id="positionFilter">
+                    <option value="">ทุกตำแหน่ง</option>
+                    <option value="SPT">SPT</option>
+                    <option value="SPT/F">SPT/F</option>
+                    <option value="SPTA">SPTA</option>
+                    <option value="SPTA/F">SPTA/F</option>
+                    <option value="SPTB">SPTB</option>
+                    <option value="SPTC">SPTC</option>
+                    <option value="SPTS">SPTS</option>
+                    <option value="SPTS/F">SPTS/F</option>
+                    <option value="SPV">SPV</option>
+                    <option value="ADM">ADM</option>
+                    <option value="CS">CS</option>
+                    <option value="HO">HO</option>
+                    <option value="OP">OP</option>
+                    <option value="GM">GM</option>
+                    <option value="MD">MD</option>
+                    <option value="หัวหน้า HR">หัวหน้า HR</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">สถานะ</label>
+                <select class="form-select" id="statusFilter">
+                    <option value="">ทุกสถานะ</option>
+                    <option value="present">มาทำงาน</option>
+                    <option value="absent">ขาดงาน</option>
+                    <option value="late">มาสาย</option>
+                    <option value="leave">ลา</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">วันที่</label>
+                <input type="date" class="form-control" id="dateFilter" value="{{ today_date }}">
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-md-12">
+                <button class="btn btn-primary" onclick="applyFilters()">
+                    <i class="fas fa-search me-2"></i>
+                    กรองข้อมูล
+                </button>
+                <button class="btn btn-secondary ms-2" onclick="clearFilters()">
+                    <i class="fas fa-times me-2"></i>
+                    ล้างตัวกรอง
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Attendance Table -->
+    <div class="attendance-card">
+        <div class="card-header bg-white">
+            <h5 class="mb-0">
+                <i class="fas fa-list me-2"></i>
+                ข้อมูลการมาทำงาน ({{ attendance_records|length }} รายการ)
+            </h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 attendance-table" id="attendanceTable">
+                    <thead>
+                        <tr>
+                            <th>รหัสพนักงาน</th>
+                            <th>ชื่อ-นามสกุล</th>
+                            <th>ตำแหน่ง</th>
+                            <th>สาขา</th>
+                            <th>วันที่</th>
+                            <th>เวลาเข้างาน</th>
+                            <th>เวลาออกงาน</th>
+                            <th>ชั่วโมงทำงาน</th>
+                            <th>สถานะ</th>
+                            <th>หมายเหตุ</th>
+                            <th>การดำเนินการ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for record in attendance_records %}
+                        <tr class="attendance-row" 
+                            data-branch="{{ record.branch_code }}" 
+                            data-position="{{ record.position }}" 
+                            data-status="{{ record.status }}"
+                            data-date="{{ record.work_date }}">
+                            <td>{{ record.employee_id }}</td>
+                            <td>{{ record.employee_name }}</td>
+                            <td>{{ record.position }}</td>
+                            <td>{{ branches[record.branch_code] if record.branch_code in branches else record.branch_code }}</td>
+                            <td>{{ record.work_date }}</td>
+                            <td>
+                                <span class="time-badge">{{ record.check_in_time or '-' }}</span>
+                            </td>
+                            <td>
+                                <span class="time-badge">{{ record.check_out_time or '-' }}</span>
+                            </td>
+                            <td>
+                                <span class="time-badge">{{ record.work_hours or '0' }} ชม.</span>
+                            </td>
+                            <td>
+                                {% if record.status == 'present' %}
+                                    <span class="badge status-badge status-present">มาทำงาน</span>
+                                {% elif record.status == 'absent' %}
+                                    <span class="badge status-badge status-absent">ขาดงาน</span>
+                                {% elif record.status == 'late' %}
+                                    <span class="badge status-badge status-late">มาสาย</span>
+                                {% elif record.status == 'leave' %}
+                                    <span class="badge status-badge status-leave">ลา</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ record.notes or '-' }}</td>
+                            <td>
+                                <button class="btn btn-sm btn-info" onclick="viewAttendanceDetail({{ record.id }})">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-sm btn-warning" onclick="editAttendanceRecord({{ record.id }})">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteAttendanceRecord({{ record.id }})">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Attendance Modal -->
+    <div class="modal fade" id="attendanceModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="attendanceModalTitle">เพิ่มข้อมูลการมาทำงาน</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="attendanceForm">
+                        <input type="hidden" id="attendanceId" name="attendance_id">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">พนักงาน *</label>
+                                    <select class="form-select" id="employeeSelect" name="employee_id" required>
+                                        <option value="">เลือกพนักงาน</option>
+                                        {% for emp in employees %}
+                                            <option value="{{ emp.employee_id }}">{{ emp.employee_id }} - {{ emp.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">วันที่ *</label>
+                                    <input type="date" class="form-control" id="workDate" name="work_date" required>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">เวลาเข้างาน</label>
+                                    <input type="time" class="form-control" id="checkInTime" name="check_in_time">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">เวลาออกงาน</label>
+                                    <input type="time" class="form-control" id="checkOutTime" name="check_out_time">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">สถานะ *</label>
+                                    <select class="form-select" id="statusSelect" name="status" required>
+                                        <option value="">เลือกสถานะ</option>
+                                        <option value="present">มาทำงาน</option>
+                                        <option value="absent">ขาดงาน</option>
+                                        <option value="late">มาสาย</option>
+                                        <option value="leave">ลา</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">ชั่วโมงทำงาน</label>
+                                    <input type="number" class="form-control" id="workHours" name="work_hours" step="0.5" min="0" max="24">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">หมายเหตุ</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+                    <button type="button" class="btn btn-primary" onclick="saveAttendanceRecord()">บันทึก</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Filter functionality
+        document.getElementById('branchFilter').addEventListener('change', filterTable);
+        document.getElementById('positionFilter').addEventListener('change', filterTable);
+        document.getElementById('statusFilter').addEventListener('change', filterTable);
+        document.getElementById('dateFilter').addEventListener('change', filterTable);
+
+        function filterTable() {
+            const branchFilter = document.getElementById('branchFilter').value;
+            const positionFilter = document.getElementById('positionFilter').value;
+            const statusFilter = document.getElementById('statusFilter').value;
+            const dateFilter = document.getElementById('dateFilter').value;
+            
+            const rows = document.querySelectorAll('#attendanceTable tbody tr');
+            
+            rows.forEach(row => {
+                const branch = row.getAttribute('data-branch');
+                const position = row.getAttribute('data-position');
+                const status = row.getAttribute('data-status');
+                const date = row.getAttribute('data-date');
+                
+                let show = true;
+                
+                if (branchFilter && branch !== branchFilter) show = false;
+                if (positionFilter && position !== positionFilter) show = false;
+                if (statusFilter && status !== statusFilter) show = false;
+                if (dateFilter && date !== dateFilter) show = false;
+                
+                row.style.display = show ? '' : 'none';
+            });
+        }
+
+        function applyFilters() {
+            filterTable();
+        }
+
+        function clearFilters() {
+            document.getElementById('branchFilter').value = '';
+            document.getElementById('positionFilter').value = '';
+            document.getElementById('statusFilter').value = '';
+            document.getElementById('dateFilter').value = '';
+            filterTable();
+        }
+
+        function addAttendanceRecord() {
+            document.getElementById('attendanceModalTitle').textContent = 'เพิ่มข้อมูลการมาทำงาน';
+            document.getElementById('attendanceForm').reset();
+            document.getElementById('attendanceId').value = '';
+            document.getElementById('workDate').value = new Date().toISOString().split('T')[0];
+            new bootstrap.Modal(document.getElementById('attendanceModal')).show();
+        }
+
+        function editAttendanceRecord(recordId) {
+            document.getElementById('attendanceModalTitle').textContent = 'แก้ไขข้อมูลการมาทำงาน';
+            // Load record data
+            fetch(`/api/attendance/${recordId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const record = data.record;
+                        document.getElementById('attendanceId').value = record.id;
+                        document.getElementById('employeeSelect').value = record.employee_id;
+                        document.getElementById('workDate').value = record.work_date;
+                        document.getElementById('checkInTime').value = record.check_in_time || '';
+                        document.getElementById('checkOutTime').value = record.check_out_time || '';
+                        document.getElementById('statusSelect').value = record.status;
+                        document.getElementById('workHours').value = record.work_hours || '';
+                        document.getElementById('notes').value = record.notes || '';
+                        new bootstrap.Modal(document.getElementById('attendanceModal')).show();
+                    }
+                });
+        }
+
+        function saveAttendanceRecord() {
+            const formData = new FormData(document.getElementById('attendanceForm'));
+            const recordId = document.getElementById('attendanceId').value;
+            
+            const url = recordId ? `/api/attendance/${recordId}/update` : '/api/attendance/add';
+            
+            fetch(url, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('บันทึกข้อมูลสำเร็จ');
+                    location.reload();
+                } else {
+                    alert('เกิดข้อผิดพลาด: ' + data.message);
+                }
+            });
+        }
+
+        function deleteAttendanceRecord(recordId) {
+            if (confirm('คุณต้องการลบข้อมูลการมาทำงานนี้หรือไม่?')) {
+                fetch(`/api/attendance/${recordId}/delete`, {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('ลบข้อมูลสำเร็จ');
+                        location.reload();
+                    } else {
+                        alert('เกิดข้อผิดพลาด: ' + data.message);
+                    }
+                });
+            }
+        }
+
+        function viewAttendanceDetail(recordId) {
+            // Implement view detail functionality
+            alert('ดูรายละเอียดข้อมูลการมาทำงาน: ' + recordId);
+        }
+
+        function exportAttendanceData() {
+            const branchFilter = document.getElementById('branchFilter').value;
+            const dateFilter = document.getElementById('dateFilter').value;
+            
+            let url = '/api/attendance/export?';
+            if (branchFilter) url += `branch=${branchFilter}&`;
+            if (dateFilter) url += `date=${dateFilter}`;
+            
+            window.open(url, '_blank');
+        }
+
+        function bulkImportAttendance() {
+            alert('นำเข้าข้อมูลการมาทำงาน');
+        }
+
+        function generateAttendanceReport() {
+            alert('สร้างรายงานการมาทำงาน');
+        }
+
+        function sendAttendanceReminder() {
+            alert('ส่งการแจ้งเตือนการมาทำงาน');
+        }
+
+        function viewAttendanceCalendar() {
+            alert('ดูปฏิทินการมาทำงาน');
+        }
+    </script>
+</body>
+</html> 

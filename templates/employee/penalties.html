@@ -1,0 +1,280 @@
+{% extends 'index.html' %}
+{% block content %}
+<div class="excel-interface">
+    <!-- Excel Toolbar -->
+    <div class="excel-toolbar">
+        <div class="d-flex">
+            <button class="btn btn-success btn-sm" onclick="exportToExcel()">
+                <i class="fas fa-file-excel"></i> ส่งออก
+            </button>
+            <button class="btn btn-warning btn-sm" onclick="clearFilters()">
+                <i class="fas fa-eraser"></i> ล้างข้อมูล
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="downloadData()">
+                <i class="fas fa-download"></i> ดาวน์โหลดข้อมูล
+            </button>
+        </div>
+        <button class="btn btn-outline-secondary btn-sm" onclick="toggleFilters()">
+            <i class="fas fa-chevron-up"></i> ย่อ
+        </button>
+    </div>
+
+    <!-- Excel Filter Section -->
+    <div class="excel-filter-section" id="filterSection">
+        <div class="excel-filter-row">
+            <div class="excel-filter-item">
+                <label>ประเภทค่าปรับ</label>
+                <select id="penaltyTypeFilter" class="form-select">
+                    <option value="">ทุกประเภท</option>
+                    <option value="มาสาย">มาสาย</option>
+                    <option value="ขาดงาน">ขาดงาน</option>
+                    <option value="ลาออก">ลาออก</option>
+                    <option value="ค่าปรับบริการ">ค่าปรับบริการ</option>
+                    <option value="ค่าปรับอื่นๆ">ค่าปรับอื่นๆ</option>
+                </select>
+            </div>
+            <div class="excel-filter-item">
+                <label>วันที่เริ่มต้น</label>
+                <input type="date" id="dateFromFilter" class="form-control">
+            </div>
+            <div class="excel-filter-item">
+                <label>วันที่สิ้นสุด</label>
+                <input type="date" id="dateToFilter" class="form-control">
+            </div>
+            <div class="excel-filter-item">
+                <label>จำนวนเงินขั้นต่ำ</label>
+                <input type="number" id="minAmountFilter" class="form-control" placeholder="จำนวนเงินขั้นต่ำ">
+            </div>
+            <div class="excel-filter-item">
+                <label>จำนวนเงินสูงสุด</label>
+                <input type="number" id="maxAmountFilter" class="form-control" placeholder="จำนวนเงินสูงสุด">
+            </div>
+            <div class="excel-filter-item">
+                <label>สถานะ</label>
+                <select id="statusFilter" class="form-select">
+                    <option value="">ทุกสถานะ</option>
+                    <option value="active">ยังไม่ชำระ</option>
+                    <option value="paid">ชำระแล้ว</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Excel Table -->
+    <div class="table-responsive">
+        <table class="table table-bordered mb-0" id="penaltiesTable">
+            <thead class="excel-table-header">
+                <tr>
+                    <th>ลำดับ</th>
+                    <th>วันที่</th>
+                    <th>ประเภทค่าปรับ</th>
+                    <th>จำนวนเงิน</th>
+                    <th>เหตุผล</th>
+                    <th>สถานะ</th>
+                    <th>วันที่ชำระ</th>
+                    <th>การดำเนินการ</th>
+                </tr>
+            </thead>
+            <tbody class="excel-table-body">
+                {% for penalty in penalties %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>{{ penalty[0] }}</td>
+                    <td>
+                        <span class="badge bg-danger">{{ penalty[1] }}</span>
+                    </td>
+                    <td><strong>{{ "{:,.0f}".format(penalty[2]) }} บาท</strong></td>
+                    <td>{{ penalty[3] }}</td>
+                    <td>
+                        <span class="status-badge status-pending">ยังไม่ชำระ</span>
+                    </td>
+                    <td>-</td>
+                    <td>
+                        <div class="excel-actions">
+                            <button class="btn btn-sm btn-outline-primary" onclick="viewPenaltyDetail({{ loop.index }})" title="ดูรายละเอียด">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-success" onclick="payPenalty({{ loop.index }})" title="ชำระค่าปรับ">
+                                <i class="fas fa-money-bill"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="row mt-4">
+    <div class="col-md-3">
+        <div class="card bg-danger text-white">
+            <div class="card-body">
+                <h5 class="card-title">ค่าปรับรวม</h5>
+                <h3 id="totalPenalties">0 บาท</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <h5 class="card-title">ยังไม่ชำระ</h5>
+                <h3 id="unpaidPenalties">0 บาท</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <h5 class="card-title">ชำระแล้ว</h5>
+                <h3 id="paidPenalties">0 บาท</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <h5 class="card-title">จำนวนรายการ</h5>
+                <h3 id="totalCount">0 รายการ</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Penalty Detail Modal -->
+<div class="modal fade" id="penaltyModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">รายละเอียดค่าปรับ</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="penaltyModalBody">
+                <!-- Content will be loaded here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleFilters() {
+    const filterSection = document.getElementById('filterSection');
+    const toggleBtn = event.target.closest('button');
+    const icon = toggleBtn.querySelector('i');
+    
+    if (filterSection.style.display === 'none') {
+        filterSection.style.display = 'block';
+        icon.className = 'fas fa-chevron-up';
+    } else {
+        filterSection.style.display = 'none';
+        icon.className = 'fas fa-chevron-down';
+    }
+}
+
+function clearFilters() {
+    document.getElementById('penaltyTypeFilter').value = '';
+    document.getElementById('dateFromFilter').value = '';
+    document.getElementById('dateToFilter').value = '';
+    document.getElementById('minAmountFilter').value = '';
+    document.getElementById('maxAmountFilter').value = '';
+    document.getElementById('statusFilter').value = '';
+    
+    // Show all rows
+    const rows = document.querySelectorAll('#penaltiesTable tbody tr');
+    rows.forEach(row => row.style.display = '');
+}
+
+function filterPenalties() {
+    const penaltyType = document.getElementById('penaltyTypeFilter').value;
+    const dateFrom = document.getElementById('dateFromFilter').value;
+    const dateTo = document.getElementById('dateToFilter').value;
+    const minAmount = document.getElementById('minAmountFilter').value;
+    const maxAmount = document.getElementById('maxAmountFilter').value;
+    const status = document.getElementById('statusFilter').value;
+    
+    const rows = document.querySelectorAll('#penaltiesTable tbody tr');
+    
+    rows.forEach(row => {
+        const type = row.cells[2].textContent;
+        const date = row.cells[1].textContent;
+        const amount = parseInt(row.cells[3].textContent.replace(/[^\d]/g, ''));
+        const penaltyStatus = row.cells[5].textContent;
+        
+        const typeMatch = !penaltyType || type.includes(penaltyType);
+        const dateMatch = !dateFrom || !dateTo || (date >= dateFrom && date <= dateTo);
+        const amountMatch = !minAmount || !maxAmount || (amount >= minAmount && amount <= maxAmount);
+        const statusMatch = !status || penaltyStatus.includes(status);
+        
+        if (typeMatch && dateMatch && amountMatch && statusMatch) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+function viewPenaltyDetail(index) {
+    // Implement penalty detail view functionality
+    alert('ดูรายละเอียดค่าปรับ: ' + index);
+}
+
+function payPenalty(index) {
+    if (confirm('คุณต้องการชำระค่าปรับนี้ใช่หรือไม่?')) {
+        // Implement penalty payment functionality
+        alert('ชำระค่าปรับ: ' + index);
+    }
+}
+
+function exportToExcel() {
+    // Implement Excel export functionality
+    alert('ส่งออกเป็นไฟล์ Excel');
+}
+
+function downloadData() {
+    // Implement download functionality
+    alert('ดาวน์โหลดข้อมูล');
+}
+
+// Calculate totals
+function calculateTotals() {
+    const rows = document.querySelectorAll('#penaltiesTable tbody tr');
+    let totalPenalties = 0;
+    let unpaidPenalties = 0;
+    let paidPenalties = 0;
+    let totalCount = 0;
+    
+    rows.forEach(row => {
+        if (row.style.display !== 'none') {
+            const amount = parseInt(row.cells[3].textContent.replace(/[^\d]/g, ''));
+            const status = row.cells[5].textContent;
+            
+            totalPenalties += amount;
+            totalCount++;
+            
+            if (status.includes('ยังไม่ชำระ')) {
+                unpaidPenalties += amount;
+            } else {
+                paidPenalties += amount;
+            }
+        }
+    });
+    
+    document.getElementById('totalPenalties').textContent = totalPenalties.toLocaleString() + ' บาท';
+    document.getElementById('unpaidPenalties').textContent = unpaidPenalties.toLocaleString() + ' บาท';
+    document.getElementById('paidPenalties').textContent = paidPenalties.toLocaleString() + ' บาท';
+    document.getElementById('totalCount').textContent = totalCount + ' รายการ';
+}
+
+// Add event listeners for real-time filtering
+document.getElementById('penaltyTypeFilter').addEventListener('change', filterPenalties);
+document.getElementById('dateFromFilter').addEventListener('change', filterPenalties);
+document.getElementById('dateToFilter').addEventListener('change', filterPenalties);
+document.getElementById('minAmountFilter').addEventListener('input', filterPenalties);
+document.getElementById('maxAmountFilter').addEventListener('input', filterPenalties);
+document.getElementById('statusFilter').addEventListener('change', filterPenalties);
+
+// Calculate totals on page load
+document.addEventListener('DOMContentLoaded', calculateTotals);
+</script>
+{% endblock %} 

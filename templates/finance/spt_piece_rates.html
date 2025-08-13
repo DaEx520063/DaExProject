@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>การจัดการเรทเงินเดือนพนักงาน - DaEx</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .piece-rate-table {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        .piece-rate-table th {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 12px 8px;
+            font-weight: 600;
+            color: #495057;
+            text-align: center;
+            vertical-align: middle;
+            font-size: 0.875rem;
+        }
+        .piece-rate-table td {
+            border: 1px solid #e9ecef;
+            padding: 8px;
+            text-align: center;
+            vertical-align: middle;
+            font-size: 0.875rem;
+        }
+        .piece-rate-table tr:hover {
+            background-color: #f8f9fa;
+        }
+        .editable-cell {
+            cursor: pointer;
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+        }
+        .editable-cell:hover {
+            background-color: #ffeaa7;
+        }
+        .editable-cell input {
+            border: none;
+            background: transparent;
+            text-align: center;
+            width: 100%;
+            font-size: 0.875rem;
+        }
+        .zone-badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+        }
+        .branch-code {
+            font-family: monospace;
+            font-weight: 600;
+        }
+        .weight-range-header {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #495057;
+        }
+ 
+        /* ป้องกันปัญหา aria-hidden */
+        #pieceRateModal[aria-hidden="true"] {
+            display: none !important;
+        }
+        
+        #pieceRateModal[aria-hidden="false"] {
+            display: block !important;
+        }
+        
+        /* ปรับปรุง accessibility */
+        .modal:not(.show) {
+            display: none !important;
+        }
+        
+        .modal.show {
+            display: block !important;
+        }
+ 
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1">
+                <i class="fas fa-calculator me-2"></i>
+                การจัดการเรทเงินเดือนพนักงาน
+            </h2>
+            <p class="text-muted mb-0">ตั้งค่าเรทการคิดเงินตามน้ำหนักและสาขา</p>
+        </div>
+        <div>
+            <button class="btn btn-success me-2" onclick="exportToExcel()">
+                <i class="fas fa-file-excel me-2"></i>
+                ส่งออก Excel
+            </button>
+            <button class="btn btn-primary" onclick="addPieceRate()">
+                <i class="fas fa-plus me-2"></i>
+                เพิ่มเรทใหม่
+            </button>
+        </div>
+    </div>
+
+                    <!-- Filter Controls -->
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-2">
+                                    <label class="form-label">โซน</label>
+                                    <select class="form-select" id="zoneFilter">
+                                        <option value="">ทุกโซน</option>
+                                        <option value="1A">1A</option>
+                                        <option value="2A">2A</option>
+                                        <option value="3A">3A</option>
+                                        <option value="1B">1B</option>
+                                        <option value="2B">2B</option>
+                                        <option value="3B">3B</option>
+                                        <option value="1C">1C</option>
+                                        <option value="2C">2C</option>
+                                        <option value="3C">3C</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label">รหัสสาขา</label>
+                                    <select class="form-select" id="branchFilter">
+                                        <option value="">ทุกสาขา</option>
+                                        <option value="671180">671180</option>
+                                        <option value="671181">671181</option>
+                                        <option value="871022">871022</option>
+                                        <option value="871023">871023</option>
+                                        <option value="871025">871025</option>
+                                        <option value="671184">671184</option>
+                                        <option value="671189">671189</option>
+                                        <option value="871021">871021</option>
+                                        <option value="871026">871026</option>
+                                        <option value="871027">871027</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label">ประเภท</label>
+                                    <select class="form-select" id="typeFilter">
+                                        <option value="">ทุกประเภท</option>
+                                        <option value="piece_rate">ชิ้นงาน</option>
+                                        <option value="base_salary">ฐานเงินเดือน</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label">ตำแหน่ง</label>
+                                    <select class="form-select" id="positionFilter">
+                                        <option value="">ทุกตำแหน่ง</option>
+                                        <option value="SPT">SPT</option>
+                                        <option value="SPT/F">SPT/F</option>
+                                        <option value="SPTA">SPTA</option>
+                                        <option value="SPTA/F">SPTA/F</option>
+                                        <option value="SPTB">SPTB</option>
+                                        <option value="SPTC">SPTC</option>
+                                        <option value="SPTS">SPTS</option>
+                                        <option value="SPTS/F">SPTS/F</option>
+                                        <option value="SPV">SPV</option>
+                                        <option value="ADM">ADM</option>
+                                        <option value="CS">CS</option>
+                                        <option value="HO">HO</option>
+                                        <option value="OP">OP</option>
+                                        <option value="GM">GM</option>
+                                        <option value="MD">MD</option>
+                                        <option value="หัวหน้า HR">หัวหน้า HR</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label">ช่วงน้ำหนัก</label>
+                                    <select class="form-select" id="weightFilter">
+                                        <option value="">ทุกช่วง</option>
+                                        <option value="1">0-0.5 KG</option>
+                                        <option value="2">0.51-1 KG</option>
+                                        <option value="3">1.01-1.5 KG</option>
+                                        <option value="4">1.51-2 KG</option>
+                                        <option value="5">2.01-2.5 KG</option>
+                                        <option value="6">2.51-3 KG</option>
+                                        <option value="7">3-5 KG</option>
+                                        <option value="8">5.01-10 KG</option>
+                                        <option value="9">10.01-15 KG</option>
+                                        <option value="10">15 KG UP</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label">ค้นหา</label>
+                                    <input type="text" class="form-control" id="searchFilter" placeholder="ค้นหาสาขา...">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Piece Rate Table -->
+                    <div class="piece-rate-table">
+                        <div class="table-responsive">
+                            <table class="table table-bordered mb-0" id="pieceRateTable">
+                                <thead>
+                                    <tr>
+                                        <th rowspan="2">ลำดับ</th>
+                                        <th rowspan="2">โซน</th>
+                                        <th rowspan="2">รหัสสาขา</th>
+                                        <th rowspan="2">ตำแหน่ง</th>
+                                        <th rowspan="2">ประเภท</th>
+                                        <th rowspan="2">ฐานเงินเดือน</th>
+                                        <th rowspan="2">ค่าชิ้นโบนัส</th>
+                                        <th rowspan="2">เงินสมทบ</th>
+                                        <th rowspan="2" style="min-width: 200px;">หมายเหตุ</th>
+                                        <th colspan="10">ช่วงน้ำหนัก</th>
+                                        <th rowspan="2">การดำเนินการ</th>
+                                    </tr>
+                                    <tr>
+                                        <th class="weight-range-header">0-0.5 KG</th>
+                                        <th class="weight-range-header">0.51-1 KG</th>
+                                        <th class="weight-range-header">1.01-1.5 KG</th>
+                                        <th class="weight-range-header">1.51-2 KG</th>
+                                        <th class="weight-range-header">2.01-2.5 KG</th>
+                                        <th class="weight-range-header">2.51-3 KG</th>
+                                        <th class="weight-range-header">3-5 KG</th>
+                                        <th class="weight-range-header">5.01-10 KG</th>
+                                        <th class="weight-range-header">10.01-15 KG</th>
+                                        <th class="weight-range-header">15 KG UP</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for rate in piece_rates %}
+                                    <tr data-zone="{{ rate[1] }}" data-branch="{{ rate[2] }}">
+                                        <td>{{ loop.index }}</td>
+                                        <td>
+                                            <span class="badge bg-primary zone-badge">{{ rate[1] }}</span>
+                                        </td>
+                                        <td class="branch-code">{{ rate[2] }}</td>
+                                        <td>{{ rate[3] or '-' }}</td>
+                                        <td>
+                                            <span class="badge bg-info">{{ rate[4] }}</span>
+                                        </td>
+                                        <td class="editable-cell" data-field="base_salary" data-value="{{ rate[5] or 0 }}">
+                                            {{ "{:,.0f}".format(rate[5] or 0) }}
+                                        </td>
+                                        <td class="editable-cell" data-field="piece_rate_bonus" data-value="{{ rate[6] or 0 }}">
+                                            {{ "{:,.0f}".format(rate[6] or 0) }}
+                                        </td>
+                                        <td class="editable-cell" data-field="allowance" data-value="{{ rate[7] or 0 }}">
+                                            {{ "{:,.0f}".format(rate[7] or 0) }}
+                                        </td>
+                                        <td class="text-center">
+                                            {% if rate[7] and rate[7] > 0 %}
+                                                <button class="btn btn-sm btn-outline-info" onclick="showAllowanceDetails({{ rate[0] }}, '{{ rate[1] }}', '{{ rate[2] }}', '{{ rate[18] or "[]" }}')">
+                                                    <i class="fas fa-info-circle"></i> ดูรายละเอียด
+                                                </button>
+                                            {% elif rate[18] and rate[18] != 'null' and rate[18] != 'None' and rate[18] != '[]' %}
+                                                <button class="btn btn-sm btn-outline-info" onclick="showAllowanceDetails({{ rate[0] }}, '{{ rate[1] }}', '{{ rate[2] }}', '{{ rate[18] }}')">
+                                                    <i class="fas fa-info-circle"></i> ดูรายละเอียด
+                                                </button>
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="editable-cell" data-field="weight_range_1" data-value="{{ rate[8] or 0 }}">
+                                            {{ "{:.2f}".format(rate[8] or 0) }}
+                                        </td>
+                                        <td class="editable-cell" data-field="weight_range_2" data-value="{{ rate[9] or 0 }}">
+                                            {{ "{:.2f}".format(rate[9] or 0) }}
+                                        </td>
+                                        <td class="editable-cell" data-field="weight_range_3" data-value="{{ rate[10] or 0 }}">
+                                            {{ "{:.2f}".format(rate[10] or 0) }}
+                                        </td>
+                                        <td class="editable-cell" data-field="weight_range_4" data-value="{{ rate[11] or 0 }}">
+                                            {{ "{:.2f}".format(rate[11] or 0) }}
+                                        </td>
+                                        <td class="editable-cell" data-field="weight_range_5" data-value="{{ rate[12] or 0 }}">
+                                            {{ "{:.2f}".format(rate[12] or 0) }}
+                                        </td>
+                                        <td class="editable-cell" data-field="weight_range_6" data-value="{{ rate[13] or 0 }}">
+                                            {{ "{:.2f}".format(rate[13] or 0) }}
+                                        </td>
+                                        <td class="editable-cell" data-field="weight_range_7" data-value="{{ rate[14] or 0 }}">
+                                            {{ "{:.2f}".format(rate[14] or 0) }}
+                                        </td>
+                                        <td class="editable-cell" data-field="weight_range_8" data-value="{{ rate[15] or 0 }}">
+                                            {{ "{:.2f}".format(rate[15] or 0) }}
+                                        </td>
+                                        <td class="editable-cell" data-field="weight_range_9" data-value="{{ rate[16] or 0 }}">
+                                            {{ "{:.2f}".format(rate[16] or 0) }}
+                                        </td>
+                                        <td class="editable-cell" data-field="weight_range_10" data-value="{{ rate[17] or 0 }}">
+                                            {{ "{:.2f}".format(rate[17] or 0) }}
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <button class="btn btn-outline-primary" onclick="editPieceRate({{ rate[0] }})" title="แก้ไข">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button class="btn btn-outline-danger" onclick="deletePieceRate({{ rate[0] }})" title="ลบ">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    {% if not piece_rates %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-calculator fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">ไม่มีข้อมูลเรทชิ้น</h5>
+                        <p class="text-muted">ยังไม่มีข้อมูลเรทชิ้นในระบบ</p>
+                    </div>
+                    {% endif %}
+
+    <!-- Add/Edit Piece Rate Modal -->
+    <div class="modal fade" id="pieceRateModal" tabindex="-1" role="dialog" aria-labelledby="pieceRateModalTitle">
+        <div class="modal-dialog modal-xl" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="pieceRateModalTitle">เพิ่มเรทชิ้นใหม่</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" tabindex="-1"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="pieceRateForm">
+                        <input type="hidden" id="pieceRateId" name="piece_rate_id">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label">โซน *</label>
+                                    <select class="form-select" id="zone" name="zone" required>
+                                        <option value="">เลือกโซน</option>
+                                        <option value="1A">1A</option>
+                                        <option value="2A">2A</option>
+                                        <option value="3A">3A</option>
+                                        <option value="1B">1B</option>
+                                        <option value="2B">2B</option>
+                                        <option value="3B">3B</option>
+                                        <option value="1C">1C</option>
+                                        <option value="2C">2C</option>
+                                        <option value="3C">3C</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label">รหัสสาขา *</label>
+                                    <select class="form-select" id="branchCode" name="branch_code" required>
+                                        <option value="ทุกสาขา">ทุกสาขา</option>
+                                        <option value="671180">671180</option>
+                                        <option value="671181">671181</option>
+                                        <option value="871022">871022</option>
+                                        <option value="871023">871023</option>
+                                        <option value="871025">871025</option>
+                                        <option value="671184">671184</option>
+                                        <option value="671189">671189</option>
+                                        <option value="871021">871021</option>
+                                        <option value="871026">871026</option>
+                                        <option value="871027">871027</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label">ตำแหน่ง *</label>
+                                    <select class="form-select" id="position" name="position" required>
+                                        <option value="">เลือกตำแหน่ง</option>
+                                        <option value="SPT">SPT</option>
+                                        <option value="SPT/F">SPT/F</option>
+                                        <option value="SPTA">SPTA</option>
+                                        <option value="SPTA/F">SPTA/F</option>
+                                        <option value="SPTB">SPTB</option>
+                                        <option value="SPTC">SPTC</option>
+                                        <option value="SPTS">SPTS</option>
+                                        <option value="SPTS/F">SPTS/F</option>
+                                        <option value="SPV">SPV</option>
+                                        <option value="ADM">ADM</option>
+                                        <option value="CS">CS</option>
+                                        <option value="HO">HO</option>
+                                        <option value="OP">OP</option>
+                                        <option value="GM">GM</option>
+                                        <option value="MD">MD</option>
+                                        <option value="หัวหน้า HR">หัวหน้า HR</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label">ประเภท *</label>
+                                    <select class="form-select" id="salaryType" name="salary_type" required>
+                                        <option value="piece_rate">เรทชิ้น</option>
+                                        <option value="base_salary">เรทฐานเงินเดือน</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label">ฐานเงินเดือน (บาท)</label>
+                                    <input type="number" class="form-control" id="baseSalary" name="base_salary" value="0" step="100">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label">ค่าชิ้นโบนัส (บาท)</label>
+                                    <input type="number" class="form-control" id="pieceRateBonus" name="piece_rate_bonus" value="0" step="50">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">เงินสมทบค่าเสื่อม/ค่าน้ำมัน (บาท)</label>
+                                    <input type="number" class="form-control" id="allowance" name="allowance" value="0" step="50">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">เงื่อนไขเงินสมทบแบบขั้น (Tiered Allowance)</label>
+                            <table class="table table-bordered" id="allowanceTiersTable">
+                                <thead>
+                                    <tr>
+                                        <th style="width:50%">จำนวนชิ้นขั้นต่ำ</th>
+                                        <th style="width:40%">เงินสมทบ (บาท)</th>
+                                        <th style="width:10%"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                            </table>
+                            <button type="button" class="btn btn-sm btn-outline-success" onclick="addAllowanceTierRow()">
+                                <i class="fas fa-plus"></i> เพิ่มเงื่อนไข
+                            </button>
+                            <input type="hidden" id="allowanceTiers" name="allowance_tiers">
+                        </div>
+                        
+                        <h6 class="mt-4 mb-3">เรทชิ้นตามน้ำหนัก (บาท)</h6>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label">0-0.5 KG</label>
+                                    <input type="number" class="form-control" id="weightRange1" name="weight_range_1" value="5.50" step="0.01">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label">0.51-1 KG</label>
+                                    <input type="number" class="form-control" id="weightRange2" name="weight_range_2" value="6.00" step="0.01">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label">1.01-1.5 KG</label>
+                                    <input type="number" class="form-control" id="weightRange3" name="weight_range_3" value="6.50" step="0.01">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label">1.51-2 KG</label>
+                                    <input type="number" class="form-control" id="weightRange4" name="weight_range_4" value="7.00" step="0.01">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label">2.01-2.5 KG</label>
+                                    <input type="number" class="form-control" id="weightRange5" name="weight_range_5" value="8.00" step="0.01">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label">2.51-3 KG</label>
+                                    <input type="number" class="form-control" id="weightRange6" name="weight_range_6" value="9.00" step="0.01">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label">3-5 KG</label>
+                                    <input type="number" class="form-control" id="weightRange7" name="weight_range_7" value="12.00" step="0.01">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label">5.01-10 KG</label>
+                                    <input type="number" class="form-control" id="weightRange8" name="weight_range_8" value="15.00" step="0.01">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label">10.01-15 KG</label>
+                                    <input type="number" class="form-control" id="weightRange9" name="weight_range_9" value="18.00" step="0.01">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label">15 KG UP</label>
+                                    <input type="number" class="form-control" id="weightRange10" name="weight_range_10" value="21.00" step="0.01">
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+                    <button type="button" class="btn btn-primary" onclick="savePieceRate()">บันทึก</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal สำหรับแสดงรายละเอียดเงินสมทบ -->
+    <div class="modal fade" id="allowanceDetailsModal" tabindex="-1">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-info-circle me-2"></i>
+                        รายละเอียดเงินสมทบ
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <strong>สาขา:</strong> <span id="modalBranchCode"></span>
+                    </div>
+                    <div class="mb-3">
+                        <strong>โซน:</strong> <span id="modalZone"></span>
+                    </div>
+                    <div>
+                        <strong>เงื่อนไขเงินสมทบ:</strong>
+                        <div id="modalAllowanceDetails" class="mt-2">
+                            <!-- รายละเอียดจะถูกเพิ่มด้วย JavaScript -->
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ปิด</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+function showAllowanceDetails(rateId, zone, branchCode, allowanceTiers) {
+    // แสดงข้อมูลใน modal
+    document.getElementById('modalZone').textContent = zone;
+    document.getElementById('modalBranchCode').textContent = branchCode;
+    
+    // แสดงรายละเอียดเงื่อนไขเงินสมทบ
+    const detailsContainer = document.getElementById('modalAllowanceDetails');
+    detailsContainer.innerHTML = '';
+    
+    try {
+        const tiers = JSON.parse(allowanceTiers);
+        if (Array.isArray(tiers) && tiers.length > 0) {
+            tiers.forEach((tier, index) => {
+                const tierDiv = document.createElement('div');
+                tierDiv.className = 'alert alert-info mb-2';
+                
+                if (tier.min_pieces && tier.allowance) {
+                    // รูปแบบใหม่
+                    tierDiv.innerHTML = `<strong>${tier.min_pieces}+ ชิ้น:</strong> ฿${tier.allowance.toLocaleString()}`;
+                } else if (tier.pieces && tier.amount) {
+                    // รูปแบบเก่า
+                    tierDiv.innerHTML = `<strong>${tier.pieces}+ ชิ้น:</strong> ฿${tier.amount.toLocaleString()}`;
+                }
+                
+                detailsContainer.appendChild(tierDiv);
+            });
+        } else {
+            detailsContainer.innerHTML = '<div class="alert alert-warning">ไม่มีข้อมูลเงื่อนไขเงินสมทบ</div>';
+        }
+    } catch (e) {
+        detailsContainer.innerHTML = '<div class="alert alert-danger">ไม่สามารถอ่านข้อมูลได้</div>';
+    }
+    
+    // แสดง modal
+    const modal = new bootstrap.Modal(document.getElementById('allowanceDetailsModal'));
+    modal.show();
+}
+
+function addPieceRate() {
+    // รีเซ็ตฟอร์ม
+    document.getElementById('pieceRateForm').reset();
+    document.getElementById('pieceRateModalTitle').textContent = 'เพิ่มเรทชิ้นใหม่';
+    document.getElementById('pieceRateId').value = '';
+    
+    // ล้างตาราง allowance tiers
+    const tbody = document.querySelector('#allowanceTiersTable tbody');
+    tbody.innerHTML = '';
+    addAllowanceTierRow();
+    
+    // แสดง modal
+    new bootstrap.Modal(document.getElementById('pieceRateModal')).show();
+}
+
+function editPieceRate(rateId) {
+    // Load rate data and show modal
+    fetch(`/api/piece-rate/${rateId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const rate = data.rate;
+                document.getElementById('pieceRateModalTitle').textContent = 'แก้ไขเรทชิ้น';
+                document.getElementById('pieceRateId').value = rate.id;
+                document.getElementById('zone').value = rate.zone;
+                document.getElementById('branchCode').value = rate.branch_code;
+                document.getElementById('position').value = rate.position;
+                document.getElementById('salaryType').value = rate.salary_type;
+                document.getElementById('baseSalary').value = rate.base_salary;
+                document.getElementById('pieceRateBonus').value = rate.piece_rate_bonus;
+                document.getElementById('allowance').value = rate.allowance;
+                document.getElementById('weightRange1').value = rate.weight_range_1;
+                document.getElementById('weightRange2').value = rate.weight_range_2;
+                document.getElementById('weightRange3').value = rate.weight_range_3;
+                document.getElementById('weightRange4').value = rate.weight_range_4;
+                document.getElementById('weightRange5').value = rate.weight_range_5;
+                document.getElementById('weightRange6').value = rate.weight_range_6;
+                document.getElementById('weightRange7').value = rate.weight_range_7;
+                document.getElementById('weightRange8').value = rate.weight_range_8;
+                document.getElementById('weightRange9').value = rate.weight_range_9;
+                document.getElementById('weightRange10').value = rate.weight_range_10;
+                
+                // โหลดข้อมูล allowance_tiers
+                if (rate.allowance_tiers) {
+                    try {
+                        const allowanceTiers = JSON.parse(rate.allowance_tiers);
+                        const tbody = document.querySelector('#allowanceTiersTable tbody');
+                        tbody.innerHTML = ''; // ล้างข้อมูลเก่า
+                        
+                        allowanceTiers.forEach(tier => {
+                            addAllowanceTierRow(tier.pieces || tier.min_pieces, tier.amount || tier.allowance);
+                        });
+                    } catch (e) {
+                        console.error('Error parsing allowance_tiers:', e);
+                        // ถ้าไม่มีข้อมูล ให้เพิ่มแถวเปล่า
+                        const tbody = document.querySelector('#allowanceTiersTable tbody');
+                        tbody.innerHTML = '';
+                        addAllowanceTierRow();
+                    }
+                } else {
+                    // ถ้าไม่มีข้อมูล ให้เพิ่มแถวเปล่า
+                    const tbody = document.querySelector('#allowanceTiersTable tbody');
+                    tbody.innerHTML = '';
+                    addAllowanceTierRow();
+                }
+                
+                new bootstrap.Modal(document.getElementById('pieceRateModal')).show();
+            }
+        })
+        .catch(error => {
+            console.error('Error loading rate data:', error);
+            alert('เกิดข้อผิดพลาดในการโหลดข้อมูล');
+        });
+}
+
+function savePieceRate() {
+    console.log('savePieceRate function called');
+    
+    const form = document.getElementById('pieceRateForm');
+    if (!form) {
+        console.error('Form not found');
+        alert('ไม่พบฟอร์ม');
+        return;
+    }
+    
+    const formData = new FormData(form);
+    
+    // แปลง FormData เป็น JSON
+    const jsonData = {};
+    formData.forEach((value, key) => {
+        jsonData[key] = value;
+    });
+    
+    // เพิ่มข้อมูล allowance_tiers
+    const allowanceTiersInput = document.getElementById('allowanceTiers');
+    if (allowanceTiersInput) {
+        jsonData.allowance_tiers = allowanceTiersInput.value;
+        console.log('Allowance tiers:', allowanceTiersInput.value);
+    }
+    
+    console.log('Saving piece rate data:', jsonData);
+    
+    // ลบ focus จากปุ่มบันทึก
+    const saveButton = document.querySelector('#pieceRateModal .btn-primary');
+    if (saveButton) {
+        saveButton.blur();
+    }
+    
+    // ปิด modal ก่อนส่งข้อมูล
+    const modal = bootstrap.Modal.getInstance(document.getElementById('pieceRateModal'));
+    if (modal) {
+        modal.hide();
+    }
+    
+    console.log('Sending request to /api/piece-rate/save');
+    
+    fetch('/api/piece-rate/save', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(jsonData)
+    })
+    .then(response => {
+        console.log('Response status:', response.status);
+        console.log('Response headers:', response.headers);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Response data:', data);
+        if (data.success) {
+            alert('บันทึกเรทชิ้นเรียบร้อยแล้ว');
+            location.reload();
+        } else {
+            alert('เกิดข้อผิดพลาด: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล');
+    });
+}
+
+function deletePieceRate(rateId) {
+    if (confirm('คุณแน่ใจหรือไม่ที่จะลบเรทชิ้นนี้?')) {
+        fetch(`/api/piece-rate/${rateId}/delete`, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('เกิดข้อผิดพลาด: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('เกิดข้อผิดพลาดในการลบข้อมูล');
+        });
+    }
+}
+
+function addAllowanceTierRow(pieces = '', amount = '') {
+    const tbody = document.querySelector('#allowanceTiersTable tbody');
+    const row = document.createElement('tr');
+    row.innerHTML = `
+        <td><input type="number" class="form-control min-pieces" value="${pieces}" min="0"></td>
+        <td><input type="number" class="form-control tier-amount" value="${amount}" min="0"></td>
+        <td><button type="button" class="btn btn-sm btn-danger" onclick="this.closest('tr').remove(); updateAllowanceTiersInput();"><i class="fas fa-trash"></i></button></td>
+    `;
+    tbody.appendChild(row);
+    updateAllowanceTiersInput();
+    row.querySelectorAll('input').forEach(input => {
+        input.addEventListener('input', updateAllowanceTiersInput);
+    });
+}
+
+function updateAllowanceTiersInput() {
+    const rows = document.querySelectorAll('#allowanceTiersTable tbody tr');
+    const tiers = [];
+    rows.forEach(row => {
+        const pieces = parseInt(row.querySelector('.min-pieces').value) || 0;
+        const amount = parseFloat(row.querySelector('.tier-amount').value) || 0;
+        if (pieces > 0 && amount > 0) {
+            tiers.push({ pieces, amount });
+        }
+    });
+    document.getElementById('allowanceTiers').value = JSON.stringify(tiers);
+}
+
+// ฟังก์ชันตัวกรอง
+function filterTable() {
+    const zoneFilter = document.getElementById('zoneFilter').value;
+    const branchFilter = document.getElementById('branchFilter').value;
+    const typeFilter = document.getElementById('typeFilter').value;
+    const positionFilter = document.getElementById('positionFilter').value;
+    const weightFilter = document.getElementById('weightFilter').value;
+    const searchFilter = document.getElementById('searchFilter').value.toLowerCase();
+    
+    const rows = document.querySelectorAll('#pieceRateTable tbody tr');
+    
+    rows.forEach(row => {
+        const zoneElement = row.querySelector('td:nth-child(2) .zone-badge');
+        const branchElement = row.querySelector('td:nth-child(3)');
+        const positionElement = row.querySelector('td:nth-child(4)');
+        const typeElement = row.querySelector('td:nth-child(5) .badge');
+        
+        const zone = zoneElement ? zoneElement.textContent.trim() : '';
+        const branch = branchElement ? branchElement.textContent.trim() : '';
+        const position = positionElement ? positionElement.textContent.trim() : '';
+        const type = typeElement ? typeElement.textContent.trim() : '';
+        
+        let show = true;
+        
+        // กรองตามโซน
+        if (zoneFilter && zone !== zoneFilter) show = false;
+        
+        // กรองตามสาขา
+        if (branchFilter && branch !== branchFilter) show = false;
+        
+        // กรองตามประเภท
+        if (typeFilter && type !== typeFilter) show = false;
+        
+        // กรองตามตำแหน่ง
+        if (positionFilter && position !== positionFilter) show = false;
+        
+        // กรองตามการค้นหา
+        if (searchFilter && !branch.toLowerCase().includes(searchFilter)) show = false;
+        
+        row.style.display = show ? '' : 'none';
+    });
+}
+
+// เพิ่ม event listeners สำหรับตัวกรอง
+function addFilterEventListeners() {
+    const filters = ['zoneFilter', 'branchFilter', 'typeFilter', 'positionFilter', 'weightFilter'];
+    filters.forEach(filterId => {
+        const element = document.getElementById(filterId);
+        if (element) {
+            element.addEventListener('change', filterTable);
+        }
+    });
+    
+    const searchFilter = document.getElementById('searchFilter');
+    if (searchFilter) {
+        searchFilter.addEventListener('input', filterTable);
+    }
+}
+
+// เรียกใช้เมื่อ DOM โหลดเสร็จ
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', addFilterEventListeners);
+} else {
+    addFilterEventListeners();
+}
+
+// เพิ่มการจัดการ modal events
+document.addEventListener('DOMContentLoaded', function() {
+    const pieceRateModal = document.getElementById('pieceRateModal');
+    if (pieceRateModal) {
+        // ป้องกันการตั้งค่า aria-hidden โดย Bootstrap
+        pieceRateModal.addEventListener('show.bs.modal', function() {
+            this.removeAttribute('aria-hidden');
+        });
+        
+        pieceRateModal.addEventListener('hidden.bs.modal', function() {
+            // รีเซ็ตฟอร์มเมื่อปิด modal
+            const form = document.getElementById('pieceRateForm');
+            if (form) {
+                form.reset();
+            }
+            // ล้างตาราง allowance tiers
+            const tbody = document.querySelector('#allowanceTiersTable tbody');
+            if (tbody) {
+                tbody.innerHTML = '';
+                addAllowanceTierRow();
+            }
+            // ลบ focus จากปุ่มปิด
+            const closeButton = pieceRateModal.querySelector('.btn-close');
+            if (closeButton) {
+                closeButton.blur();
+            }
+            // ลบ aria-hidden ที่ Bootstrap เพิ่ม
+            this.removeAttribute('aria-hidden');
+        });
+        
+        pieceRateModal.addEventListener('shown.bs.modal', function() {
+            // ตั้งค่า focus ที่ input แรก
+            const firstInput = pieceRateModal.querySelector('input, select');
+            if (firstInput) {
+                firstInput.focus();
+            }
+            // ลบ aria-hidden ที่ Bootstrap เพิ่ม
+            this.removeAttribute('aria-hidden');
+        });
+        
+        pieceRateModal.addEventListener('hide.bs.modal', function() {
+            // ลบ focus ก่อนปิด modal
+            const activeElement = document.activeElement;
+            if (activeElement && pieceRateModal.contains(activeElement)) {
+                activeElement.blur();
+            }
+            // ลบ aria-hidden ที่ Bootstrap เพิ่ม
+            this.removeAttribute('aria-hidden');
+        });
+    }
+});
+
+if (document.querySelector('#allowanceTiersTable tbody').children.length === 0) {
+    addAllowanceTierRow();
+}
+    </script>
+</body>
+</html> 

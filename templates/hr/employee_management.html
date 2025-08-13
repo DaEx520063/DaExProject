@@ -1,0 +1,692 @@
+<style>
+    .employee-management-container {
+        font-size: 14px;
+    }
+    .employee-management-container h2 {
+        font-size: 18px;
+    }
+    .employee-management-container h5 {
+        font-size: 16px;
+    }
+    .employee-management-container h3 {
+        font-size: 20px;
+    }
+    .employee-management-container .table {
+        font-size: 14px;
+    }
+    .employee-management-container .btn {
+        font-size: 12px;
+        padding: 4px 8px;
+    }
+    .employee-management-container .form-label {
+        font-size: 14px;
+    }
+    .employee-management-container .form-control,
+    .employee-management-container .form-select {
+        font-size: 14px;
+    }
+    .employee-management-container .modal-title {
+        font-size: 16px;
+    }
+    .employee-management-container .modal-body {
+        font-size: 14px;
+    }
+</style>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>จัดการพนักงาน - DaEx</title>
+    <!-- Bootstrap 5 CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome CDN -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+
+<div class="container-fluid employee-management-container">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-users-cog"></i> จัดการพนักงาน</h2>
+                <div>
+                    <button class="btn btn-danger me-2" onclick="deleteSelectedEmployees()" id="deleteSelectedBtn" style="display: none;">
+                        <i class="fas fa-trash"></i> ลบที่เลือก
+                    </button>
+                    <button class="btn btn-success me-2" onclick="importExcel()">
+                        <i class="fas fa-upload"></i> Import Excel
+                    </button>
+                    <button class="btn btn-primary" onclick="exportToExcelSimple()">
+                        <i class="fas fa-download"></i> Export Excel
+                    </button>
+                </div>
+            </div>
+
+            <!-- Filter Controls -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <label class="form-label">สาขา</label>
+                            <select class="form-select" id="branchFilter">
+                                <option value="">ทุกสาขา</option>
+                                {% for code, name in branches.items() %}
+                                <option value="{{ code }}">{{ name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">สถานะ</label>
+                            <select class="form-select" id="statusFilter">
+                                <option value="">ทุกสถานะ</option>
+                                <option value="active">เปิดใช้งาน</option>
+                                <option value="inactive">ปิดใช้งาน</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">ตำแหน่ง</label>
+                            <select class="form-select" id="positionFilter">
+                                <option value="">ทุกตำแหน่ง</option>
+                                <option value="GM">GM</option>
+                                <option value="HR">HR</option>
+                                <option value="การเงิน">การเงิน</option>
+                                <option value="SPV">SPV</option>
+                                <option value="ADM">ADM</option>
+                                <option value="SPT">SPT</option>
+                                <option value="พนักงานขับรถ">พนักงานขับรถ</option>
+                                <option value="หัวหน้าขนส่ง">หัวหน้าขนส่ง</option>
+                                <option value="นักบัญชี">นักบัญชี</option>
+                                <option value="หัวหน้าฝ่ายการเงิน">หัวหน้าฝ่ายการเงิน</option>
+                                <option value="พนักงาน HR">พนักงาน HR</option>
+                                <option value="หัวหน้า HR">หัวหน้า HR</option>
+                                <option value="พนักงานจัดส่งพัสดุ">พนักงานจัดส่งพัสดุ</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">โซน</label>
+                            <select class="form-select" id="zoneFilter">
+                                <option value="">ทุกโซน</option>
+                                <option value="office">office</option>
+                                <option value="1A">โซน 1A</option>
+                                <option value="2A">โซน 2A</option>
+                                <option value="3A">โซน 3A</option>
+                                <option value="1B">โซน 1B</option>
+                                <option value="2B">โซน 2B</option>
+                                <option value="3B">โซน 3B</option>
+                                <option value="1C">โซน 1C</option>
+                                <option value="2C">โซน 2C</option>
+                                <option value="3C">โซน 3C</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">ค้นหา</label>
+                            <input type="text" class="form-control" id="searchFilter" placeholder="ชื่อพนักงาน">
+                        </div>
+                        <div class="col-md-12 mt-2">
+                            <button type="button" class="btn btn-warning btn-sm" onclick="filterTable()">
+                                <i class="fas fa-filter"></i> ค้นหา
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Employees Table -->
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-sm" id="employeesTable">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th><input type="checkbox" id="selectAll"></th>
+                                    <th>รหัสพนักงาน</th>
+                                    <th>ชื่อ-นามสกุล</th>
+                                    <th>ตำแหน่ง</th>
+                                    <th>สาขา</th>
+                                    <th>ประเภทการจ้าง</th>
+                                    <th>เรทการจ้าง</th>
+                                    <th>โซน</th>
+                                    <th>วันที่เริ่มงาน</th>
+                                    <th>เบอร์โทร</th>
+                                    <th>อีเมล</th>
+                                    <th>สถานะ</th>
+                                    <th>การดำเนินการ</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for employee in employees %}
+                                <!-- DEBUG: Employee {{ loop.index }} - {{ employee }} -->
+                                {% if employee and employee|length >= 9 and employee[0] and employee[1] %}
+                                <tr>
+                                    <td><input type="checkbox" class="employee-checkbox" value="{{ employee[1] }}"></td>
+                                    <td>{{ employee[1] }}</td> <!-- employee_id -->
+                                    <td>{{ employee[2] }}</td> <!-- name -->
+                                    <td>{{ employee[3] }}</td> <!-- position -->
+                                    <td>{{ branches.get(employee[4], employee[4]) }}</td> <!-- branch_code -->
+                                    <td>
+                                        {% if employee[10] == 'ประจำ' %}
+                                            <span class="badge bg-primary">ประจำ</span>
+                                        {% elif employee[10] == 'สัญญาจ้าง' %}
+                                            <span class="badge bg-info">สัญญาจ้าง</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ employee[10] or 'ยังไม่กำหนด' }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if employee[12] == 'piece_rate' %}
+                                            <span class="badge bg-success">เรทชิ้น</span>
+                                        {% elif employee[12] == 'base_salary' %}
+                                            <span class="badge bg-primary">เรทฐานเงินเดือน</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">ยังไม่กำหนด</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ employee[11] or '-' }}</td> <!-- zone -->
+                                    <td>{{ employee[5] }}</td> <!-- hire_date -->
+                                    <td>{{ employee[6] }}</td> <!-- phone -->
+                                    <td>{{ employee[7] }}</td> <!-- email -->
+                                    <td>
+                                        {% if employee[9] == 'active' %}
+                                            <span class="badge bg-success">ทำงาน</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">ลาออก</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-warning" onclick="openEditEmployeeModal('{{ employee[1] }}', '{{ employee[2] }}', '{{ employee[3] }}', '{{ employee[4] }}', '{{ employee[5] }}', '{{ employee[6] }}', '{{ employee[7] }}', '{{ employee[10] }}', '{{ employee[12] }}', '{{ employee[11] }}', '{{ employee[9] }}')">
+                                            <i class="fas fa-edit"></i> แก้ไข
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-danger delete-btn" data-employee-id="{{ employee[1] }}" data-employee-name="{{ employee[2] }}">
+                                            <i class="fas fa-trash"></i> ลบ
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <!-- DEBUG: Skipping invalid employee data: {{ employee }} -->
+                                {% endif %}
+                                {% else %}
+                                <tr><td colspan="13" class="text-center text-muted">ไม่มีรายชื่อพนักงาน</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary Cards -->
+            <div class="row mt-4">
+                <div class="col-md-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">พนักงานทั้งหมด</h5>
+                            <h3 class="card-text">{{ total_employees }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">ทำงาน</h5>
+                            <h3 class="card-text">{{ active_employees }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-secondary text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">ลาออก</h5>
+                            <h3 class="card-text">{{ inactive_employees }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-info text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">สาขา</h5>
+                            <h3 class="card-text">{{ branch_count }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal แก้ไขพนักงาน -->
+<div class="modal fade" id="editEmployeeModal" tabindex="-1" aria-labelledby="editEmployeeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editEmployeeModalLabel">แก้ไขข้อมูลพนักงาน</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editEmployeeForm">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="editEmployeeId" class="form-label">รหัสพนักงาน</label>
+                                <input type="text" class="form-control" id="editEmployeeId" readonly>
+                            </div>
+                            <div class="mb-3">
+                                <label for="editName" class="form-label">ชื่อ-นามสกุล</label>
+                                <input type="text" class="form-control" id="editName" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="editPosition" class="form-label">ตำแหน่ง</label>
+                                <select class="form-select" id="editPosition" required>
+                                    <option value="">เลือกตำแหน่ง</option>
+                                    <option value="MD">MD</option>
+                                    <option value="GM">GM</option>
+                                    <option value="HO">HO</option>
+                                    <option value="OP">OP</option>
+                                    <option value="CS">CS</option>
+                                    <option value="ADM">ADM</option>
+                                    <option value="SPTB">SPTB</option>
+                                    <option value="SPT">SPT</option>
+                                    <option value="SPTC">SPTC</option>
+                                    <option value="หัวหน้า HR">หัวหน้า HR</option>
+                                    <option value="พนักงานขับรถ">พนักงานขับรถ</option>
+                                    <option value="หัวหน้าขนส่ง">หัวหน้าขนส่ง</option>
+                                    <option value="นักบัญชี">นักบัญชี</option>
+                                    <option value="หัวหน้าฝ่ายการเงิน">หัวหน้าฝ่ายการเงิน</option>
+                                    <option value="พนักงาน HR">พนักงาน HR</option>
+                                    <option value="พนักงานจัดส่งพัสดุ">พนักงานจัดส่งพัสดุ</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="editBranchCode" class="form-label">สาขา</label>
+                                <select class="form-select" id="editBranchCode" required>
+                                    <option value="">เลือกสาขา</option>
+                                    {% for code, name in branches.items() %}
+                                        <option value="{{ code }}">{{ name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="editHireDate" class="form-label">วันที่เริ่มงาน</label>
+                                <input type="date" class="form-control" id="editHireDate" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="editPhone" class="form-label">เบอร์โทร</label>
+                                <input type="tel" class="form-control" id="editPhone">
+                            </div>
+                            <div class="mb-3">
+                                <label for="editEmail" class="form-label">อีเมล</label>
+                                <input type="email" class="form-control" id="editEmail">
+                            </div>
+                            <div class="mb-3">
+                                <label for="editEmploymentType" class="form-label">ประเภทการจ้าง</label>
+                                <select class="form-select" id="editEmploymentType" required>
+                                    <option value="">เลือกประเภทการจ้าง</option>
+                                    <option value="piece_rate">เรทชิ้น</option>
+                                    <option value="base_salary">เรทฐานเงินเดือน</option>
+                                    <option value="ประจำ">ประจำ</option>
+                                    <option value="สัญญาจ้าง">สัญญาจ้าง</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="editRateType" class="form-label">เรทการจ้าง</label>
+                                <select class="form-select" id="editRateType" required>
+                                    <option value="">เลือกเรทการจ้าง</option>
+                                    <option value="piece_rate">เรทชิ้น</option>
+                                    <option value="base_salary">เรทฐานเงินเดือน</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="editZone" class="form-label">โซน</label>
+                                <select class="form-select" id="editZone">
+                                    <option value="">เลือกโซน</option>
+                                    <option value="1A">1A</option>
+                                    <option value="1B">1B</option>
+                                    <option value="1C">1C</option>
+                                    <option value="2A">2A</option>
+                                    <option value="2B">2B</option>
+                                    <option value="2C">2C</option>
+                                    <option value="3A">3A</option>
+                                    <option value="3B">3B</option>
+                                    <option value="3C">3C</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="editStatus" class="form-label">สถานะ</label>
+                                <select class="form-select" id="editStatus" required>
+                                    <option value="active">ทำงาน</option>
+                                    <option value="inactive">ลาออก</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+                <button type="button" class="btn btn-primary" onclick="saveEmployeeEdit()">บันทึก</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ====== ย้าย JS ทั้งหมดมาไว้ใน <script> ======
+
+// ฟังก์ชันแก้ไขพนักงานถูกย้ายไปไว้ใน dashboard.html แล้ว (Global Functions)
+
+function saveEmployeeChanges() {
+    const oldEmployeeId = document.getElementById('editEmployeeId').getAttribute('data-original-id');
+    const newEmployeeId = document.getElementById('editEmployeeId').value;
+    
+    console.log('Debug - oldEmployeeId:', oldEmployeeId);
+    console.log('Debug - newEmployeeId:', newEmployeeId);
+    
+    const formData = {
+        login_id: document.getElementById('editLoginId').value,
+        employee_id: oldEmployeeId,
+        new_employee_id: newEmployeeId,
+        name: document.getElementById('editName').value,
+        position: document.getElementById('editPosition').value,
+        branch_code: document.getElementById('editBranchCode').value,
+        hire_date: document.getElementById('editHireDate').value,
+        phone: document.getElementById('editPhone').value,
+        email: document.getElementById('editEmail').value,
+        employment_type: document.getElementById('editEmploymentType').value,
+        rate_type: document.getElementById('editRateType').value,
+        zone: document.getElementById('editZone').value,
+        status: document.getElementById('editStatus').value,
+        password: document.getElementById('editPassword').value
+    };
+    
+    console.log('Debug - formData:', formData);
+    
+    // Disable save button to prevent double submission
+    const saveButton = document.querySelector('#editEmployeeModal .btn-primary');
+    const originalText = saveButton.textContent;
+    saveButton.textContent = 'กำลังบันทึก...';
+    saveButton.disabled = true;
+    
+    fetch('/api/update-employee', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData)
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            alert('บันทึกข้อมูลพนักงานสำเร็จ');
+            location.reload();
+        } else {
+            alert('เกิดข้อผิดพลาด: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('เกิดข้อผิดพลาดในการบันทึก: ' + error.message);
+    })
+    .finally(() => {
+        // Re-enable save button
+        saveButton.textContent = originalText;
+        saveButton.disabled = false;
+    });
+}
+
+// Filter functions
+function filterTable() {
+    console.log('=== FILTER FUNCTION CALLED ===');
+    
+    const branchFilter = document.getElementById('branchFilter');
+    const statusFilter = document.getElementById('statusFilter');
+    const positionFilter = document.getElementById('positionFilter');
+    const zoneFilter = document.getElementById('zoneFilter');
+    const searchFilter = document.getElementById('searchFilter');
+    
+    console.log('Filter elements found:', {
+        branchFilter: !!branchFilter,
+        statusFilter: !!statusFilter,
+        positionFilter: !!positionFilter,
+        zoneFilter: !!zoneFilter,
+        searchFilter: !!searchFilter
+    });
+    
+    if (!branchFilter || !statusFilter || !positionFilter || !zoneFilter || !searchFilter) {
+        console.log('Filter elements not found');
+        alert('ไม่พบองค์ประกอบตัวกรอง');
+        return;
+    }
+    
+    const branchValue = branchFilter.value.toLowerCase();
+    const statusValue = statusFilter.value.toLowerCase();
+    const positionValue = positionFilter.value.toLowerCase();
+    const zoneValue = zoneFilter.value.toLowerCase();
+    const searchValue = searchFilter.value.toLowerCase();
+    
+    console.log('Filter values:', { branchValue, statusValue, positionValue, searchValue });
+    
+    const table = document.getElementById('employeesTable');
+    if (!table) {
+        console.log('Table not found');
+        alert('ไม่พบตารางข้อมูล');
+        return;
+    }
+    
+    const rows = table.querySelectorAll('tbody tr');
+    console.log('Total rows found:', rows.length);
+    
+    if (rows.length === 0) {
+        console.log('No rows found in table');
+        return;
+    }
+    
+    let visibleCount = 0;
+    let hiddenCount = 0;
+    
+    rows.forEach((row, index) => {
+        const cells = row.querySelectorAll('td');
+        console.log(`Row ${index} has ${cells.length} cells`);
+        
+        if (cells.length >= 13) { // Updated for new table structure without salary column
+            // Get text content from each cell
+            const branch = cells[4].textContent.trim().toLowerCase(); // สาขา column
+            const position = cells[3].textContent.trim().toLowerCase(); // ตำแหน่ง column
+            const zone = cells[7].textContent.trim().toLowerCase(); // โซน column
+            const name = cells[2].textContent.trim().toLowerCase(); // ชื่อ column
+            const statusElement = cells[11].querySelector('.badge');
+            const status = statusElement ? statusElement.textContent.trim().toLowerCase() : cells[11].textContent.trim().toLowerCase(); // สถานะ column
+            
+            console.log(`Row ${index} data:`, { branch, position, zone, name, status });
+            
+            // Check if filters match
+            const branchMatch = !branchValue || branch.includes(branchValue) || branchValue.includes(branch);
+            const statusMatch = !statusValue || 
+                (statusValue === 'active' && status.includes('ทำงาน')) ||
+                (statusValue === 'inactive' && status.includes('ลาออก')) ||
+                status.includes(statusValue);
+            const positionMatch = !positionValue || position.includes(positionValue);
+            const zoneMatch = !zoneValue || zone.includes(zoneValue);
+            const searchMatch = !searchValue || name.includes(searchValue);
+            
+            console.log(`Row ${index} matches:`, { branchMatch, statusMatch, positionMatch, zoneMatch, searchMatch });
+            
+            if (branchMatch && statusMatch && positionMatch && zoneMatch && searchMatch) {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+                hiddenCount++;
+            }
+        } else {
+            console.log(`Row ${index} skipped - insufficient cells`);
+        }
+    });
+    
+    console.log(`Filter complete: ${visibleCount} visible, ${hiddenCount} hidden`);
+}
+
+// Add event listeners immediately
+function setupFilters() {
+    const branchFilter = document.getElementById('branchFilter');
+    const statusFilter = document.getElementById('statusFilter');
+    const positionFilter = document.getElementById('positionFilter');
+    const zoneFilter = document.getElementById('zoneFilter');
+    const searchFilter = document.getElementById('searchFilter');
+    
+    if (branchFilter) {
+        branchFilter.addEventListener('change', filterTable);
+        console.log('Branch filter listener added');
+    }
+    if (statusFilter) {
+        statusFilter.addEventListener('change', filterTable);
+        console.log('Status filter listener added');
+    }
+    if (positionFilter) {
+        positionFilter.addEventListener('change', filterTable);
+        console.log('Position filter listener added');
+    }
+    if (zoneFilter) {
+        zoneFilter.addEventListener('change', filterTable);
+        console.log('Zone filter listener added');
+    }
+    if (searchFilter) {
+        searchFilter.addEventListener('input', filterTable);
+        console.log('Search filter listener added');
+    }
+    
+    console.log('Filter event listeners added');
+}
+
+// Setup filters immediately
+setupFilters();
+
+// Also setup when DOM is loaded (backup)
+document.addEventListener('DOMContentLoaded', setupFilters);
+
+// Setup filters after a short delay to ensure elements are loaded
+setTimeout(setupFilters, 500);
+
+// Delete employee functions
+function deleteEmployee(employeeId, employeeName) {
+    if (confirm(`คุณต้องการลบพนักงาน "${employeeName}" (${employeeId}) ใช่หรือไม่?\n\nการดำเนินการนี้ไม่สามารถยกเลิกได้!`)) {
+        fetch(`/api/employee/${employeeId}/delete`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('ลบพนักงานเรียบร้อยแล้ว');
+                location.reload();
+            } else {
+                alert('เกิดข้อผิดพลาด: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('เกิดข้อผิดพลาดในการลบพนักงาน: ' + error.message);
+        });
+    }
+}
+
+function deleteSelectedEmployees() {
+    const selectedCheckboxes = document.querySelectorAll('.employee-checkbox:checked');
+    
+    if (selectedCheckboxes.length === 0) {
+        alert('กรุณาเลือกพนักงานที่ต้องการลบ');
+        return;
+    }
+    
+    const employeeIds = Array.from(selectedCheckboxes).map(cb => cb.value);
+    const employeeNames = Array.from(selectedCheckboxes).map(cb => {
+        const row = cb.closest('tr');
+        const nameCell = row.querySelector('.employee-name');
+        return nameCell ? nameCell.textContent.trim() : cb.value;
+    });
+    
+    const confirmMessage = `คุณต้องการลบพนักงาน ${employeeIds.length} คน ใช่หรือไม่?\n\nรายชื่อ:\n${employeeNames.join('\n')}\n\nการดำเนินการนี้ไม่สามารถยกเลิกได้!`;
+    
+    if (confirm(confirmMessage)) {
+        fetch('/api/employees/bulk-delete', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                employee_ids: employeeIds
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(`ลบพนักงาน ${data.deleted_count} คนเรียบร้อยแล้ว`);
+                location.reload();
+            } else {
+                alert('เกิดข้อผิดพลาด: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('เกิดข้อผิดพลาดในการลบพนักงาน: ' + error.message);
+        });
+    }
+}
+
+// Setup delete button event listeners
+function setupDeleteButtons() {
+    // Individual delete buttons
+    document.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const employeeId = this.getAttribute('data-employee-id');
+            const employeeName = this.getAttribute('data-employee-name');
+            deleteEmployee(employeeId, employeeName);
+        });
+    });
+    
+    // Select all checkbox
+    const selectAllCheckbox = document.getElementById('selectAll');
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', function() {
+            const checkboxes = document.querySelectorAll('.employee-checkbox');
+            checkboxes.forEach(cb => cb.checked = this.checked);
+            updateDeleteButton();
+        });
+    }
+    
+    // Individual checkboxes
+    document.querySelectorAll('.employee-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', updateDeleteButton);
+    });
+}
+
+function updateDeleteButton() {
+    const selectedCheckboxes = document.querySelectorAll('.employee-checkbox:checked');
+    const deleteButton = document.getElementById('deleteSelectedBtn');
+    
+    if (deleteButton) {
+        if (selectedCheckboxes.length > 0) {
+            deleteButton.style.display = 'inline-block';
+            deleteButton.textContent = `ลบที่เลือก (${selectedCheckboxes.length})`;
+        } else {
+            deleteButton.style.display = 'none';
+        }
+    }
+}
+
+// Setup delete functionality
+document.addEventListener('DOMContentLoaded', setupDeleteButtons);
+setTimeout(setupDeleteButtons, 500);
+
+// Also setup when window loads (additional backup)
+window.addEventListener('load', setupFilters);
+
+
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script> 
