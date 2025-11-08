@@ -95,234 +95,395 @@
                                 </div>
                             </div>
 
-                            <!-- ตรวจเช็คเครื่องยนต์ -->
+                            <!-- รายการตรวจเช็คสภาพรถ -->
                             <div class="check-section">
-                                <h5><i class="fas fa-cog"></i> เครื่องยนต์</h5>
-                                <div class="row">
-                                    <div class="col-md-8">
-                                        <div class="mb-3">
-                                            <label class="form-label">สถานะ</label>
-                                            <div class="btn-group w-100" role="group">
-                                                <input type="radio" class="btn-check" name="engineStatus" id="engineGood" value="good" checked>
-                                                <label class="btn btn-outline-success" for="engineGood">ดี</label>
-                                                <input type="radio" class="btn-check" name="engineStatus" id="engineWarning" value="warning">
-                                                <label class="btn btn-outline-warning" for="engineWarning">ควรระวัง</label>
-                                                <input type="radio" class="btn-check" name="engineStatus" id="engineBad" value="bad">
-                                                <label class="btn btn-outline-danger" for="engineBad">ต้องซ่อม</label>
+                                <h5><i class="fas fa-clipboard-check"></i> รายการตรวจเช็คสภาพรถ</h5>
+                                
+                                <!-- 1. น้ำมันเครื่อง -->
+                                <div class="mb-4 p-3 border rounded">
+                                    <label class="form-label fw-bold">1. น้ำมันเครื่อง</label>
+                                    <div class="row mt-2">
+                                        <div class="col-md-8">
+                                            <div class="mb-2">
+                                                <label class="form-label">สถานะ</label>
+                                                <div class="btn-group w-100" role="group">
+                                                    <input type="radio" class="btn-check" name="oilStatus" id="oilGood" value="good" checked>
+                                                    <label class="btn btn-outline-success" for="oilGood">ดี</label>
+                                                    <input type="radio" class="btn-check" name="oilStatus" id="oilWarning" value="warning">
+                                                    <label class="btn btn-outline-warning" for="oilWarning">ควรระวัง</label>
+                                                    <input type="radio" class="btn-check" name="oilStatus" id="oilBad" value="bad">
+                                                    <label class="btn btn-outline-danger" for="oilBad">ต้องเติม/เปลี่ยน</label>
+                                                </div>
+                                            </div>
+                                            <div class="mb-2">
+                                                <label for="oilNotes" class="form-label">หมายเหตุ</label>
+                                                <textarea class="form-control" id="oilNotes" rows="2" placeholder="รายละเอียด..."></textarea>
                                             </div>
                                         </div>
-                                        <div class="mb-3">
-                                            <label for="engineNotes" class="form-label">หมายเหตุ</label>
-                                            <textarea class="form-control" id="engineNotes" rows="2" placeholder="รายละเอียดสภาพเครื่องยนต์..."></textarea>
+                                        <div class="col-md-4">
+                                            <div class="image-upload" onclick="document.getElementById('oilImage').click()">
+                                                <i class="fas fa-camera fa-2x mb-2"></i>
+                                                <p class="mb-0">คลิกเพื่ออัปโหลดรูป</p>
+                                                <input type="file" id="oilImage" accept="image/*" style="display: none;" onchange="previewImage(this, 'oilPreview')">
+                                            </div>
+                                            <div id="oilPreview" class="mt-2"></div>
                                         </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="image-upload" onclick="document.getElementById('engineImage').click()">
-                                            <i class="fas fa-camera fa-2x mb-2"></i>
-                                            <p class="mb-0">คลิกเพื่ออัปโหลดรูป</p>
-                                            <input type="file" id="engineImage" accept="image/*" style="display: none;" onchange="previewImage(this, 'enginePreview')">
-                                        </div>
-                                        <div id="enginePreview" class="mt-2"></div>
                                     </div>
                                 </div>
-                            </div>
 
-                            <!-- ตรวจเช็คตัวถัง -->
-                            <div class="check-section">
-                                <h5><i class="fas fa-car"></i> ตัวถัง</h5>
-                                <div class="row">
-                                    <div class="col-md-8">
-                                        <div class="mb-3">
-                                            <label class="form-label">สถานะ</label>
-                                            <div class="btn-group w-100" role="group">
-                                                <input type="radio" class="btn-check" name="bodyStatus" id="bodyGood" value="good" checked>
-                                                <label class="btn btn-outline-success" for="bodyGood">ดี</label>
-                                                <input type="radio" class="btn-check" name="bodyStatus" id="bodyWarning" value="warning">
-                                                <label class="btn btn-outline-warning" for="bodyWarning">ควรระวัง</label>
-                                                <input type="radio" class="btn-check" name="bodyStatus" id="bodyBad" value="bad">
-                                                <label class="btn btn-outline-danger" for="bodyBad">ต้องซ่อม</label>
+                                <!-- 2. แบตเตอรี่ -->
+                                <div class="mb-4 p-3 border rounded">
+                                    <label class="form-label fw-bold">2. แบตเตอรี่</label>
+                                    <div class="row mt-2">
+                                        <div class="col-md-8">
+                                            <div class="mb-2">
+                                                <label class="form-label">สถานะ</label>
+                                                <div class="btn-group w-100" role="group">
+                                                    <input type="radio" class="btn-check" name="batteryStatus" id="batteryGood" value="good" checked>
+                                                    <label class="btn btn-outline-success" for="batteryGood">ดี</label>
+                                                    <input type="radio" class="btn-check" name="batteryStatus" id="batteryWarning" value="warning">
+                                                    <label class="btn btn-outline-warning" for="batteryWarning">ควรระวัง</label>
+                                                    <input type="radio" class="btn-check" name="batteryStatus" id="batteryBad" value="bad">
+                                                    <label class="btn btn-outline-danger" for="batteryBad">ต้องเปลี่ยน</label>
+                                                </div>
+                                            </div>
+                                            <div class="mb-2">
+                                                <label for="batteryNotes" class="form-label">หมายเหตุ</label>
+                                                <textarea class="form-control" id="batteryNotes" rows="2" placeholder="รายละเอียด..."></textarea>
                                             </div>
                                         </div>
-                                        <div class="mb-3">
-                                            <label for="bodyNotes" class="form-label">หมายเหตุ</label>
-                                            <textarea class="form-control" id="bodyNotes" rows="2" placeholder="รายละเอียดสภาพตัวถัง..."></textarea>
+                                        <div class="col-md-4">
+                                            <div class="image-upload" onclick="document.getElementById('batteryImage').click()">
+                                                <i class="fas fa-camera fa-2x mb-2"></i>
+                                                <p class="mb-0">คลิกเพื่ออัปโหลดรูป</p>
+                                                <input type="file" id="batteryImage" accept="image/*" style="display: none;" onchange="previewImage(this, 'batteryPreview')">
+                                            </div>
+                                            <div id="batteryPreview" class="mt-2"></div>
                                         </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="image-upload" onclick="document.getElementById('bodyImage').click()">
-                                            <i class="fas fa-camera fa-2x mb-2"></i>
-                                            <p class="mb-0">คลิกเพื่ออัปโหลดรูป</p>
-                                            <input type="file" id="bodyImage" accept="image/*" style="display: none;" onchange="previewImage(this, 'bodyPreview')">
-                                        </div>
-                                        <div id="bodyPreview" class="mt-2"></div>
                                     </div>
                                 </div>
-                            </div>
 
-                            <!-- ตรวจเช็คยางรถ -->
-                            <div class="check-section">
-                                <h5><i class="fas fa-circle"></i> ยางรถ</h5>
-                                <div class="row">
-                                    <div class="col-md-8">
-                                        <div class="mb-3">
-                                            <label class="form-label">สถานะ</label>
-                                            <div class="btn-group w-100" role="group">
-                                                <input type="radio" class="btn-check" name="tiresStatus" id="tiresGood" value="good" checked>
-                                                <label class="btn btn-outline-success" for="tiresGood">ดี</label>
-                                                <input type="radio" class="btn-check" name="tiresStatus" id="tiresWarning" value="warning">
-                                                <label class="btn btn-outline-warning" for="tiresWarning">ควรระวัง</label>
-                                                <input type="radio" class="btn-check" name="tiresStatus" id="tiresBad" value="bad">
-                                                <label class="btn btn-outline-danger" for="tiresBad">ต้องเปลี่ยน</label>
+                                <!-- 3. ยางรถยนต์ -->
+                                <div class="mb-4 p-3 border rounded">
+                                    <label class="form-label fw-bold">3. ยางรถยนต์</label>
+                                    <div class="row mt-2">
+                                        <div class="col-md-8">
+                                            <div class="mb-2">
+                                                <label class="form-label">สถานะ</label>
+                                                <div class="btn-group w-100" role="group">
+                                                    <input type="radio" class="btn-check" name="tiresStatus" id="tiresGood" value="good" checked>
+                                                    <label class="btn btn-outline-success" for="tiresGood">ดี</label>
+                                                    <input type="radio" class="btn-check" name="tiresStatus" id="tiresWarning" value="warning">
+                                                    <label class="btn btn-outline-warning" for="tiresWarning">ควรระวัง</label>
+                                                    <input type="radio" class="btn-check" name="tiresStatus" id="tiresBad" value="bad">
+                                                    <label class="btn btn-outline-danger" for="tiresBad">ต้องเปลี่ยน</label>
+                                                </div>
+                                            </div>
+                                            <div class="mb-2">
+                                                <label for="tiresNotes" class="form-label">หมายเหตุ</label>
+                                                <textarea class="form-control" id="tiresNotes" rows="2" placeholder="รายละเอียด..."></textarea>
                                             </div>
                                         </div>
-                                        <div class="mb-3">
-                                            <label for="tiresNotes" class="form-label">หมายเหตุ</label>
-                                            <textarea class="form-control" id="tiresNotes" rows="2" placeholder="รายละเอียดสภาพยางรถ..."></textarea>
+                                        <div class="col-md-4">
+                                            <div class="image-upload" onclick="document.getElementById('tiresImage').click()">
+                                                <i class="fas fa-camera fa-2x mb-2"></i>
+                                                <p class="mb-0">คลิกเพื่ออัปโหลดรูป</p>
+                                                <input type="file" id="tiresImage" accept="image/*" style="display: none;" onchange="previewImage(this, 'tiresPreview')">
+                                            </div>
+                                            <div id="tiresPreview" class="mt-2"></div>
                                         </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="image-upload" onclick="document.getElementById('tiresImage').click()">
-                                            <i class="fas fa-camera fa-2x mb-2"></i>
-                                            <p class="mb-0">คลิกเพื่ออัปโหลดรูป</p>
-                                            <input type="file" id="tiresImage" accept="image/*" style="display: none;" onchange="previewImage(this, 'tiresPreview')">
-                                        </div>
-                                        <div id="tiresPreview" class="mt-2"></div>
                                     </div>
                                 </div>
-                            </div>
 
-                            <!-- ตรวจเช็คไฟ -->
-                            <div class="check-section">
-                                <h5><i class="fas fa-lightbulb"></i> ไฟ</h5>
-                                <div class="row">
-                                    <div class="col-md-8">
-                                        <div class="mb-3">
-                                            <label class="form-label">สถานะ</label>
-                                            <div class="btn-group w-100" role="group">
-                                                <input type="radio" class="btn-check" name="lightsStatus" id="lightsGood" value="good" checked>
-                                                <label class="btn btn-outline-success" for="lightsGood">ดี</label>
-                                                <input type="radio" class="btn-check" name="lightsStatus" id="lightsWarning" value="warning">
-                                                <label class="btn btn-outline-warning" for="lightsWarning">ควรระวัง</label>
-                                                <input type="radio" class="btn-check" name="lightsStatus" id="lightsBad" value="bad">
-                                                <label class="btn btn-outline-danger" for="lightsBad">ต้องซ่อม</label>
+                                <!-- 4. น้ำมันเบรค -->
+                                <div class="mb-4 p-3 border rounded">
+                                    <label class="form-label fw-bold">4. น้ำมันเบรค</label>
+                                    <div class="row mt-2">
+                                        <div class="col-md-8">
+                                            <div class="mb-2">
+                                                <label class="form-label">สถานะ</label>
+                                                <div class="btn-group w-100" role="group">
+                                                    <input type="radio" class="btn-check" name="brakeFluidStatus" id="brakeFluidGood" value="good" checked>
+                                                    <label class="btn btn-outline-success" for="brakeFluidGood">ดี</label>
+                                                    <input type="radio" class="btn-check" name="brakeFluidStatus" id="brakeFluidWarning" value="warning">
+                                                    <label class="btn btn-outline-warning" for="brakeFluidWarning">ควรระวัง</label>
+                                                    <input type="radio" class="btn-check" name="brakeFluidStatus" id="brakeFluidBad" value="bad">
+                                                    <label class="btn btn-outline-danger" for="brakeFluidBad">ต้องเติม/เปลี่ยน</label>
+                                                </div>
+                                            </div>
+                                            <div class="mb-2">
+                                                <label for="brakeFluidNotes" class="form-label">หมายเหตุ</label>
+                                                <textarea class="form-control" id="brakeFluidNotes" rows="2" placeholder="รายละเอียด..."></textarea>
                                             </div>
                                         </div>
-                                        <div class="mb-3">
-                                            <label for="lightsNotes" class="form-label">หมายเหตุ</label>
-                                            <textarea class="form-control" id="lightsNotes" rows="2" placeholder="รายละเอียดสภาพไฟ..."></textarea>
+                                        <div class="col-md-4">
+                                            <div class="image-upload" onclick="document.getElementById('brakeFluidImage').click()">
+                                                <i class="fas fa-camera fa-2x mb-2"></i>
+                                                <p class="mb-0">คลิกเพื่ออัปโหลดรูป</p>
+                                                <input type="file" id="brakeFluidImage" accept="image/*" style="display: none;" onchange="previewImage(this, 'brakeFluidPreview')">
+                                            </div>
+                                            <div id="brakeFluidPreview" class="mt-2"></div>
                                         </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="image-upload" onclick="document.getElementById('lightsImage').click()">
-                                            <i class="fas fa-camera fa-2x mb-2"></i>
-                                            <p class="mb-0">คลิกเพื่ออัปโหลดรูป</p>
-                                            <input type="file" id="lightsImage" accept="image/*" style="display: none;" onchange="previewImage(this, 'lightsPreview')">
-                                        </div>
-                                        <div id="lightsPreview" class="mt-2"></div>
                                     </div>
                                 </div>
-                            </div>
 
-                            <!-- ตรวจเช็คเบรก -->
-                            <div class="check-section">
-                                <h5><i class="fas fa-stop-circle"></i> เบรก</h5>
-                                <div class="row">
-                                    <div class="col-md-8">
-                                        <div class="mb-3">
-                                            <label class="form-label">สถานะ</label>
-                                            <div class="btn-group w-100" role="group">
-                                                <input type="radio" class="btn-check" name="brakesStatus" id="brakesGood" value="good" checked>
-                                                <label class="btn btn-outline-success" for="brakesGood">ดี</label>
-                                                <input type="radio" class="btn-check" name="brakesStatus" id="brakesWarning" value="warning">
-                                                <label class="btn btn-outline-warning" for="brakesWarning">ควรระวัง</label>
-                                                <input type="radio" class="btn-check" name="brakesStatus" id="brakesBad" value="bad">
-                                                <label class="btn btn-outline-danger" for="brakesBad">ต้องซ่อม</label>
+                                <!-- 5. น้ำมันครัช -->
+                                <div class="mb-4 p-3 border rounded">
+                                    <label class="form-label fw-bold">5. น้ำมันครัช</label>
+                                    <div class="row mt-2">
+                                        <div class="col-md-8">
+                                            <div class="mb-2">
+                                                <label class="form-label">สถานะ</label>
+                                                <div class="btn-group w-100" role="group">
+                                                    <input type="radio" class="btn-check" name="clutchFluidStatus" id="clutchFluidGood" value="good" checked>
+                                                    <label class="btn btn-outline-success" for="clutchFluidGood">ดี</label>
+                                                    <input type="radio" class="btn-check" name="clutchFluidStatus" id="clutchFluidWarning" value="warning">
+                                                    <label class="btn btn-outline-warning" for="clutchFluidWarning">ควรระวัง</label>
+                                                    <input type="radio" class="btn-check" name="clutchFluidStatus" id="clutchFluidBad" value="bad">
+                                                    <label class="btn btn-outline-danger" for="clutchFluidBad">ต้องเติม/เปลี่ยน</label>
+                                                </div>
+                                            </div>
+                                            <div class="mb-2">
+                                                <label for="clutchFluidNotes" class="form-label">หมายเหตุ</label>
+                                                <textarea class="form-control" id="clutchFluidNotes" rows="2" placeholder="รายละเอียด..."></textarea>
                                             </div>
                                         </div>
-                                        <div class="mb-3">
-                                            <label for="brakesNotes" class="form-label">หมายเหตุ</label>
-                                            <textarea class="form-control" id="brakesNotes" rows="2" placeholder="รายละเอียดสภาพเบรก..."></textarea>
+                                        <div class="col-md-4">
+                                            <div class="image-upload" onclick="document.getElementById('clutchFluidImage').click()">
+                                                <i class="fas fa-camera fa-2x mb-2"></i>
+                                                <p class="mb-0">คลิกเพื่ออัปโหลดรูป</p>
+                                                <input type="file" id="clutchFluidImage" accept="image/*" style="display: none;" onchange="previewImage(this, 'clutchFluidPreview')">
+                                            </div>
+                                            <div id="clutchFluidPreview" class="mt-2"></div>
                                         </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="image-upload" onclick="document.getElementById('brakesImage').click()">
-                                            <i class="fas fa-camera fa-2x mb-2"></i>
-                                            <p class="mb-0">คลิกเพื่ออัปโหลดรูป</p>
-                                            <input type="file" id="brakesImage" accept="image/*" style="display: none;" onchange="previewImage(this, 'brakesPreview')">
-                                        </div>
-                                        <div id="brakesPreview" class="mt-2"></div>
                                     </div>
                                 </div>
-                            </div>
 
-                            <!-- ตรวจเช็คภายใน -->
-                            <div class="check-section">
-                                <h5><i class="fas fa-car-side"></i> ภายในรถ</h5>
-                                <div class="row">
-                                    <div class="col-md-8">
-                                        <div class="mb-3">
-                                            <label class="form-label">สถานะ</label>
-                                            <div class="btn-group w-100" role="group">
-                                                <input type="radio" class="btn-check" name="interiorStatus" id="interiorGood" value="good" checked>
-                                                <label class="btn btn-outline-success" for="interiorGood">ดี</label>
-                                                <input type="radio" class="btn-check" name="interiorStatus" id="interiorWarning" value="warning">
-                                                <label class="btn btn-outline-warning" for="interiorWarning">ควรระวัง</label>
-                                                <input type="radio" class="btn-check" name="interiorStatus" id="interiorBad" value="bad">
-                                                <label class="btn btn-outline-danger" for="interiorBad">ต้องทำความสะอาด</label>
+                                <!-- 6. น้ำยาแอร์ -->
+                                <div class="mb-4 p-3 border rounded">
+                                    <label class="form-label fw-bold">6. น้ำยาแอร์</label>
+                                    <div class="row mt-2">
+                                        <div class="col-md-8">
+                                            <div class="mb-2">
+                                                <label class="form-label">สถานะ</label>
+                                                <div class="btn-group w-100" role="group">
+                                                    <input type="radio" class="btn-check" name="acFluidStatus" id="acFluidGood" value="good" checked>
+                                                    <label class="btn btn-outline-success" for="acFluidGood">ดี</label>
+                                                    <input type="radio" class="btn-check" name="acFluidStatus" id="acFluidWarning" value="warning">
+                                                    <label class="btn btn-outline-warning" for="acFluidWarning">ควรระวัง</label>
+                                                    <input type="radio" class="btn-check" name="acFluidStatus" id="acFluidBad" value="bad">
+                                                    <label class="btn btn-outline-danger" for="acFluidBad">ต้องเติม</label>
+                                                </div>
+                                            </div>
+                                            <div class="mb-2">
+                                                <label for="acFluidNotes" class="form-label">หมายเหตุ</label>
+                                                <textarea class="form-control" id="acFluidNotes" rows="2" placeholder="รายละเอียด..."></textarea>
                                             </div>
                                         </div>
-                                        <div class="mb-3">
-                                            <label for="interiorNotes" class="form-label">หมายเหตุ</label>
-                                            <textarea class="form-control" id="interiorNotes" rows="2" placeholder="รายละเอียดสภาพภายในรถ..."></textarea>
+                                        <div class="col-md-4">
+                                            <div class="image-upload" onclick="document.getElementById('acFluidImage').click()">
+                                                <i class="fas fa-camera fa-2x mb-2"></i>
+                                                <p class="mb-0">คลิกเพื่ออัปโหลดรูป</p>
+                                                <input type="file" id="acFluidImage" accept="image/*" style="display: none;" onchange="previewImage(this, 'acFluidPreview')">
+                                            </div>
+                                            <div id="acFluidPreview" class="mt-2"></div>
                                         </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="image-upload" onclick="document.getElementById('interiorImage').click()">
-                                            <i class="fas fa-camera fa-2x mb-2"></i>
-                                            <p class="mb-0">คลิกเพื่ออัปโหลดรูป</p>
-                                            <input type="file" id="interiorImage" accept="image/*" style="display: none;" onchange="previewImage(this, 'interiorPreview')">
-                                        </div>
-                                        <div id="interiorPreview" class="mt-2"></div>
                                     </div>
                                 </div>
-                            </div>
 
-                            <!-- สรุปภาพรวม -->
-                            <div class="check-section">
-                                <h5><i class="fas fa-clipboard-check"></i> สรุปภาพรวม</h5>
-                                <div class="row">
-                                    <div class="col-md-8">
-                                        <div class="mb-3">
-                                            <label class="form-label">สถานะภาพรวม</label>
-                                            <div class="btn-group w-100" role="group">
-                                                <input type="radio" class="btn-check" name="overallStatus" id="overallGood" value="good" checked>
-                                                <label class="btn btn-outline-success" for="overallGood">ดี</label>
-                                                <input type="radio" class="btn-check" name="overallStatus" id="overallWarning" value="warning">
-                                                <label class="btn btn-outline-warning" for="overallWarning">ควรระวัง</label>
-                                                <input type="radio" class="btn-check" name="overallStatus" id="overallBad" value="bad">
-                                                <label class="btn btn-outline-danger" for="overallBad">ต้องซ่อม</label>
+                                <!-- 7. น้ำหล่อเย็น น้ำกลั่น หม้อน้ำ -->
+                                <div class="mb-4 p-3 border rounded">
+                                    <label class="form-label fw-bold">7. น้ำหล่อเย็น น้ำกลั่น หม้อน้ำ</label>
+                                    <div class="row mt-2">
+                                        <div class="col-md-8">
+                                            <div class="mb-2">
+                                                <label class="form-label">สถานะ</label>
+                                                <div class="btn-group w-100" role="group">
+                                                    <input type="radio" class="btn-check" name="coolantStatus" id="coolantGood" value="good" checked>
+                                                    <label class="btn btn-outline-success" for="coolantGood">ดี</label>
+                                                    <input type="radio" class="btn-check" name="coolantStatus" id="coolantWarning" value="warning">
+                                                    <label class="btn btn-outline-warning" for="coolantWarning">ควรระวัง</label>
+                                                    <input type="radio" class="btn-check" name="coolantStatus" id="coolantBad" value="bad">
+                                                    <label class="btn btn-outline-danger" for="coolantBad">ต้องเติม/ตรวจสอบ</label>
+                                                </div>
+                                            </div>
+                                            <div class="mb-2">
+                                                <label for="coolantNotes" class="form-label">หมายเหตุ</label>
+                                                <textarea class="form-control" id="coolantNotes" rows="2" placeholder="รายละเอียด..."></textarea>
                                             </div>
                                         </div>
-                                        <div class="mb-3">
-                                            <label for="overallNotes" class="form-label">หมายเหตุภาพรวม</label>
-                                            <textarea class="form-control" id="overallNotes" rows="3" placeholder="สรุปภาพรวมการตรวจเช็ค..."></textarea>
-                                        </div>
-                                        <div class="mb-3">
-                                            <label for="recommendations" class="form-label">คำแนะนำ</label>
-                                            <textarea class="form-control" id="recommendations" rows="3" placeholder="คำแนะนำสำหรับการบำรุงรักษา..."></textarea>
-                                        </div>
-                                        <div class="mb-3">
-                                            <label for="nextCheckDate" class="form-label">วันที่ตรวจเช็คครั้งถัดไป</label>
-                                            <input type="date" class="form-control" id="nextCheckDate">
+                                        <div class="col-md-4">
+                                            <div class="image-upload" onclick="document.getElementById('coolantImage').click()">
+                                                <i class="fas fa-camera fa-2x mb-2"></i>
+                                                <p class="mb-0">คลิกเพื่ออัปโหลดรูป</p>
+                                                <input type="file" id="coolantImage" accept="image/*" style="display: none;" onchange="previewImage(this, 'coolantPreview')">
+                                            </div>
+                                            <div id="coolantPreview" class="mt-2"></div>
                                         </div>
                                     </div>
-                                    <div class="col-md-4">
-                                        <div class="image-upload" onclick="document.getElementById('overallImage').click()">
-                                            <i class="fas fa-camera fa-2x mb-2"></i>
-                                            <p class="mb-0">คลิกเพื่ออัปโหลดรูป</p>
-                                            <input type="file" id="overallImage" accept="image/*" style="display: none;" onchange="previewImage(this, 'overallPreview')">
+                                </div>
+
+                                <!-- 8. ประตูรถ ด้ามจับ -->
+                                <div class="mb-4 p-3 border rounded">
+                                    <label class="form-label fw-bold">8. ประตูรถ ด้ามจับ</label>
+                                    <div class="row mt-2">
+                                        <div class="col-md-8">
+                                            <div class="mb-2">
+                                                <label class="form-label">สถานะ</label>
+                                                <div class="btn-group w-100" role="group">
+                                                    <input type="radio" class="btn-check" name="doorsStatus" id="doorsGood" value="good" checked>
+                                                    <label class="btn btn-outline-success" for="doorsGood">ดี</label>
+                                                    <input type="radio" class="btn-check" name="doorsStatus" id="doorsWarning" value="warning">
+                                                    <label class="btn btn-outline-warning" for="doorsWarning">ควรระวัง</label>
+                                                    <input type="radio" class="btn-check" name="doorsStatus" id="doorsBad" value="bad">
+                                                    <label class="btn btn-outline-danger" for="doorsBad">ต้องซ่อม</label>
+                                                </div>
+                                            </div>
+                                            <div class="mb-2">
+                                                <label for="doorsNotes" class="form-label">หมายเหตุ</label>
+                                                <textarea class="form-control" id="doorsNotes" rows="2" placeholder="รายละเอียด..."></textarea>
+                                            </div>
                                         </div>
-                                        <div id="overallPreview" class="mt-2"></div>
+                                        <div class="col-md-4">
+                                            <div class="image-upload" onclick="document.getElementById('doorsImage').click()">
+                                                <i class="fas fa-camera fa-2x mb-2"></i>
+                                                <p class="mb-0">คลิกเพื่ออัปโหลดรูป</p>
+                                                <input type="file" id="doorsImage" accept="image/*" style="display: none;" onchange="previewImage(this, 'doorsPreview')">
+                                            </div>
+                                            <div id="doorsPreview" class="mt-2"></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 9. ไฟหน้า-ท้าย -->
+                                <div class="mb-4 p-3 border rounded">
+                                    <label class="form-label fw-bold">9. ไฟหน้า-ท้าย</label>
+                                    <div class="row mt-2">
+                                        <div class="col-md-8">
+                                            <div class="mb-2">
+                                                <label class="form-label">สถานะ</label>
+                                                <div class="btn-group w-100" role="group">
+                                                    <input type="radio" class="btn-check" name="lightsStatus" id="lightsGood" value="good" checked>
+                                                    <label class="btn btn-outline-success" for="lightsGood">ดี</label>
+                                                    <input type="radio" class="btn-check" name="lightsStatus" id="lightsWarning" value="warning">
+                                                    <label class="btn btn-outline-warning" for="lightsWarning">ควรระวัง</label>
+                                                    <input type="radio" class="btn-check" name="lightsStatus" id="lightsBad" value="bad">
+                                                    <label class="btn btn-outline-danger" for="lightsBad">ต้องซ่อม/เปลี่ยน</label>
+                                                </div>
+                                            </div>
+                                            <div class="mb-2">
+                                                <label for="lightsNotes" class="form-label">หมายเหตุ</label>
+                                                <textarea class="form-control" id="lightsNotes" rows="2" placeholder="รายละเอียด..."></textarea>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="image-upload" onclick="document.getElementById('lightsImage').click()">
+                                                <i class="fas fa-camera fa-2x mb-2"></i>
+                                                <p class="mb-0">คลิกเพื่ออัปโหลดรูป</p>
+                                                <input type="file" id="lightsImage" accept="image/*" style="display: none;" onchange="previewImage(this, 'lightsPreview')">
+                                            </div>
+                                            <div id="lightsPreview" class="mt-2"></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 10. กระจกมองข้าง -->
+                                <div class="mb-4 p-3 border rounded">
+                                    <label class="form-label fw-bold">10. กระจกมองข้าง</label>
+                                    <div class="row mt-2">
+                                        <div class="col-md-8">
+                                            <div class="mb-2">
+                                                <label class="form-label">สถานะ</label>
+                                                <div class="btn-group w-100" role="group">
+                                                    <input type="radio" class="btn-check" name="mirrorsStatus" id="mirrorsGood" value="good" checked>
+                                                    <label class="btn btn-outline-success" for="mirrorsGood">ดี</label>
+                                                    <input type="radio" class="btn-check" name="mirrorsStatus" id="mirrorsWarning" value="warning">
+                                                    <label class="btn btn-outline-warning" for="mirrorsWarning">ควรระวัง</label>
+                                                    <input type="radio" class="btn-check" name="mirrorsStatus" id="mirrorsBad" value="bad">
+                                                    <label class="btn btn-outline-danger" for="mirrorsBad">ต้องซ่อม/เปลี่ยน</label>
+                                                </div>
+                                            </div>
+                                            <div class="mb-2">
+                                                <label for="mirrorsNotes" class="form-label">หมายเหตุ</label>
+                                                <textarea class="form-control" id="mirrorsNotes" rows="2" placeholder="รายละเอียด..."></textarea>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="image-upload" onclick="document.getElementById('mirrorsImage').click()">
+                                                <i class="fas fa-camera fa-2x mb-2"></i>
+                                                <p class="mb-0">คลิกเพื่ออัปโหลดรูป</p>
+                                                <input type="file" id="mirrorsImage" accept="image/*" style="display: none;" onchange="previewImage(this, 'mirrorsPreview')">
+                                            </div>
+                                            <div id="mirrorsPreview" class="mt-2"></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- อื่นๆ -->
+                                <div class="mb-4 p-3 border rounded">
+                                    <label class="form-label fw-bold">อื่นๆ (........)</label>
+                                    <div class="row mt-2">
+                                        <div class="col-md-8">
+                                            <div class="mb-2">
+                                                <label for="othersDescription" class="form-label">รายการอื่นๆ</label>
+                                                <input type="text" class="form-control" id="othersDescription" placeholder="ระบุรายการ...">
+                                            </div>
+                                            <div class="mb-2">
+                                                <label class="form-label">สถานะ</label>
+                                                <div class="btn-group w-100" role="group">
+                                                    <input type="radio" class="btn-check" name="othersStatus" id="othersGood" value="good" checked>
+                                                    <label class="btn btn-outline-success" for="othersGood">ดี</label>
+                                                    <input type="radio" class="btn-check" name="othersStatus" id="othersWarning" value="warning">
+                                                    <label class="btn btn-outline-warning" for="othersWarning">ควรระวัง</label>
+                                                    <input type="radio" class="btn-check" name="othersStatus" id="othersBad" value="bad">
+                                                    <label class="btn btn-outline-danger" for="othersBad">ต้องตรวจสอบ</label>
+                                                </div>
+                                            </div>
+                                            <div class="mb-2">
+                                                <label for="othersNotes" class="form-label">หมายเหตุ</label>
+                                                <textarea class="form-control" id="othersNotes" rows="2" placeholder="รายละเอียด..."></textarea>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="image-upload" onclick="document.getElementById('othersImage').click()">
+                                                <i class="fas fa-camera fa-2x mb-2"></i>
+                                                <p class="mb-0">คลิกเพื่ออัปโหลดรูป</p>
+                                                <input type="file" id="othersImage" accept="image/*" style="display: none;" onchange="previewImage(this, 'othersPreview')">
+                                            </div>
+                                            <div id="othersPreview" class="mt-2"></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- สรุปภาพรวม -->
+                                <div class="mb-4 p-3 border rounded bg-light">
+                                    <h6 class="fw-bold"><i class="fas fa-clipboard-list"></i> สรุปภาพรวม</h6>
+                                    <div class="row mt-2">
+                                        <div class="col-md-12">
+                                            <div class="mb-3">
+                                                <label class="form-label">สถานะภาพรวม</label>
+                                                <div class="btn-group w-100" role="group">
+                                                    <input type="radio" class="btn-check" name="overallStatus" id="overallGood" value="good" checked>
+                                                    <label class="btn btn-outline-success" for="overallGood">ดี</label>
+                                                    <input type="radio" class="btn-check" name="overallStatus" id="overallWarning" value="warning">
+                                                    <label class="btn btn-outline-warning" for="overallWarning">ควรระวัง</label>
+                                                    <input type="radio" class="btn-check" name="overallStatus" id="overallBad" value="bad">
+                                                    <label class="btn btn-outline-danger" for="overallBad">ต้องซ่อม</label>
+                                                </div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="overallNotes" class="form-label">หมายเหตุภาพรวม</label>
+                                                <textarea class="form-control" id="overallNotes" rows="3" placeholder="สรุปภาพรวมการตรวจเช็ค..."></textarea>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="recommendations" class="form-label">คำแนะนำ</label>
+                                                <textarea class="form-control" id="recommendations" rows="3" placeholder="คำแนะนำสำหรับการบำรุงรักษา..."></textarea>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="nextCheckDate" class="form-label">วันที่ตรวจเช็คครั้งถัดไป</label>
+                                                <input type="date" class="form-control" id="nextCheckDate">
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -350,17 +511,25 @@
                 .then(response => response.json())
                 .then(data => {
                     const select = document.getElementById('vehicleId');
-                    if (data.vehicles && data.vehicles.length > 0) {
-                        data.vehicles.forEach(vehicle => {
+                    // Clear existing options except the first one
+                    select.innerHTML = '<option value="">เลือกรถ</option>';
+                    
+                    // API returns array directly, not object with vehicles property
+                    if (Array.isArray(data) && data.length > 0) {
+                        data.forEach(vehicle => {
                             const option = document.createElement('option');
                             option.value = vehicle.vehicle_id;
-                            option.textContent = `${vehicle.brand} ${vehicle.model} (${vehicle.license_plate})`;
+                            const displayText = `${vehicle.license_plate || ''} - ${vehicle.brand || ''} ${vehicle.model || ''}`.trim();
+                            option.textContent = displayText || `รถ ID: ${vehicle.vehicle_id}`;
                             select.appendChild(option);
                         });
+                    } else {
+                        console.warn('No vehicles found or invalid data format:', data);
                     }
                 })
                 .catch(error => {
                     console.error('Error loading vehicles:', error);
+                    alert('เกิดข้อผิดพลาดในการโหลดรายการรถ');
                 });
         }
 
@@ -383,31 +552,65 @@
             const formData = new FormData();
             formData.append('vehicle_id', document.getElementById('vehicleId').value);
             formData.append('check_date', document.getElementById('checkDate').value);
-            formData.append('engine_status', document.querySelector('input[name="engineStatus"]:checked').value);
-            formData.append('engine_notes', document.getElementById('engineNotes').value);
-            formData.append('body_status', document.querySelector('input[name="bodyStatus"]:checked').value);
-            formData.append('body_notes', document.getElementById('bodyNotes').value);
-            formData.append('tires_status', document.querySelector('input[name="tiresStatus"]:checked').value);
-            formData.append('tires_notes', document.getElementById('tiresNotes').value);
-            formData.append('lights_status', document.querySelector('input[name="lightsStatus"]:checked').value);
-            formData.append('lights_notes', document.getElementById('lightsNotes').value);
-            formData.append('brakes_status', document.querySelector('input[name="brakesStatus"]:checked').value);
-            formData.append('brakes_notes', document.getElementById('brakesNotes').value);
-            formData.append('interior_status', document.querySelector('input[name="interiorStatus"]:checked').value);
-            formData.append('interior_notes', document.getElementById('interiorNotes').value);
+
+            // รายการตรวจเช็คสภาพรถ
+            const checkItems = [
+                { statusName: 'oilStatus', notesId: 'oilNotes' },
+                { statusName: 'batteryStatus', notesId: 'batteryNotes' },
+                { statusName: 'tiresStatus', notesId: 'tiresNotes' },
+                { statusName: 'brakeFluidStatus', notesId: 'brakeFluidNotes' },
+                { statusName: 'clutchFluidStatus', notesId: 'clutchFluidNotes' },
+                { statusName: 'acFluidStatus', notesId: 'acFluidNotes' },
+                { statusName: 'coolantStatus', notesId: 'coolantNotes' },
+                { statusName: 'doorsStatus', notesId: 'doorsNotes' },
+                { statusName: 'lightsStatus', notesId: 'lightsNotes' },
+                { statusName: 'mirrorsStatus', notesId: 'mirrorsNotes' },
+                { statusName: 'othersStatus', notesId: 'othersNotes' }
+            ];
+
+            checkItems.forEach(item => {
+                const statusValue = document.querySelector(`input[name="${item.statusName}"]:checked`);
+                if (statusValue) {
+                    formData.append(item.statusName, statusValue.value);
+                }
+                const notesElement = document.getElementById(item.notesId);
+                if (notesElement) {
+                    formData.append(`${item.statusName}_notes`, notesElement.value);
+                }
+            });
+
+            // เพิ่มข้อมูลอื่นๆ
+            const othersDesc = document.getElementById('othersDescription');
+            if (othersDesc && othersDesc.value) {
+                formData.append('others_description', othersDesc.value);
+            }
+
+            // เพิ่มรูปภาพทั้งหมด - ใช้ชื่อ field ที่ตรงกับ API backend (camelCase)
+            const imageFields = [
+                { id: 'oilImage', name: 'oilImage' },
+                { id: 'batteryImage', name: 'batteryImage' },
+                { id: 'tiresImage', name: 'tiresImage' },
+                { id: 'brakeFluidImage', name: 'brakeFluidImage' },
+                { id: 'clutchFluidImage', name: 'clutchFluidImage' },
+                { id: 'acFluidImage', name: 'acFluidImage' },
+                { id: 'coolantImage', name: 'coolantImage' },
+                { id: 'doorsImage', name: 'doorsImage' },
+                { id: 'lightsImage', name: 'lightsImage' },
+                { id: 'mirrorsImage', name: 'mirrorsImage' },
+                { id: 'othersImage', name: 'othersImage' }
+            ];
+
+            imageFields.forEach(field => {
+                const fileInput = document.getElementById(field.id);
+                if (fileInput && fileInput.files && fileInput.files[0]) {
+                    formData.append(field.name, fileInput.files[0]);
+                }
+            });
+
             formData.append('overall_status', document.querySelector('input[name="overallStatus"]:checked').value);
             formData.append('overall_notes', document.getElementById('overallNotes').value);
             formData.append('recommendations', document.getElementById('recommendations').value);
             formData.append('next_check_date', document.getElementById('nextCheckDate').value);
-
-            // เพิ่มรูปภาพ
-            const imageFields = ['engineImage', 'bodyImage', 'tiresImage', 'lightsImage', 'brakesImage', 'interiorImage', 'overallImage'];
-            imageFields.forEach(field => {
-                const fileInput = document.getElementById(field);
-                if (fileInput.files[0]) {
-                    formData.append(field, fileInput.files[0]);
-                }
-            });
 
             // ส่งข้อมูล
             fetch('/api/vehicle/check', {
@@ -444,3 +647,4 @@
     </script>
 </body>
 </html>
+
