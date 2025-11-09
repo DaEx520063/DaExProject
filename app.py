@@ -1049,10 +1049,6 @@ def api_content(content_type):
         conn.close()
         return render_template('hr/leave_management.html', branches=BRANCHES)
     
-    elif content_type == 'vehicle-management' and user_role in ['GM', 'MD', 'HR', 'การเงิน', 'SPV']:
-        # ระบบจัดการรถบริษัท
-        conn.close()
-        return render_template('vehicle_management_content.html')
     elif content_type == 'mobile-app' and user_role in ['GM', 'MD', 'HR', 'การเงิน', 'SPV']:
         # Mobile App สำหรับระบบจัดการรถบริษัท
         conn.close()
