@@ -57,8 +57,10 @@
                         <ul class="dropdown-menu">
                             <li><a class="dropdown-item" href="/vehicle/register">ลงทะเบียนใช้งาน</a></li>
                             <li><a class="dropdown-item" href="/vehicle/check">ตรวจเช็คสภาพ</a></li>
-                            <li><a class="dropdown-item" href="/vehicle/list">รายการรถ</a></li>
+                            <li><a class="dropdown-item" href="/vehicle/check-history">ประวัติการตรวจเช็ค</a></li>
+                            <li><a class="dropdown-item" href="/vehicle/add-fuel">บันทึกเบิกจ่ายน้ำมัน</a></li>
                             <li><a class="dropdown-item" href="/vehicle/fuel">ประวัติน้ำมัน</a></li>
+                            <li><a class="dropdown-item" href="/vehicle/list">รายการรถ</a></li>
                         </ul>
                     </li>
                 </ul>
@@ -157,6 +159,16 @@
             <div class="col-md-3 mb-3">
                 <div class="card feature-card h-100">
                     <div class="card-body text-center">
+                        <i class="fas fa-history fa-3x text-secondary mb-3"></i>
+                        <h5>ประวัติการตรวจสภาพ</h5>
+                        <p class="text-muted">ตรวจสอบประวัติการตรวจเช็คทั้งหมด</p>
+                        <a href="/vehicle/check-history" class="btn btn-secondary">ดูประวัติ</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card feature-card h-100">
+                    <div class="card-body text-center">
                         <i class="fas fa-list fa-3x text-info mb-3"></i>
                         <h5>รายการรถ</h5>
                         <p class="text-muted">ดูรายการรถทั้งหมด</p>
@@ -233,8 +245,9 @@
                                     <i class="fas fa-circle text-primary"></i>
                                 </div>
                                 <div class="flex-grow-1 ms-3">
-                                    <h6 class="mb-0">${activity.title}</h6>
-                                    <small class="text-muted">${activity.timestamp}</small>
+                                    <h6 class="mb-1">${activity.title || activity.description || '-'}</h6>
+                                    <p class="mb-1 text-muted small">${activity.description || ''}</p>
+                                    <small class="text-muted">${activity.timestamp || ''}</small>
                                 </div>
                             </div>
                         `).join('');

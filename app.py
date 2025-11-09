@@ -330,6 +330,7 @@ def login():
         password = request.form['password'].strip()
         
         conn = sqlite3.connect('database/daex_system.db')
+        conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
         cursor.execute('SELECT id, username, password_hash, role, branch_code, email FROM users WHERE username = ?', (username,))
         user = cursor.fetchone()
@@ -4232,7 +4233,8 @@ def api_vehicle_dashboard_stats():
             'total_vehicles': total_vehicles,
             'active_vehicles': active_vehicles,
             'maintenance_vehicles': maintenance_vehicles,
-            'monthly_fuel_cost': monthly_fuel_cost
+            'monthly_fuel_cost': monthly_fuel_cost,
+            'total_fuel_cost': monthly_fuel_cost
         })
         
     except Exception as e:
@@ -4273,28 +4275,27 @@ def api_vehicle_recent_activities():
         
         activities = []
         
-        # เพิ่มข้อมูลการใช้งาน
         for usage in recent_usage:
+            usage_date = usage[0] or ''
             activities.append({
                 'type': 'usage',
-                'date': usage[0],
-                'description': f'รถ {usage[2]} - {usage[1]}',
-                'user': usage[3]
+                'title': f"ลงทะเบียนใช้งานรถ {usage[2]}",
+                'description': f"วัตถุประสงค์: {usage[1]} | คนขับ: {usage[3]}",
+                'timestamp': usage_date
             })
         
-        # เพิ่มข้อมูลการตรวจเช็ค
         for check in recent_checks:
+            check_date = check[0] or ''
             activities.append({
                 'type': 'check',
-                'date': check[0],
-                'description': f'ตรวจเช็ครถ {check[1]} - สภาพ: {check[3]}',
-                'user': check[2]
+                'title': f"ตรวจเช็ครถ {check[1]}",
+                'description': f"ผู้ตรวจ: {check[2]} | สภาพรวม: {check[3] or '-'}",
+                'timestamp': check_date
             })
         
-        # เรียงลำดับตามวันที่
-        activities.sort(key=lambda x: x['date'], reverse=True)
+        activities.sort(key=lambda x: x['timestamp'], reverse=True)
         
-        return jsonify(activities[:10])
+        return jsonify({'activities': activities[:10]})
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -4317,8 +4318,7 @@ def api_vehicle_notifications():
         
         if not table_exists:
             conn.close()
-            # ถ้าไม่มีตาราง ให้ return empty array
-            return jsonify([])
+            return jsonify({'notifications': []})
         
         # ดึงการแจ้งเตือนที่ยังไม่เสร็จสิ้น
         cursor.execute('''
@@ -4343,18 +4343,16 @@ def api_vehicle_notifications():
                 'vehicle': notif[4]
             })
         
-        return jsonify(result)
+        return jsonify({'notifications': result})
         
     except sqlite3.OperationalError as e:
-        # ถ้า error เกี่ยวกับตารางไม่มี ให้ return empty array
         print(f"Vehicle notifications table error: {str(e)}")
-        return jsonify([])
+        return jsonify({'notifications': []})
     except Exception as e:
         import traceback
         error_msg = f"Error in api_vehicle_notifications: {str(e)}\n{traceback.format_exc()}"
         print(error_msg)
-        # Return empty array instead of error to prevent dashboard from breaking
-        return jsonify([])
+        return jsonify({'notifications': []})
 
 @app.route('/api/vehicle/list')
 @login_required
@@ -4409,27 +4407,31 @@ def api_vehicle_list():
         
         conn.close()
         
+        def get_value(row, key):
+            return row[key] if key in row.keys() else None
+        
         result = []
         for vehicle in vehicles:
             result.append({
-                'vehicle_id': vehicle[1],
-                'license_plate': vehicle[2],
-                'brand': vehicle[3],
-                'model': vehicle[4],
-                'year': vehicle[5],
-                'color': vehicle[6],
-                'engine_size': vehicle[7],
-                'fuel_type': vehicle[8],
-                'transmission': vehicle[9],
-                'mileage': vehicle[10],
-                'status': vehicle[11],
-                'branch_code': vehicle[12],
-                'assigned_driver_id': vehicle[13],
-                'purchase_date': vehicle[14],
-                'purchase_price': vehicle[15],
-                'insurance_expiry': vehicle[16],
-                'registration_expiry': vehicle[17],
-                'assigned_driver_name': vehicle[19]
+                'vehicle_id': get_value(vehicle, 'vehicle_id'),
+                'license_plate': get_value(vehicle, 'license_plate'),
+                'brand': get_value(vehicle, 'brand'),
+                'model': get_value(vehicle, 'model'),
+                'year': get_value(vehicle, 'year'),
+                'color': get_value(vehicle, 'color'),
+                'engine_size': get_value(vehicle, 'engine_size'),
+                'fuel_type': get_value(vehicle, 'fuel_type'),
+                'transmission': get_value(vehicle, 'transmission'),
+                'mileage': get_value(vehicle, 'mileage'),
+                'status': get_value(vehicle, 'status'),
+                'branch_code': get_value(vehicle, 'branch_code'),
+                'assigned_driver_id': get_value(vehicle, 'assigned_driver_id'),
+                'purchase_date': get_value(vehicle, 'purchase_date'),
+                'purchase_price': get_value(vehicle, 'purchase_price'),
+                'insurance_expiry': get_value(vehicle, 'insurance_expiry'),
+                'registration_expiry': get_value(vehicle, 'registration_expiry'),
+                'assigned_driver_name': get_value(vehicle, 'assigned_driver_name'),
+                'created_at': get_value(vehicle, 'created_at')
             })
         
         return jsonify(result)
