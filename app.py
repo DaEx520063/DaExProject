@@ -1606,6 +1606,7 @@ def api_activate_employee(employee_id):
     """API สำหรับเปิดรหัสพนักงาน"""
     try:
         conn = sqlite3.connect('database/daex_system.db')
+        conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
         
         cursor.execute('''
