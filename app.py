@@ -33,9 +33,24 @@ CORS(app)
 # สร้างโฟลเดอร์ database ถ้ายังไม่มี
 os.makedirs('database', exist_ok=True)
 
+def get_database_path():
+    """หาตำแหน่งไฟล์ฐานข้อมูลหลัก"""
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    db_path = os.path.join(base_dir, 'database', 'daex_system.db')
+    if not os.path.exists(db_path):
+        db_path = os.path.join(base_dir, 'daex_system.db')
+    return db_path
+
+def get_db_connection(timeout=30.0):
+    """เชื่อมต่อฐานข้อมูลพร้อมกำหนด row_factory ให้คืน dict-like rows"""
+    db_path = get_database_path()
+    conn = sqlite3.connect(db_path, timeout=timeout)
+    conn.row_factory = sqlite3.Row
+    return conn
+
 def init_db():
     """สร้างตารางฐานข้อมูลสำหรับระบบ JMS"""
-    conn = sqlite3.connect('database/daex_system.db')
+    conn = sqlite3.connect(get_database_path())
     cursor = conn.cursor()
     
     # สร้างตารางผู้ใช้งานระบบ
@@ -358,7 +373,7 @@ def mobile_login():
         username = request.form['username'].strip()
         password = request.form['password'].strip()
         
-        conn = sqlite3.connect('database/daex_system.db')
+        conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute('SELECT id, username, password_hash, role, branch_code, email FROM users WHERE username = ?', (username,))
         user = cursor.fetchone()
@@ -656,7 +671,7 @@ def api_my_leave_requests():
     """API สำหรับดึงข้อมูลการลาของผู้ใช้"""
     try:
         employee_id = session.get('username')
-        conn = sqlite3.connect('database/daex_system.db')
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         cursor.execute('''
@@ -872,7 +887,7 @@ def api_content(content_type):
     
     elif content_type == 'all-expenses' and user_role in ['GM', 'MD']:
         # ค่าใช้จ่ายทั้งหมด
-        conn = sqlite3.connect('database/daex_system.db')
+        conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute('''
             SELECT e.*, emp.name as employee_name, emp.branch_code 
@@ -902,7 +917,7 @@ def api_content(content_type):
     
     elif content_type == 'all-penalties' and user_role in ['GM', 'MD']:
         # ค่าปรับทั้งหมด
-        conn = sqlite3.connect('database/daex_system.db')
+        conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute('''
             SELECT p.*, e.name as employee_name, e.branch_code 
@@ -1061,7 +1076,7 @@ def api_salary_monthly_data():
         branch = request.args.get('branch', '')
         employee_id = request.args.get('employee_id', '')
         
-        conn = sqlite3.connect('database/daex_system.db')
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         # ดึงข้อมูลจาก monthly_salary_data (ข้อมูลที่มีช่วงน้ำหนักแยก)
@@ -1278,7 +1293,7 @@ def api_salary_monthly_data():
 def api_employee_salary_details(employee_id):
     """API สำหรับดึงข้อมูลรายละเอียดเงินเดือนของพนักงานคนเดียว"""
     try:
-        conn = sqlite3.connect('database/daex_system.db')
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         # ดึงข้อมูลพนักงาน
@@ -5625,10 +5640,8 @@ def api_add_fuel_record():
         data = request.get_json()
         
         # ใช้ timeout เพื่อป้องกัน database locked
-        conn = sqlite3.connect('database/daex_system.db', timeout=10.0)
+        conn = get_db_connection(timeout=10.0)
         cursor = conn.cursor()
-        
-        # ตั้งค่า WAL mode เพื่อลดปัญหา database locked
         cursor.execute('PRAGMA journal_mode=WAL')
         
         cursor.execute('''
