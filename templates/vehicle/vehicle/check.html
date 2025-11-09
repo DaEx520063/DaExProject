@@ -107,26 +107,26 @@
                                             <div class="mb-2">
                                             <label class="form-label">สถานะ</label>
                                             <div class="btn-group w-100" role="group">
-                                                    <input type="radio" class="btn-check" name="oilStatus" id="oilGood" value="good" checked>
-                                                    <label class="btn btn-outline-success" for="oilGood">ดี</label>
-                                                    <input type="radio" class="btn-check" name="oilStatus" id="oilWarning" value="warning">
-                                                    <label class="btn btn-outline-warning" for="oilWarning">ควรระวัง</label>
-                                                    <input type="radio" class="btn-check" name="oilStatus" id="oilBad" value="bad">
+                                                <input type="radio" class="btn-check" name="oilStatus" id="oilGood" value="good" checked>
+                                                <label class="btn btn-outline-success" for="oilGood">ดี</label>
+                                                <input type="radio" class="btn-check" name="oilStatus" id="oilWarning" value="warning">
+                                                <label class="btn btn-outline-warning" for="oilWarning">ควรระวัง</label>
+                                                <input type="radio" class="btn-check" name="oilStatus" id="oilBad" value="bad">
                                                     <label class="btn btn-outline-danger" for="oilBad">ต้องเติม/เปลี่ยน</label>
+                                                </div>
                                             </div>
-                                        </div>
                                             <div class="mb-2">
                                                 <label for="oilNotes" class="form-label">หมายเหตุ</label>
                                                 <textarea class="form-control" id="oilNotes" rows="2" placeholder="รายละเอียด..."></textarea>
                                         </div>
                                     </div>
                                     <div class="col-md-4">
-                                            <div class="image-upload" onclick="document.getElementById('oilImage').click()">
+                                        <div class="image-upload" onclick="document.getElementById('oilImage').click()">
                                             <i class="fas fa-camera fa-2x mb-2"></i>
                                             <p class="mb-0">คลิกเพื่ออัปโหลดรูป</p>
-                                                <input type="file" id="oilImage" accept="image/*" style="display: none;" onchange="previewImage(this, 'oilPreview')">
+                                            <input type="file" id="oilImage" accept="image/*" style="display: none;" onchange="previewImage(this, 'oilPreview')">
                                         </div>
-                                            <div id="oilPreview" class="mt-2"></div>
+                                        <div id="oilPreview" class="mt-2"></div>
                                     </div>
                                 </div>
                             </div>
@@ -139,26 +139,26 @@
                                             <div class="mb-2">
                                             <label class="form-label">สถานะ</label>
                                             <div class="btn-group w-100" role="group">
-                                                    <input type="radio" class="btn-check" name="batteryStatus" id="batteryGood" value="good" checked>
-                                                    <label class="btn btn-outline-success" for="batteryGood">ดี</label>
-                                                    <input type="radio" class="btn-check" name="batteryStatus" id="batteryWarning" value="warning">
-                                                    <label class="btn btn-outline-warning" for="batteryWarning">ควรระวัง</label>
-                                                    <input type="radio" class="btn-check" name="batteryStatus" id="batteryBad" value="bad">
-                                                    <label class="btn btn-outline-danger" for="batteryBad">ต้องเปลี่ยน</label>
+                                                <input type="radio" class="btn-check" name="batteryStatus" id="batteryGood" value="good" checked>
+                                                <label class="btn btn-outline-success" for="batteryGood">ดี</label>
+                                                <input type="radio" class="btn-check" name="batteryStatus" id="batteryWarning" value="warning">
+                                                <label class="btn btn-outline-warning" for="batteryWarning">ควรระวัง</label>
+                                                <input type="radio" class="btn-check" name="batteryStatus" id="batteryBad" value="bad">
+                                                <label class="btn btn-outline-danger" for="batteryBad">ต้องเปลี่ยน</label>
                                             </div>
                                         </div>
                                             <div class="mb-2">
-                                                <label for="batteryNotes" class="form-label">หมายเหตุ</label>
+                                            <label for="batteryNotes" class="form-label">หมายเหตุ</label>
                                                 <textarea class="form-control" id="batteryNotes" rows="2" placeholder="รายละเอียด..."></textarea>
-                                        </div>
+                                            </div>
                                     </div>
                                     <div class="col-md-4">
-                                            <div class="image-upload" onclick="document.getElementById('batteryImage').click()">
+                                        <div class="image-upload" onclick="document.getElementById('batteryImage').click()">
                                             <i class="fas fa-camera fa-2x mb-2"></i>
                                             <p class="mb-0">คลิกเพื่ออัปโหลดรูป</p>
-                                                <input type="file" id="batteryImage" accept="image/*" style="display: none;" onchange="previewImage(this, 'batteryPreview')">
+                                            <input type="file" id="batteryImage" accept="image/*" style="display: none;" onchange="previewImage(this, 'batteryPreview')">
                                         </div>
-                                            <div id="batteryPreview" class="mt-2"></div>
+                                        <div id="batteryPreview" class="mt-2"></div>
                                     </div>
                                 </div>
                             </div>
@@ -182,7 +182,7 @@
                                             <div class="mb-2">
                                             <label for="tiresNotes" class="form-label">หมายเหตุ</label>
                                                 <textarea class="form-control" id="tiresNotes" rows="2" placeholder="รายละเอียด..."></textarea>
-                                        </div>
+                                            </div>
                                     </div>
                                     <div class="col-md-4">
                                         <div class="image-upload" onclick="document.getElementById('tiresImage').click()">
@@ -199,10 +199,10 @@
                                 <div class="mb-4 p-3 border rounded">
                                     <label class="form-label fw-bold">4. น้ำมันเบรค</label>
                                     <div class="row mt-2">
-                                        <div class="col-md-8">
+                                    <div class="col-md-8">
                                             <div class="mb-2">
-                                                <label class="form-label">สถานะ</label>
-                                                <div class="btn-group w-100" role="group">
+                                            <label class="form-label">สถานะ</label>
+                                            <div class="btn-group w-100" role="group">
                                                     <input type="radio" class="btn-check" name="brakeFluidStatus" id="brakeFluidGood" value="good" checked>
                                                     <label class="btn btn-outline-success" for="brakeFluidGood">ดี</label>
                                                     <input type="radio" class="btn-check" name="brakeFluidStatus" id="brakeFluidWarning" value="warning">
@@ -246,27 +246,27 @@
                                             <div class="mb-2">
                                                 <label for="clutchFluidNotes" class="form-label">หมายเหตุ</label>
                                                 <textarea class="form-control" id="clutchFluidNotes" rows="2" placeholder="รายละเอียด..."></textarea>
-                                            </div>
                                         </div>
-                                        <div class="col-md-4">
+                                    </div>
+                                    <div class="col-md-4">
                                             <div class="image-upload" onclick="document.getElementById('clutchFluidImage').click()">
-                                                <i class="fas fa-camera fa-2x mb-2"></i>
-                                                <p class="mb-0">คลิกเพื่ออัปโหลดรูป</p>
+                                            <i class="fas fa-camera fa-2x mb-2"></i>
+                                            <p class="mb-0">คลิกเพื่ออัปโหลดรูป</p>
                                                 <input type="file" id="clutchFluidImage" accept="image/*" style="display: none;" onchange="previewImage(this, 'clutchFluidPreview')">
                                             </div>
                                             <div id="clutchFluidPreview" class="mt-2"></div>
-                                        </div>
                                     </div>
                                 </div>
+                            </div>
 
                                 <!-- 6. น้ำยาแอร์ -->
                                 <div class="mb-4 p-3 border rounded">
                                     <label class="form-label fw-bold">6. น้ำยาแอร์</label>
                                     <div class="row mt-2">
-                                        <div class="col-md-8">
+                                    <div class="col-md-8">
                                             <div class="mb-2">
-                                                <label class="form-label">สถานะ</label>
-                                                <div class="btn-group w-100" role="group">
+                                            <label class="form-label">สถานะ</label>
+                                            <div class="btn-group w-100" role="group">
                                                     <input type="radio" class="btn-check" name="acFluidStatus" id="acFluidGood" value="good" checked>
                                                     <label class="btn btn-outline-success" for="acFluidGood">ดี</label>
                                                     <input type="radio" class="btn-check" name="acFluidStatus" id="acFluidWarning" value="warning">
@@ -310,27 +310,27 @@
                                             <div class="mb-2">
                                                 <label for="coolantNotes" class="form-label">หมายเหตุ</label>
                                                 <textarea class="form-control" id="coolantNotes" rows="2" placeholder="รายละเอียด..."></textarea>
-                                            </div>
                                         </div>
-                                        <div class="col-md-4">
+                                    </div>
+                                    <div class="col-md-4">
                                             <div class="image-upload" onclick="document.getElementById('coolantImage').click()">
-                                                <i class="fas fa-camera fa-2x mb-2"></i>
-                                                <p class="mb-0">คลิกเพื่ออัปโหลดรูป</p>
+                                            <i class="fas fa-camera fa-2x mb-2"></i>
+                                            <p class="mb-0">คลิกเพื่ออัปโหลดรูป</p>
                                                 <input type="file" id="coolantImage" accept="image/*" style="display: none;" onchange="previewImage(this, 'coolantPreview')">
                                             </div>
                                             <div id="coolantPreview" class="mt-2"></div>
-                                        </div>
                                     </div>
                                 </div>
+                            </div>
 
                                 <!-- 8. ประตูรถ ด้ามจับ -->
                                 <div class="mb-4 p-3 border rounded">
                                     <label class="form-label fw-bold">8. ประตูรถ ด้ามจับ</label>
                                     <div class="row mt-2">
-                                        <div class="col-md-8">
+                                    <div class="col-md-8">
                                             <div class="mb-2">
-                                                <label class="form-label">สถานะ</label>
-                                                <div class="btn-group w-100" role="group">
+                                            <label class="form-label">สถานะ</label>
+                                            <div class="btn-group w-100" role="group">
                                                     <input type="radio" class="btn-check" name="doorsStatus" id="doorsGood" value="good" checked>
                                                     <label class="btn btn-outline-success" for="doorsGood">ดี</label>
                                                     <input type="radio" class="btn-check" name="doorsStatus" id="doorsWarning" value="warning">
@@ -342,18 +342,18 @@
                                             <div class="mb-2">
                                                 <label for="doorsNotes" class="form-label">หมายเหตุ</label>
                                                 <textarea class="form-control" id="doorsNotes" rows="2" placeholder="รายละเอียด..."></textarea>
-                                            </div>
                                         </div>
-                                        <div class="col-md-4">
+                                    </div>
+                                    <div class="col-md-4">
                                             <div class="image-upload" onclick="document.getElementById('doorsImage').click()">
-                                                <i class="fas fa-camera fa-2x mb-2"></i>
-                                                <p class="mb-0">คลิกเพื่ออัปโหลดรูป</p>
+                                            <i class="fas fa-camera fa-2x mb-2"></i>
+                                            <p class="mb-0">คลิกเพื่ออัปโหลดรูป</p>
                                                 <input type="file" id="doorsImage" accept="image/*" style="display: none;" onchange="previewImage(this, 'doorsPreview')">
                                             </div>
                                             <div id="doorsPreview" class="mt-2"></div>
-                                        </div>
                                     </div>
                                 </div>
+                            </div>
 
                                 <!-- 9. ไฟหน้า-ท้าย -->
                                 <div class="mb-4 p-3 border rounded">
@@ -369,10 +369,10 @@
                                                 <label class="btn btn-outline-warning" for="lightsWarning">ควรระวัง</label>
                                                 <input type="radio" class="btn-check" name="lightsStatus" id="lightsBad" value="bad">
                                                     <label class="btn btn-outline-danger" for="lightsBad">ต้องซ่อม/เปลี่ยน</label>
+                                                </div>
                                             </div>
-                                        </div>
                                             <div class="mb-2">
-                                            <label for="lightsNotes" class="form-label">หมายเหตุ</label>
+                                                <label for="lightsNotes" class="form-label">หมายเหตุ</label>
                                                 <textarea class="form-control" id="lightsNotes" rows="2" placeholder="รายละเอียด..."></textarea>
                                         </div>
                                     </div>
@@ -401,8 +401,8 @@
                                                     <label class="btn btn-outline-warning" for="mirrorsWarning">ควรระวัง</label>
                                                     <input type="radio" class="btn-check" name="mirrorsStatus" id="mirrorsBad" value="bad">
                                                     <label class="btn btn-outline-danger" for="mirrorsBad">ต้องซ่อม/เปลี่ยน</label>
+                                                </div>
                                             </div>
-                                        </div>
                                             <div class="mb-2">
                                                 <label for="mirrorsNotes" class="form-label">หมายเหตุ</label>
                                                 <textarea class="form-control" id="mirrorsNotes" rows="2" placeholder="รายละเอียด..."></textarea>
@@ -413,7 +413,7 @@
                                             <i class="fas fa-camera fa-2x mb-2"></i>
                                             <p class="mb-0">คลิกเพื่ออัปโหลดรูป</p>
                                                 <input type="file" id="mirrorsImage" accept="image/*" style="display: none;" onchange="previewImage(this, 'mirrorsPreview')">
-                                        </div>
+                                            </div>
                                             <div id="mirrorsPreview" class="mt-2"></div>
                                     </div>
                                 </div>
@@ -437,8 +437,8 @@
                                                     <label class="btn btn-outline-warning" for="othersWarning">ควรระวัง</label>
                                                     <input type="radio" class="btn-check" name="othersStatus" id="othersBad" value="bad">
                                                     <label class="btn btn-outline-danger" for="othersBad">ต้องตรวจสอบ</label>
+                                                </div>
                                             </div>
-                                        </div>
                                             <div class="mb-2">
                                                 <label for="othersNotes" class="form-label">หมายเหตุ</label>
                                                 <textarea class="form-control" id="othersNotes" rows="2" placeholder="รายละเอียด..."></textarea>
@@ -449,7 +449,7 @@
                                             <i class="fas fa-camera fa-2x mb-2"></i>
                                             <p class="mb-0">คลิกเพื่ออัปโหลดรูป</p>
                                                 <input type="file" id="othersImage" accept="image/*" style="display: none;" onchange="previewImage(this, 'othersPreview')">
-                                        </div>
+                                            </div>
                                             <div id="othersPreview" class="mt-2"></div>
                                     </div>
                                 </div>
@@ -647,4 +647,3 @@
     </script>
 </body>
 </html>
-
