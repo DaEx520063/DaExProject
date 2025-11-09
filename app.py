@@ -1463,6 +1463,7 @@ def api_import_employees():
         employees = data.get('employees', [])
         
         conn = sqlite3.connect('database/daex_system.db')
+        conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
         
         success_count = 0
@@ -1538,6 +1539,7 @@ def api_update_employee():
         data = request.get_json()
         
         conn = sqlite3.connect('database/daex_system.db')
+        conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
         
         old_employee_id = data['employee_id']
@@ -1633,7 +1635,7 @@ def api_activate_employee(employee_id):
 def api_deactivate_employee(employee_id):
     """API สำหรับปิดรหัสพนักงาน"""
     try:
-        conn = sqlite3.connect('database/daex_system.db')
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         cursor.execute('''
@@ -4372,7 +4374,7 @@ def api_vehicle_notifications():
 def api_vehicle_list():
     """API สำหรับรายการรถ"""
     try:
-        conn = sqlite3.connect('database/daex_system.db')
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         # ดึงพารามิเตอร์การกรอง
