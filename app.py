@@ -365,6 +365,32 @@ def parse_images_json(images_text):
     except json.JSONDecodeError:
         return []
 
+def normalize_image_field(value):
+    """ปรับรูปแบบข้อมูลรูปภาพให้เป็น list ของ dict เสมอ"""
+    if not value:
+        return []
+    if isinstance(value, list):
+        # ตรวจสอบว่า list มีโครงสร้าง dict ที่มี data หรือไม่
+        normalized = []
+        for item in value:
+            if isinstance(item, dict) and item.get('data'):
+                normalized.append({
+                    'filename': item.get('filename'),
+                    'data': item.get('data')
+                })
+        return normalized
+    if isinstance(value, str):
+        parsed = parse_images_json(value)
+        if parsed:
+            return normalize_image_field(parsed)
+        # กรณีเป็น base64 ตรง ให้แปลงเป็น list เดี่ยว
+        return [{
+            'filename': None,
+            'data': value
+        }]
+    # กรณีอื่นให้คืน list ว่าง
+    return []
+
 # เรียกใช้ init_db() - skip for existing database
 # init_db()
 
@@ -5177,22 +5203,28 @@ def api_vehicle_check():
         }
         
         image_data = {}
-        # อ่านรูปภาพ field ใหม่
+        max_images_per_field = 3
+        # อ่านรูปภาพ field ใหม่ (รองรับหลายไฟล์)
         for form_field, db_field in image_fields_map.items():
-            file = request.files.get(form_field)
-            if file and file.filename:
-                file_data = file.read()
-                image_data[db_field] = base64.b64encode(file_data).decode('utf-8') if file_data else None
+            files = request.files.getlist(form_field)
+            if not files:
+                single_file = request.files.get(form_field)
+                if single_file:
+                    files = [single_file]
+            
+            if files:
+                encoded_images = encode_multiple_images(files[:max_images_per_field])
+                image_data[db_field] = json.dumps(encoded_images) if encoded_images else None
             else:
                 image_data[db_field] = None
         
-        # อ่านรูปภาพ field เก่า (ถ้ามี)
+        # อ่านรูปภาพ field เก่า (ถ้ามี) - รองรับไฟล์เดี่ยว
         for form_field, db_field in old_image_fields_map.items():
-            if db_field not in image_data:  # ถ้ายังไม่มีค่า
+            if db_field not in image_data or image_data[db_field] is None:
                 file = request.files.get(form_field)
                 if file and file.filename:
-                    file_data = file.read()
-                    image_data[db_field] = base64.b64encode(file_data).decode('utf-8') if file_data else None
+                    filename, encoded = encode_file_storage(file)
+                    image_data[db_field] = encoded
                 else:
                     image_data[db_field] = None
         
@@ -5466,6 +5498,18 @@ def api_vehicle_check_history():
             
             # เพิ่ม vehicle_display
             record_dict['vehicle_display'] = f"{record_dict.get('license_plate') or ''} {record_dict.get('brand') or ''} {record_dict.get('model') or ''}".strip()
+
+            image_field_keys = [
+                'oil_image', 'battery_image', 'tires_image', 'brake_fluid_image',
+                'clutch_fluid_image', 'ac_fluid_image', 'coolant_image',
+                'doors_image', 'lights_image', 'mirrors_image', 'others_image',
+                'hood_image', 'driver_cabin_image', 'cargo_area_image',
+                'engine_image', 'body_image', 'brakes_image', 'interior_image',
+                'overall_image'
+            ]
+            for image_key in image_field_keys:
+                if image_key in record_dict:
+                    record_dict[image_key] = normalize_image_field(record_dict.get(image_key))
             
             result.append(record_dict)
         
@@ -5646,11 +5690,15 @@ def api_export_check_history():
                            'engine_image', 'body_image', 'brakes_image', 'interior_image', 'overall_image']
             
             for img_field in image_fields:
-                image_record[img_field] = record_dict.get(img_field) if record_dict.get(img_field) else None
+                image_record[img_field] = normalize_image_field(record_dict.get(img_field))
             
             images_data.append(image_record)
             
             # สร้างข้อมูลสำหรับ DataFrame - ใช้ field ใหม่เป็นหลัก
+            def image_count_text(field_name):
+                images_list = image_record.get(field_name) or []
+                return f"{len(images_list)} รูป" if images_list else ''
+
             row_data = {
                 'วันที่ตรวจ': record_dict.get('check_date') or '',
                 'เลขทะเบียน': record_dict.get('license_plate') or '',
@@ -5661,55 +5709,55 @@ def api_export_check_history():
                 # Field ใหม่
                 'สถานะน้ำมันเครื่อง': status_map.get(record_dict.get('oil_status'), record_dict.get('oil_status') or ''),
                 'หมายเหตุน้ำมันเครื่อง': record_dict.get('oil_notes') or '',
-                'รูปภาพน้ำมันเครื่อง': '',
+                'รูปภาพน้ำมันเครื่อง': image_count_text('oil_image'),
                 'สถานะแบตเตอรี่': status_map.get(record_dict.get('battery_status'), record_dict.get('battery_status') or ''),
                 'หมายเหตุแบตเตอรี่': record_dict.get('battery_notes') or '',
-                'รูปภาพแบตเตอรี่': '',
+                'รูปภาพแบตเตอรี่': image_count_text('battery_image'),
                 'สถานะยาง': status_map.get(record_dict.get('tires_status'), record_dict.get('tires_status') or ''),
                 'หมายเหตุยาง': record_dict.get('tires_notes') or '',
-                'รูปภาพยาง': '',
+                'รูปภาพยาง': image_count_text('tires_image'),
                 'สถานะน้ำมันเบรค': status_map.get(record_dict.get('brake_fluid_status'), record_dict.get('brake_fluid_status') or ''),
                 'หมายเหตุน้ำมันเบรค': record_dict.get('brake_fluid_notes') or '',
-                'รูปภาพน้ำมันเบรค': '',
+                'รูปภาพน้ำมันเบรค': image_count_text('brake_fluid_image'),
                 'สถานะน้ำมันครัช': status_map.get(record_dict.get('clutch_fluid_status'), record_dict.get('clutch_fluid_status') or ''),
                 'หมายเหตุน้ำมันครัช': record_dict.get('clutch_fluid_notes') or '',
-                'รูปภาพน้ำมันครัช': '',
+                'รูปภาพน้ำมันครัช': image_count_text('clutch_fluid_image'),
                 'สถานะน้ำยาแอร์': status_map.get(record_dict.get('ac_fluid_status'), record_dict.get('ac_fluid_status') or ''),
                 'หมายเหตุน้ำยาแอร์': record_dict.get('ac_fluid_notes') or '',
-                'รูปภาพน้ำยาแอร์': '',
+                'รูปภาพน้ำยาแอร์': image_count_text('ac_fluid_image'),
                 'สถานะน้ำหล่อเย็น': status_map.get(record_dict.get('coolant_status'), record_dict.get('coolant_status') or ''),
                 'หมายเหตุน้ำหล่อเย็น': record_dict.get('coolant_notes') or '',
-                'รูปภาพน้ำหล่อเย็น': '',
+                'รูปภาพน้ำหล่อเย็น': image_count_text('coolant_image'),
                 'สถานะประตูรถ': status_map.get(record_dict.get('doors_status'), record_dict.get('doors_status') or ''),
                 'หมายเหตุประตูรถ': record_dict.get('doors_notes') or '',
-                'รูปภาพประตูรถ': '',
+                'รูปภาพประตูรถ': image_count_text('doors_image'),
                 'สถานะไฟ': status_map.get(record_dict.get('lights_status'), record_dict.get('lights_status') or ''),
                 'หมายเหตุไฟ': record_dict.get('lights_notes') or '',
-                'รูปภาพไฟ': '',
+                'รูปภาพไฟ': image_count_text('lights_image'),
                 'สถานะกระจกมองข้าง': status_map.get(record_dict.get('mirrors_status'), record_dict.get('mirrors_status') or ''),
                 'หมายเหตุกระจกมองข้าง': record_dict.get('mirrors_notes') or '',
-                'รูปภาพกระจกมองข้าง': '',
+                'รูปภาพกระจกมองข้าง': image_count_text('mirrors_image'),
                 'สถานะอื่นๆ': status_map.get(record_dict.get('others_status'), record_dict.get('others_status') or ''),
                 'รายการอื่นๆ': record_dict.get('others_description') or '',
                 'หมายเหตุอื่นๆ': record_dict.get('others_notes') or '',
-                'รูปภาพอื่นๆ': '',
-                'รูปภาพฝากระโปรงรถ': '',
-                'รูปภาพภายในห้องคนขับ': '',
-                'รูปภาพภายในตู้': '',
+                'รูปภาพอื่นๆ': image_count_text('others_image'),
+                'รูปภาพฝากระโปรงรถ': image_count_text('hood_image'),
+                'รูปภาพภายในห้องคนขับ': image_count_text('driver_cabin_image'),
+                'รูปภาพภายในตู้': image_count_text('cargo_area_image'),
                 # Field เก่า (รองรับข้อมูลเก่า)
                 'สถานะเครื่องยนต์': status_map.get(record_dict.get('engine_status'), record_dict.get('engine_status') or ''),
                 'หมายเหตุเครื่องยนต์': record_dict.get('engine_notes') or '',
-                'รูปภาพเครื่องยนต์': '',
+                'รูปภาพเครื่องยนต์': image_count_text('engine_image'),
                 'สถานะตัวถัง': status_map.get(record_dict.get('body_status'), record_dict.get('body_status') or ''),
                 'หมายเหตุตัวถัง': record_dict.get('body_notes') or '',
-                'รูปภาพตัวถัง': '',
+                'รูปภาพตัวถัง': image_count_text('body_image'),
                 'สถานะเบรก': status_map.get(record_dict.get('brakes_status'), record_dict.get('brakes_status') or ''),
                 'หมายเหตุเบรก': record_dict.get('brakes_notes') or '',
-                'รูปภาพเบรก': '',
+                'รูปภาพเบรก': image_count_text('brakes_image'),
                 'สถานะภายใน': status_map.get(record_dict.get('interior_status'), record_dict.get('interior_status') or ''),
                 'หมายเหตุภายใน': record_dict.get('interior_notes') or '',
-                'รูปภาพภายใน': '',
-                'รูปภาพภาพรวม': '',
+                'รูปภาพภายใน': image_count_text('interior_image'),
+                'รูปภาพภาพรวม': image_count_text('overall_image'),
                 'คำแนะนำ': record_dict.get('recommendations') or '',
                 'ตรวจครั้งถัดไป': record_dict.get('next_check_date') or ''
             }
@@ -5793,10 +5841,17 @@ def api_export_check_history():
                         cell = worksheet.cell(row=row_idx, column=col_idx)
                         
                         # แทรกรูปภาพถ้ามี
-                        if images[image_key]:
+                        image_list = images.get(image_key) or []
+                        first_image = None
+                        if image_list and isinstance(image_list[0], dict):
+                            first_image = image_list[0].get('data')
+                        elif image_list and isinstance(image_list[0], str):
+                            first_image = image_list[0]
+                        
+                        if first_image:
                             try:
                                 # แปลง base64 เป็น bytes
-                                img_bytes = base64.b64decode(images[image_key])
+                                img_bytes = base64.b64decode(first_image)
                                 img_io = BytesIO(img_bytes)
                                 
                                 # สร้าง Image object

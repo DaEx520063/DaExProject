@@ -30,10 +30,18 @@
             border-color: #007bff;
             background-color: #f8f9fa;
         }
+        .image-preview-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
         .image-preview {
-            max-width: 200px;
-            max-height: 200px;
+            width: 120px;
+            height: 120px;
+            object-fit: cover;
             border-radius: 10px;
+            border: 1px solid #dee2e6;
+            background-color: #f8f9fa;
         }
         .status-good { color: #28a745; }
         .status-warning { color: #ffc107; }
@@ -126,10 +134,10 @@
                                     <div class="col-md-4">
                                             <div class="image-upload" onclick="document.getElementById('oilImage').click()">
                                             <i class="fas fa-camera fa-2x mb-2"></i>
-                                            <p class="mb-0">คลิกเพื่ออัปโหลดรูป</p>
-                                                <input type="file" id="oilImage" accept="image/*" style="display: none;" onchange="previewImage(this, 'oilPreview')">
+                                            <p class="mb-0">คลิกเพื่ออัปโหลดรูป (สูงสุด 3 รูป)</p>
+                                                <input type="file" id="oilImage" accept="image/*" multiple style="display: none;" onchange="previewImages(this, 'oilPreview')">
                                         </div>
-                                            <div id="oilPreview" class="mt-2"></div>
+                                            <div id="oilPreview" class="mt-2 image-preview-container"></div>
                                     </div>
                                 </div>
                             </div>
@@ -158,10 +166,10 @@
                                     <div class="col-md-4">
                                             <div class="image-upload" onclick="document.getElementById('batteryImage').click()">
                                             <i class="fas fa-camera fa-2x mb-2"></i>
-                                            <p class="mb-0">คลิกเพื่ออัปโหลดรูป</p>
-                                                <input type="file" id="batteryImage" accept="image/*" style="display: none;" onchange="previewImage(this, 'batteryPreview')">
+                                            <p class="mb-0">คลิกเพื่ออัปโหลดรูป (สูงสุด 3 รูป)</p>
+                                                <input type="file" id="batteryImage" accept="image/*" multiple style="display: none;" onchange="previewImages(this, 'batteryPreview')">
                                         </div>
-                                            <div id="batteryPreview" class="mt-2"></div>
+                                            <div id="batteryPreview" class="mt-2 image-preview-container"></div>
                                     </div>
                                 </div>
                             </div>
@@ -190,10 +198,10 @@
                                     <div class="col-md-4">
                                         <div class="image-upload" onclick="document.getElementById('tiresImage').click()">
                                             <i class="fas fa-camera fa-2x mb-2"></i>
-                                            <p class="mb-0">คลิกเพื่ออัปโหลดรูป</p>
-                                            <input type="file" id="tiresImage" accept="image/*" style="display: none;" onchange="previewImage(this, 'tiresPreview')">
+                                            <p class="mb-0">คลิกเพื่ออัปโหลดรูป (สูงสุด 3 รูป)</p>
+                                            <input type="file" id="tiresImage" accept="image/*" multiple style="display: none;" onchange="previewImages(this, 'tiresPreview')">
                                         </div>
-                                        <div id="tiresPreview" class="mt-2"></div>
+                                        <div id="tiresPreview" class="mt-2 image-preview-container"></div>
                                     </div>
                                 </div>
                             </div>
@@ -222,10 +230,10 @@
                                         <div class="col-md-4">
                                             <div class="image-upload" onclick="document.getElementById('brakeFluidImage').click()">
                                                 <i class="fas fa-camera fa-2x mb-2"></i>
-                                                <p class="mb-0">คลิกเพื่ออัปโหลดรูป</p>
-                                                <input type="file" id="brakeFluidImage" accept="image/*" style="display: none;" onchange="previewImage(this, 'brakeFluidPreview')">
+                                                <p class="mb-0">คลิกเพื่ออัปโหลดรูป (สูงสุด 3 รูป)</p>
+                                                <input type="file" id="brakeFluidImage" accept="image/*" multiple style="display: none;" onchange="previewImages(this, 'brakeFluidPreview')">
                                             </div>
-                                            <div id="brakeFluidPreview" class="mt-2"></div>
+                                            <div id="brakeFluidPreview" class="mt-2 image-preview-container"></div>
                                         </div>
                                     </div>
                                 </div>
@@ -254,10 +262,10 @@
                                         <div class="col-md-4">
                                             <div class="image-upload" onclick="document.getElementById('clutchFluidImage').click()">
                                                 <i class="fas fa-camera fa-2x mb-2"></i>
-                                                <p class="mb-0">คลิกเพื่ออัปโหลดรูป</p>
-                                                <input type="file" id="clutchFluidImage" accept="image/*" style="display: none;" onchange="previewImage(this, 'clutchFluidPreview')">
+                                                <p class="mb-0">คลิกเพื่ออัปโหลดรูป (สูงสุด 3 รูป)</p>
+                                                <input type="file" id="clutchFluidImage" accept="image/*" multiple style="display: none;" onchange="previewImages(this, 'clutchFluidPreview')">
                                             </div>
-                                            <div id="clutchFluidPreview" class="mt-2"></div>
+                                            <div id="clutchFluidPreview" class="mt-2 image-preview-container"></div>
                                         </div>
                                     </div>
                                 </div>
@@ -286,10 +294,10 @@
                                         <div class="col-md-4">
                                             <div class="image-upload" onclick="document.getElementById('acFluidImage').click()">
                                                 <i class="fas fa-camera fa-2x mb-2"></i>
-                                                <p class="mb-0">คลิกเพื่ออัปโหลดรูป</p>
-                                                <input type="file" id="acFluidImage" accept="image/*" style="display: none;" onchange="previewImage(this, 'acFluidPreview')">
+                                                <p class="mb-0">คลิกเพื่ออัปโหลดรูป (สูงสุด 3 รูป)</p>
+                                                <input type="file" id="acFluidImage" accept="image/*" multiple style="display: none;" onchange="previewImages(this, 'acFluidPreview')">
                                             </div>
-                                            <div id="acFluidPreview" class="mt-2"></div>
+                                            <div id="acFluidPreview" class="mt-2 image-preview-container"></div>
                                         </div>
                                     </div>
                                 </div>
@@ -318,10 +326,10 @@
                                         <div class="col-md-4">
                                             <div class="image-upload" onclick="document.getElementById('coolantImage').click()">
                                                 <i class="fas fa-camera fa-2x mb-2"></i>
-                                                <p class="mb-0">คลิกเพื่ออัปโหลดรูป</p>
-                                                <input type="file" id="coolantImage" accept="image/*" style="display: none;" onchange="previewImage(this, 'coolantPreview')">
+                                                <p class="mb-0">คลิกเพื่ออัปโหลดรูป (สูงสุด 3 รูป)</p>
+                                                <input type="file" id="coolantImage" accept="image/*" multiple style="display: none;" onchange="previewImages(this, 'coolantPreview')">
                                             </div>
-                                            <div id="coolantPreview" class="mt-2"></div>
+                                            <div id="coolantPreview" class="mt-2 image-preview-container"></div>
                                         </div>
                                     </div>
                                 </div>
@@ -350,10 +358,10 @@
                                         <div class="col-md-4">
                                             <div class="image-upload" onclick="document.getElementById('doorsImage').click()">
                                                 <i class="fas fa-camera fa-2x mb-2"></i>
-                                                <p class="mb-0">คลิกเพื่ออัปโหลดรูป</p>
-                                                <input type="file" id="doorsImage" accept="image/*" style="display: none;" onchange="previewImage(this, 'doorsPreview')">
+                                                <p class="mb-0">คลิกเพื่ออัปโหลดรูป (สูงสุด 3 รูป)</p>
+                                                <input type="file" id="doorsImage" accept="image/*" multiple style="display: none;" onchange="previewImages(this, 'doorsPreview')">
                                             </div>
-                                            <div id="doorsPreview" class="mt-2"></div>
+                                            <div id="doorsPreview" class="mt-2 image-preview-container"></div>
                                         </div>
                                     </div>
                                 </div>
@@ -382,10 +390,10 @@
                                     <div class="col-md-4">
                                         <div class="image-upload" onclick="document.getElementById('lightsImage').click()">
                                             <i class="fas fa-camera fa-2x mb-2"></i>
-                                            <p class="mb-0">คลิกเพื่ออัปโหลดรูป</p>
-                                            <input type="file" id="lightsImage" accept="image/*" style="display: none;" onchange="previewImage(this, 'lightsPreview')">
+                                            <p class="mb-0">คลิกเพื่ออัปโหลดรูป (สูงสุด 3 รูป)</p>
+                                            <input type="file" id="lightsImage" accept="image/*" multiple style="display: none;" onchange="previewImages(this, 'lightsPreview')">
                                         </div>
-                                        <div id="lightsPreview" class="mt-2"></div>
+                                        <div id="lightsPreview" class="mt-2 image-preview-container"></div>
                                     </div>
                                 </div>
                             </div>
@@ -414,10 +422,10 @@
                                     <div class="col-md-4">
                                             <div class="image-upload" onclick="document.getElementById('mirrorsImage').click()">
                                             <i class="fas fa-camera fa-2x mb-2"></i>
-                                            <p class="mb-0">คลิกเพื่ออัปโหลดรูป</p>
-                                                <input type="file" id="mirrorsImage" accept="image/*" style="display: none;" onchange="previewImage(this, 'mirrorsPreview')">
+                                            <p class="mb-0">คลิกเพื่ออัปโหลดรูป (สูงสุด 3 รูป)</p>
+                                                <input type="file" id="mirrorsImage" accept="image/*" multiple style="display: none;" onchange="previewImages(this, 'mirrorsPreview')">
                                         </div>
-                                            <div id="mirrorsPreview" class="mt-2"></div>
+                                            <div id="mirrorsPreview" class="mt-2 image-preview-container"></div>
                                     </div>
                                 </div>
                             </div>
@@ -450,10 +458,10 @@
                                     <div class="col-md-4">
                                             <div class="image-upload" onclick="document.getElementById('othersImage').click()">
                                             <i class="fas fa-camera fa-2x mb-2"></i>
-                                            <p class="mb-0">คลิกเพื่ออัปโหลดรูป</p>
-                                                <input type="file" id="othersImage" accept="image/*" style="display: none;" onchange="previewImage(this, 'othersPreview')">
+                                            <p class="mb-0">คลิกเพื่ออัปโหลดรูป (สูงสุด 3 รูป)</p>
+                                                <input type="file" id="othersImage" accept="image/*" multiple style="display: none;" onchange="previewImages(this, 'othersPreview')">
                                         </div>
-                                            <div id="othersPreview" class="mt-2"></div>
+                                            <div id="othersPreview" class="mt-2 image-preview-container"></div>
                                     </div>
                                 </div>
                             </div>
@@ -499,28 +507,28 @@
                                         <label class="form-label fw-bold">ฝากระโปรงรถ</label>
                                         <div class="image-upload" onclick="document.getElementById('hoodImage').click()">
                                             <i class="fas fa-camera fa-2x mb-2"></i>
-                                            <p class="mb-0">คลิกเพื่ออัปโหลดรูป</p>
-                                            <input type="file" id="hoodImage" accept="image/*" style="display: none;" onchange="previewImage(this, 'hoodPreview')">
+                                            <p class="mb-0">คลิกเพื่ออัปโหลดรูป (สูงสุด 3 รูป)</p>
+                                            <input type="file" id="hoodImage" accept="image/*" multiple style="display: none;" onchange="previewImages(this, 'hoodPreview')">
                                         </div>
-                                        <div id="hoodPreview" class="mt-2"></div>
+                                        <div id="hoodPreview" class="mt-2 image-preview-container"></div>
                                     </div>
                                     <div class="col-md-4">
                                         <label class="form-label fw-bold">ภายในห้องคนขับ</label>
                                         <div class="image-upload" onclick="document.getElementById('driverCabinImage').click()">
                                             <i class="fas fa-camera fa-2x mb-2"></i>
                                             <p class="mb-0">คลิกเพื่ออัปโหลดรูป</p>
-                                            <input type="file" id="driverCabinImage" accept="image/*" style="display: none;" onchange="previewImage(this, 'driverCabinPreview')">
+                                            <input type="file" id="driverCabinImage" accept="image/*" multiple style="display: none;" onchange="previewImages(this, 'driverCabinPreview')">
                                         </div>
-                                        <div id="driverCabinPreview" class="mt-2"></div>
+                                        <div id="driverCabinPreview" class="mt-2 image-preview-container"></div>
                                     </div>
                                     <div class="col-md-4">
                                         <label class="form-label fw-bold">ภายในตู้</label>
                                         <div class="image-upload" onclick="document.getElementById('cargoImage').click()">
                                             <i class="fas fa-camera fa-2x mb-2"></i>
                                             <p class="mb-0">คลิกเพื่ออัปโหลดรูป</p>
-                                            <input type="file" id="cargoImage" accept="image/*" style="display: none;" onchange="previewImage(this, 'cargoPreview')">
+                                            <input type="file" id="cargoImage" accept="image/*" multiple style="display: none;" onchange="previewImages(this, 'cargoPreview')">
                                         </div>
-                                        <div id="cargoPreview" class="mt-2"></div>
+                                        <div id="cargoPreview" class="mt-2 image-preview-container"></div>
                                     </div>
                                 </div>
                             </div>
@@ -542,6 +550,8 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        const MAX_IMAGES_PER_SECTION = 3;
+
         // โหลดรายการรถ
         function loadVehicles() {
             fetch('/api/vehicle/list')
@@ -570,16 +580,38 @@
                 });
         }
 
-        // แสดงตัวอย่างรูปภาพ
-        function previewImage(input, previewId) {
-            if (input.files && input.files[0]) {
+        // แสดงตัวอย่างรูปภาพ (รองรับหลายรูป สูงสุด 3 รูป)
+        function previewImages(input, previewId) {
+            if (!input) return;
+            let files = Array.from(input.files || []);
+            if (files.length > MAX_IMAGES_PER_SECTION) {
+                alert(`อัปโหลดรูปได้สูงสุด ${MAX_IMAGES_PER_SECTION} รูปต่อหัวข้อ`);
+                const dataTransfer = new DataTransfer();
+                files.slice(0, MAX_IMAGES_PER_SECTION).forEach(file => dataTransfer.items.add(file));
+                input.files = dataTransfer.files;
+                files = Array.from(input.files);
+            }
+
+            const previewContainer = document.getElementById(previewId);
+            if (!previewContainer) return;
+            previewContainer.innerHTML = '';
+
+            if (files.length === 0) {
+                previewContainer.innerHTML = '<p class="text-muted small mb-0">ยังไม่ได้เลือกรูป</p>';
+                return;
+            }
+
+            files.forEach(file => {
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    const preview = document.getElementById(previewId);
-                    preview.innerHTML = `<img src="${e.target.result}" class="image-preview" alt="Preview">`;
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.className = 'image-preview';
+                    img.alt = file.name;
+                    previewContainer.appendChild(img);
                 };
-                reader.readAsDataURL(input.files[0]);
-            }
+                reader.readAsDataURL(file);
+            });
         }
 
         // จัดการการส่งฟอร์ม
@@ -642,8 +674,10 @@
 
             imageFields.forEach(field => {
                 const fileInput = document.getElementById(field.id);
-                if (fileInput && fileInput.files && fileInput.files[0]) {
-                    formData.append(field.name, fileInput.files[0]);
+                if (fileInput && fileInput.files && fileInput.files.length > 0) {
+                    Array.from(fileInput.files).slice(0, MAX_IMAGES_PER_SECTION).forEach(file => {
+                        formData.append(field.name, file);
+                    });
                 }
             });
 

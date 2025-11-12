@@ -185,6 +185,72 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         let currentHistory = [];
+        const imageFieldLabels = {
+            'oil_image': 'น้ำมันเครื่อง',
+            'battery_image': 'แบตเตอรี่',
+            'tires_image': 'ยางรถยนต์',
+            'brake_fluid_image': 'น้ำมันเบรค',
+            'clutch_fluid_image': 'น้ำมันครัช',
+            'ac_fluid_image': 'น้ำยาแอร์',
+            'coolant_image': 'น้ำหล่อเย็น น้ำกลั่น หม้อน้ำ',
+            'doors_image': 'ประตูรถ ด้ามจับ',
+            'lights_image': 'ไฟหน้า-ท้าย',
+            'mirrors_image': 'กระจกมองข้าง',
+            'others_image': 'อื่นๆ',
+            'hood_image': 'ฝากระโปรงรถ',
+            'driver_cabin_image': 'ภายในห้องคนขับ',
+            'cargo_area_image': 'ภายในตู้',
+            // Field เก่า (รองรับข้อมูลเก่า)
+            'engine_image': 'เครื่องยนต์',
+            'body_image': 'ตัวถัง',
+            'brakes_image': 'เบรก',
+            'interior_image': 'ภายใน',
+            'overall_image': 'ภาพรวม'
+        };
+
+        function normalizeImageValue(value) {
+            if (!value) return [];
+            if (Array.isArray(value)) {
+                return value
+                    .filter(item => item && (item.data || item.base64))
+                    .map(item => ({
+                        data: item.data || item.base64,
+                        filename: item.filename || ''
+                    }));
+            }
+            if (typeof value === 'string') {
+                const trimmed = value.trim();
+                if (trimmed.startsWith('[')) {
+                    try {
+                        const parsed = JSON.parse(trimmed);
+                        return normalizeImageValue(parsed);
+                    } catch (error) {
+                        console.warn('ไม่สามารถแปลงข้อความเป็น JSON ได้:', error);
+                    }
+                }
+                return [{ data: value, filename: '' }];
+            }
+            return [];
+        }
+
+        function buildImageEntries(record) {
+            const images = [];
+            Object.entries(imageFieldLabels).forEach(([key, label]) => {
+                const entries = normalizeImageValue(record[key]);
+                if (entries.length === 0) return;
+                entries.forEach((img, idx) => {
+                    const displayLabel = entries.length > 1 ? `${label} (${idx + 1})` : label;
+                    const notesKey = key.replace('_image', '_notes');
+                    images.push({
+                        label: displayLabel,
+                        data: img.data,
+                        filename: img.filename,
+                        notes: record[notesKey] || ''
+                    });
+                });
+            });
+            return images;
+        }
 
         function getStatusBadge(status) {
             if (!status) return '<span class="text-muted">-</span>';
@@ -262,43 +328,8 @@
 
             noData.classList.add('d-none');
             tbody.innerHTML = history.map((record, index) => {
-                // นับจำนวนรูปภาพที่มี - รองรับ field ใหม่และ field เก่า
-                const images = [];
-                const imageLabels = {
-                    // Field ใหม่จากฟอร์มตรวจเช็ค
-                    'oil_image': 'น้ำมันเครื่อง',
-                    'battery_image': 'แบตเตอรี่',
-                    'tires_image': 'ยางรถยนต์',
-                    'brake_fluid_image': 'น้ำมันเบรค',
-                    'clutch_fluid_image': 'น้ำมันครัช',
-                    'ac_fluid_image': 'น้ำยาแอร์',
-                    'coolant_image': 'น้ำหล่อเย็น น้ำกลั่น หม้อน้ำ',
-                    'doors_image': 'ประตูรถ ด้ามจับ',
-                    'lights_image': 'ไฟหน้า-ท้าย',
-                    'mirrors_image': 'กระจกมองข้าง',
-                    'others_image': 'อื่นๆ',
-                    'hood_image': 'ฝากระโปรงรถ',
-                    'driver_cabin_image': 'ภายในห้องคนขับ',
-                    'cargo_area_image': 'ภายในตู้',
-                    // Field เก่า (รองรับข้อมูลเก่า)
-                    'engine_image': 'เครื่องยนต์',
-                    'body_image': 'ตัวถัง',
-                    'brakes_image': 'เบรก',
-                    'interior_image': 'ภายใน',
-                    'overall_image': 'ภาพรวม'
-                };
-                
-                Object.keys(imageLabels).forEach(key => {
-                    if (record[key]) {
-                        const notesKey = key.replace('_image', '_notes');
-                        images.push({
-                            label: imageLabels[key],
-                            data: record[key],
-                            notes: record[notesKey] || record[key.replace('_image', '_notes')] || ''
-                        });
-                    }
-                });
-                
+                const images = buildImageEntries(record);
+
                 const imageIcon = images.length > 0 
                     ? `<button class="btn btn-sm btn-outline-primary" onclick="showImages(${index})" title="ดูรูปภาพ (${images.length} รูป)">
                          <i class="fas fa-images"></i> ${images.length}
@@ -337,42 +368,8 @@
             const record = currentHistory[recordIndex];
             if (!record) return;
             
-            const images = [];
-            const imageLabels = {
-                // Field ใหม่จากฟอร์มตรวจเช็ค
-                'oil_image': 'น้ำมันเครื่อง',
-                'battery_image': 'แบตเตอรี่',
-                'tires_image': 'ยางรถยนต์',
-                'brake_fluid_image': 'น้ำมันเบรค',
-                'clutch_fluid_image': 'น้ำมันครัช',
-                'ac_fluid_image': 'น้ำยาแอร์',
-                'coolant_image': 'น้ำหล่อเย็น น้ำกลั่น หม้อน้ำ',
-                'doors_image': 'ประตูรถ ด้ามจับ',
-                'lights_image': 'ไฟหน้า-ท้าย',
-                'mirrors_image': 'กระจกมองข้าง',
-                'others_image': 'อื่นๆ',
-                'hood_image': 'ฝากระโปรงรถ',
-                'driver_cabin_image': 'ภายในห้องคนขับ',
-                'cargo_area_image': 'ภายในตู้',
-                // Field เก่า (รองรับข้อมูลเก่า)
-                'engine_image': 'เครื่องยนต์',
-                'body_image': 'ตัวถัง',
-                'brakes_image': 'เบรก',
-                'interior_image': 'ภายใน',
-                'overall_image': 'ภาพรวม'
-            };
-            
-            Object.keys(imageLabels).forEach(key => {
-                if (record[key]) {
-                    const notesKey = key.replace('_image', '_notes');
-                    images.push({
-                        label: imageLabels[key],
-                        data: record[key],
-                        notes: record[notesKey] || record[key.replace('_image', '_notes')] || ''
-                    });
-                }
-            });
-            
+            const images = buildImageEntries(record);
+
             if (images.length === 0) {
                 alert('ไม่มีรูปภาพในรายการนี้');
                 return;
@@ -387,6 +384,7 @@
                             <div class="card">
                                 <div class="card-header">
                                     <strong>${img.label}</strong>
+                                    ${img.filename ? `<br><small class="text-muted">${img.filename}</small>` : ''}
                                     ${img.notes ? `<br><small class="text-muted">${img.notes}</small>` : ''}
                                 </div>
                                 <div class="card-body text-center">
