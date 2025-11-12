@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ซ่อมบำรุงรถ - JMS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .form-card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .badge-status {
+            font-size: 0.85rem;
+            padding: 0.35rem 0.75rem;
+            border-radius: 999px;
+        }
+        .file-preview {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 10px;
+            margin-top: 8px;
+            font-size: 0.9rem;
+        }
+        .file-preview li {
+            margin-bottom: 4px;
+        }
+        .image-thumb {
+            width: 100%;
+            max-height: 160px;
+            object-fit: cover;
+            border-radius: 10px;
+            border: 1px solid #dee2e6;
+        }
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 16px;
+        }
+        .image-grid .card {
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/vehicle/dashboard">
+                <i class="fas fa-car"></i> JMS Vehicle Management
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/vehicle/dashboard">หน้าหลัก</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/vehicle/register">ลงทะเบียนใช้งาน</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/vehicle/check">ตรวจเช็คสภาพ</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/vehicle/check-history">ประวัติการตรวจเช็ค</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/vehicle/list">รายการรถ</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/vehicle/fuel">ประวัติน้ำมัน</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/vehicle/maintenance">ซ่อมบำรุงรถ</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row mb-4">
+            <div class="col-12">
+                <h2><i class="fas fa-tools text-primary"></i> ซ่อมบำรุงรถ</h2>
+                <p class="text-muted">บันทึกคำขอซ่อมบำรุงและรายงานผลหลังซ่อม</p>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-lg-5">
+                <div class="card form-card">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0"><i class="fas fa-file-signature"></i> รอบที่ 1: ขออนุมัติซ่อมบำรุง</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="maintenanceRequestForm">
+                            <div class="mb-3">
+                                <label class="form-label">เลือกรถ *</label>
+                                <select class="form-select" id="vehicleId" required>
+                                    <option value="">เลือกรถ</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">สาขา *</label>
+                                <select class="form-select" id="branchCode" required>
+                                    <option value="">เลือกสาขา</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">วันที่ยื่นคำขอ *</label>
+                                <input type="date" class="form-control" id="requestDate" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">รายการซ่อม *</label>
+                                <textarea class="form-control" id="maintenanceItems" rows="3" placeholder="ระบุรายการซ่อมที่ต้องการดำเนินการ" required></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">อู่ที่ใช้บริการ *</label>
+                                <input type="text" class="form-control" id="garageName" placeholder="ชื่ออู่หรือศูนย์บริการที่ใช้" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">ประมาณการค่าใช้จ่าย (บาท)</label>
+                                <input type="text" class="form-control" id="estimatedCost" placeholder="เช่น 1500">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">แนบใบเสนอราคา *</label>
+                                <input type="file" class="form-control" id="quoteAttachment" accept=".pdf,.jpg,.jpeg,.png" required>
+                                <div id="quotePreview" class="file-preview d-none">
+                                    <strong>ไฟล์ที่เลือก:</strong>
+                                    <span id="quoteFileName"></span>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">ภาพก่อนส่งซ่อม *</label>
+                                <input type="file" class="form-control" id="beforeImages" accept="image/*" multiple required>
+                                <div id="beforeImagesPreview" class="file-preview d-none">
+                                    <strong>ไฟล์ทั้งหมด:</strong>
+                                    <ul class="mb-0" id="beforeImagesList"></ul>
+                                </div>
+                            </div>
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-upload"></i> ส่งคำขออนุมัติซ่อม
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-7">
+                <div class="card form-card h-100">
+                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-list"></i> รายการคำขอซ่อมบำรุง</h5>
+                        <div class="d-flex gap-2">
+                            <select class="form-select form-select-sm" id="statusFilter" style="min-width: 140px;">
+                                <option value="">สถานะทั้งหมด</option>
+                                <option value="requested">รอซ่อม/รอผล</option>
+                                <option value="completed">เสร็จสิ้น</option>
+                            </select>
+                            <button class="btn btn-light btn-sm" id="refreshButton"><i class="fas fa-sync-alt"></i></button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive" style="max-height: 520px; overflow-y: auto;">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>วันที่</th>
+                                        <th>รถ</th>
+                                        <th>สาขา</th>
+                                        <th>อู่</th>
+                                        <th class="text-end">ประมาณการ (บาท)</th>
+                                        <th>สถานะ</th>
+                                        <th>รูป</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="requestsTableBody">
+                                    <tr>
+                                        <td colspan="8" class="text-center text-muted">
+                                            <div class="spinner-border text-primary" role="status">
+                                                <span class="visually-hidden">กำลังโหลด...</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: รายละเอียดคำขอ -->
+    <div class="modal fade" id="requestDetailModal" tabindex="-1">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-info-circle"></i> รายละเอียดคำขอซ่อมบำรุง</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <table class="table table-sm">
+                                <tbody>
+                                    <tr><th>รถ</th><td id="detailVehicle"></td></tr>
+                                    <tr><th>สาขา</th><td id="detailBranch"></td></tr>
+                                    <tr><th>วันที่ยื่น</th><td id="detailRequestDate"></td></tr>
+                                    <tr><th>สถานะ</th><td id="detailStatus"></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <table class="table table-sm">
+                                <tbody>
+                                    <tr><th>อู่</th><td id="detailGarage"></td></tr>
+                                    <tr><th>ประมาณการ</th><td id="detailEstimatedCost"></td></tr>
+                                    <tr><th>ค่าใช้จ่ายจริง</th><td id="detailActualCost"></td></tr>
+                                    <tr><th>วันที่เสร็จ</th><td id="detailCompletionDate"></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <h6 class="fw-bold">รายการซ่อม</h6>
+                        <p id="detailMaintenanceItems" class="mb-0"></p>
+                    </div>
+                    <div class="mb-3">
+                        <h6 class="fw-bold">ไฟล์เอกสาร</h6>
+                        <div id="detailDocuments"></div>
+                    </div>
+                    <div class="mb-3">
+                        <h6 class="fw-bold text-primary">ภาพก่อนซ่อม</h6>
+                        <div id="detailBeforeImages" class="image-grid"></div>
+                    </div>
+                    <div>
+                        <h6 class="fw-bold text-success">ภาพหลังซ่อม</h6>
+                        <div id="detailAfterImages" class="image-grid"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: บันทึกผลหลังซ่อม -->
+    <div class="modal fade" id="completeModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title"><i class="fas fa-check-circle"></i> รอบที่ 2: รายงานผลหลังซ่อม</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="completeForm">
+                        <input type="hidden" id="completeRequestId">
+                        <div class="mb-3">
+                            <label class="form-label">วันที่ซ่อมเสร็จ *</label>
+                            <input type="date" class="form-control" id="completionDate" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">ค่าใช้จ่ายจริง (บาท)</label>
+                            <input type="text" class="form-control" id="actualCost" placeholder="เช่น 1800">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">แนบใบเสร็จ *</label>
+                            <input type="file" class="form-control" id="receiptAttachment" accept=".pdf,.jpg,.jpeg,.png" required>
+                            <div id="receiptPreview" class="file-preview d-none">
+                                <strong>ไฟล์ที่เลือก:</strong>
+                                <span id="receiptFileName"></span>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">ภาพหลังซ่อม *</label>
+                            <input type="file" class="form-control" id="afterImages" accept="image/*" multiple required>
+                            <div id="afterImagesPreview" class="file-preview d-none">
+                                <strong>ไฟล์ทั้งหมด:</strong>
+                                <ul class="mb-0" id="afterImagesList"></ul>
+                            </div>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-save"></i> บันทึกผลหลังซ่อม
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let requestsCache = [];
+        const detailModal = new bootstrap.Modal(document.getElementById('requestDetailModal'));
+        const completeModal = new bootstrap.Modal(document.getElementById('completeModal'));
+
+        function formatCurrency(value) {
+            if (value === null || value === undefined || value === '') return '-';
+            const num = Number(value);
+            if (isNaN(num)) return value;
+            return num.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return '-';
+            const date = new Date(dateString + 'T00:00:00');
+            if (isNaN(date.getTime())) return dateString;
+            return date.toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
+        }
+
+        function getStatusBadge(status) {
+            const map = {
+                'requested': { text: 'รอซ่อม/รอผล', className: 'bg-warning text-dark' },
+                'completed': { text: 'เสร็จสิ้น', className: 'bg-success' }
+            };
+            const info = map[status] || { text: status || '-', className: 'bg-secondary' };
+            return `<span class="badge badge-status ${info.className}">${info.text}</span>`;
+        }
+
+        function getImageMimeType(filename) {
+            if (!filename) return 'image/jpeg';
+            const ext = filename.split('.').pop().toLowerCase();
+            switch (ext) {
+                case 'png': return 'image/png';
+                case 'gif': return 'image/gif';
+                case 'webp': return 'image/webp';
+                case 'bmp': return 'image/bmp';
+                default: return 'image/jpeg';
+            }
+        }
+
+        function resetForm(form) {
+            form.reset();
+            const previews = form.querySelectorAll('.file-preview');
+            previews.forEach(preview => preview.classList.add('d-none'));
+            const lists = form.querySelectorAll('.file-preview ul');
+            lists.forEach(list => list.innerHTML = '');
+        }
+
+        function updateFilePreview(inputId, previewContainerId, fileNameContainerId, listId) {
+            const input = document.getElementById(inputId);
+            const previewContainer = document.getElementById(previewContainerId);
+            const fileNameElement = fileNameContainerId ? document.getElementById(fileNameContainerId) : null;
+            const listElement = listId ? document.getElementById(listId) : null;
+            if (!input || (!fileNameElement && !listElement)) return;
+
+            if (input.files && input.files.length > 0) {
+                previewContainer.classList.remove('d-none');
+                if (fileNameElement) {
+                    fileNameElement.textContent = input.files[0].name;
+                }
+                if (listElement) {
+                    listElement.innerHTML = '';
+                    Array.from(input.files).forEach(file => {
+                        const li = document.createElement('li');
+                        li.textContent = file.name;
+                        listElement.appendChild(li);
+                    });
+                }
+            } else {
+                previewContainer.classList.add('d-none');
+                if (fileNameElement) fileNameElement.textContent = '';
+                if (listElement) listElement.innerHTML = '';
+            }
+        }
+
+        function loadVehicles() {
+            fetch('/api/vehicle/list')
+                .then(res => res.json())
+                .then(data => {
+                    const select = document.getElementById('vehicleId');
+                    if (!select) return;
+                    select.innerHTML = '<option value="">เลือกรถ</option>';
+                    if (Array.isArray(data)) {
+                        data.forEach(vehicle => {
+                            const option = document.createElement('option');
+                            option.value = vehicle.vehicle_id;
+                            option.textContent = `${vehicle.license_plate || ''} ${vehicle.brand || ''} ${vehicle.model || ''}`.trim() || `รถ ID ${vehicle.vehicle_id}`;
+                            select.appendChild(option);
+                        });
+                    }
+                })
+                .catch(err => {
+                    console.error('Error loading vehicles:', err);
+                    alert('เกิดข้อผิดพลาดในการโหลดรายการรถ');
+                });
+        }
+
+        function loadBranches() {
+            fetch('/api/branches')
+                .then(res => res.json())
+                .then(data => {
+                    const select = document.getElementById('branchCode');
+                    if (!select) return;
+                    select.innerHTML = '<option value="">เลือกสาขา</option>';
+                    data.forEach(branch => {
+                        const option = document.createElement('option');
+                        option.value = branch.branch_code;
+                        option.textContent = branch.branch_name || branch.branch_code;
+                        select.appendChild(option);
+                    });
+                })
+                .catch(err => {
+                    console.error('Error loading branches:', err);
+                });
+        }
+
+        function loadRequests() {
+            const status = document.getElementById('statusFilter').value;
+            const params = new URLSearchParams();
+            if (status) params.append('status', status);
+
+            fetch(`/api/vehicle/maintenance/requests?${params.toString()}`)
+                .then(res => res.json())
+                .then(data => {
+                    requestsCache = Array.isArray(data) ? data : [];
+                    renderRequestsTable();
+                })
+                .catch(err => {
+                    console.error('Error loading maintenance requests:', err);
+                    document.getElementById('requestsTableBody').innerHTML =
+                        '<tr><td colspan="8" class="text-center text-danger">ไม่สามารถโหลดข้อมูลได้</td></tr>';
+                });
+        }
+
+        function renderRequestsTable() {
+            const tbody = document.getElementById('requestsTableBody');
+            if (!requestsCache.length) {
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">ยังไม่มีคำขอซ่อมบำรุง</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = requestsCache.map(request => `
+                <tr>
+                    <td>${formatDate(request.request_date)}</td>
+                    <td>${request.vehicle_display || request.license_plate || '-'}</td>
+                    <td>${request.branch_code || '-'}</td>
+                    <td>${request.garage_name || '-'}</td>
+                    <td class="text-end">${formatCurrency(request.estimated_cost)}</td>
+                    <td>${getStatusBadge(request.status)}</td>
+                    <td class="text-center">
+                        <span class="badge bg-info text-dark">${request.before_image_count || 0}</span>
+                        <i class="fas fa-arrow-right mx-1"></i>
+                        <span class="badge ${request.after_image_count ? 'bg-success' : 'bg-secondary'}">
+                            ${request.after_image_count || 0}
+                        </span>
+                    </td>
+                    <td class="text-end">
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-primary" onclick="openRequestDetail(${request.id})">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            ${request.status !== 'completed' ? `
+                                <button class="btn btn-outline-success" onclick="openCompleteModal(${request.id})">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                            ` : ''}
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function buildImageCards(images) {
+            if (!images || !images.length) {
+                return '<p class="text-muted">ไม่มีข้อมูล</p>';
+            }
+            return images.map(img => `
+                <div class="card">
+                    <div class="card-body text-center">
+                        <img src="data:${getImageMimeType(img.filename)};base64,${img.data}" class="image-thumb" alt="${img.filename || 'image'}">
+                        <p class="small mt-2 mb-0 text-truncate" title="${img.filename || ''}">
+                            <i class="fas fa-file-image"></i> ${img.filename || 'รูปภาพ'}
+                        </p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function buildDocumentLinks(detail) {
+            const parts = [];
+            if (detail.quote_attachment) {
+                parts.push(`
+                    <div class="mb-2">
+                        <i class="fas fa-file-alt text-primary"></i>
+                        <a href="data:application/octet-stream;base64,${detail.quote_attachment}" download="${detail.quote_filename || 'quote'}">
+                            ใบเสนอราคา (${detail.quote_filename || 'ไม่ระบุชื่อไฟล์'})
+                        </a>
+                    </div>
+                `);
+            }
+            if (detail.receipt_attachment) {
+                parts.push(`
+                    <div class="mb-2">
+                        <i class="fas fa-file-invoice text-success"></i>
+                        <a href="data:application/octet-stream;base64,${detail.receipt_attachment}" download="${detail.receipt_filename || 'receipt'}">
+                            ใบเสร็จ (${detail.receipt_filename || 'ไม่ระบุชื่อไฟล์'})
+                        </a>
+                    </div>
+                `);
+            }
+            if (!parts.length) {
+                return '<p class="text-muted mb-0">ไม่มีไฟล์แนบ</p>';
+            }
+            return parts.join('');
+        }
+
+        function openRequestDetail(requestId) {
+            fetch(`/api/vehicle/maintenance/requests/${requestId}`)
+                .then(res => res.json())
+                .then(detail => {
+                    document.getElementById('detailVehicle').textContent = detail.vehicle_display || detail.license_plate || '-';
+                    document.getElementById('detailBranch').textContent = detail.branch_code || '-';
+                    document.getElementById('detailRequestDate').textContent = formatDate(detail.request_date);
+                    document.getElementById('detailStatus').innerHTML = getStatusBadge(detail.status);
+                    document.getElementById('detailGarage').textContent = detail.garage_name || '-';
+                    document.getElementById('detailEstimatedCost').textContent = formatCurrency(detail.estimated_cost);
+                    document.getElementById('detailActualCost').textContent = formatCurrency(detail.actual_cost);
+                    document.getElementById('detailCompletionDate').textContent = formatDate(detail.completion_date);
+                    document.getElementById('detailMaintenanceItems').textContent = detail.maintenance_items || '-';
+                    document.getElementById('detailDocuments').innerHTML = buildDocumentLinks(detail);
+                    document.getElementById('detailBeforeImages').innerHTML = buildImageCards(detail.before_images);
+                    document.getElementById('detailAfterImages').innerHTML = buildImageCards(detail.after_images);
+                    detailModal.show();
+                })
+                .catch(err => {
+                    console.error('Error loading maintenance detail:', err);
+                    alert('ไม่สามารถโหลดรายละเอียดคำขอได้');
+                });
+        }
+
+        function openCompleteModal(requestId) {
+            const request = requestsCache.find(item => item.id === requestId);
+            if (!request) {
+                alert('ไม่พบข้อมูลคำขอ');
+                return;
+            }
+            document.getElementById('completeRequestId').value = requestId;
+            document.getElementById('completionDate').value = request.completion_date || new Date().toISOString().split('T')[0];
+            document.getElementById('actualCost').value = request.actual_cost ? request.actual_cost : '';
+            document.getElementById('receiptAttachment').value = '';
+            document.getElementById('afterImages').value = '';
+            document.getElementById('receiptPreview').classList.add('d-none');
+            document.getElementById('afterImagesPreview').classList.add('d-none');
+            document.getElementById('afterImagesList').innerHTML = '';
+            completeModal.show();
+        }
+
+        document.getElementById('maintenanceRequestForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+            const form = e.target;
+            const formData = new FormData();
+            formData.append('vehicle_id', document.getElementById('vehicleId').value);
+            formData.append('branch_code', document.getElementById('branchCode').value);
+            formData.append('request_date', document.getElementById('requestDate').value);
+            formData.append('maintenance_items', document.getElementById('maintenanceItems').value);
+            formData.append('garage_name', document.getElementById('garageName').value);
+            formData.append('estimated_cost', document.getElementById('estimatedCost').value);
+
+            const quoteFile = document.getElementById('quoteAttachment').files[0];
+            if (quoteFile) {
+                formData.append('quoteAttachment', quoteFile);
+            }
+
+            const beforeFiles = document.getElementById('beforeImages').files;
+            Array.from(beforeFiles).forEach(file => formData.append('beforeImages[]', file));
+
+            fetch('/api/vehicle/maintenance/requests', {
+                method: 'POST',
+                body: formData
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        alert(data.message || 'บันทึกคำขอเรียบร้อย');
+                        resetForm(form);
+                        loadRequests();
+                    } else {
+                        alert(data.message || 'ไม่สามารถบันทึกคำขอได้');
+                    }
+                })
+                .catch(err => {
+                    console.error('Error submitting maintenance request:', err);
+                    alert('เกิดข้อผิดพลาดในการส่งคำขอ');
+                });
+        });
+
+        document.getElementById('completeForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+            const requestId = document.getElementById('completeRequestId').value;
+            if (!requestId) {
+                alert('ไม่พบคำขอ');
+                return;
+            }
+            const formData = new FormData();
+            formData.append('completion_date', document.getElementById('completionDate').value);
+            formData.append('actual_cost', document.getElementById('actualCost').value);
+
+            const receiptFile = document.getElementById('receiptAttachment').files[0];
+            if (receiptFile) {
+                formData.append('receiptAttachment', receiptFile);
+            }
+
+            const afterFiles = document.getElementById('afterImages').files;
+            Array.from(afterFiles).forEach(file => formData.append('afterImages[]', file));
+
+            fetch(`/api/vehicle/maintenance/requests/${requestId}/complete`, {
+                method: 'POST',
+                body: formData
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        alert(data.message || 'บันทึกผลหลังซ่อมเรียบร้อย');
+                        completeModal.hide();
+                        loadRequests();
+                    } else {
+                        alert(data.message || 'ไม่สามารถบันทึกผลหลังซ่อมได้');
+                    }
+                })
+                .catch(err => {
+                    console.error('Error submitting completion:', err);
+                    alert('เกิดข้อผิดพลาดในการบันทึกผลหลังซ่อม');
+                });
+        });
+
+        document.getElementById('beforeImages').addEventListener('change', () => {
+            updateFilePreview('beforeImages', 'beforeImagesPreview', null, 'beforeImagesList');
+        });
+        document.getElementById('afterImages').addEventListener('change', () => {
+            updateFilePreview('afterImages', 'afterImagesPreview', null, 'afterImagesList');
+        });
+        document.getElementById('quoteAttachment').addEventListener('change', () => {
+            updateFilePreview('quoteAttachment', 'quotePreview', 'quoteFileName');
+        });
+        document.getElementById('receiptAttachment').addEventListener('change', () => {
+            updateFilePreview('receiptAttachment', 'receiptPreview', 'receiptFileName');
+        });
+
+        document.getElementById('statusFilter').addEventListener('change', loadRequests);
+        document.getElementById('refreshButton').addEventListener('click', () => loadRequests());
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('requestDate').value = today;
+            document.getElementById('completionDate').value = today;
+            loadVehicles();
+            loadBranches();
+            loadRequests();
+        });
+    </script>
+</body>
+</html>
+

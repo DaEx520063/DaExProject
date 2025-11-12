@@ -63,6 +63,9 @@
                     <li class="nav-item">
                         <a class="nav-link" href="/vehicle/list">รายการรถ</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/vehicle/maintenance">ซ่อมบำรุงรถ</a>
+                    </li>
                 </ul>
             </div>
         </div>
@@ -488,6 +491,40 @@
                                 </div>
                             </div>
 
+                            <!-- ภาพถ่ายบังคับ -->
+                            <div class="check-section">
+                                <h5><i class="fas fa-camera"></i> ภาพประกอบการตรวจ</h5>
+                                <div class="row g-4 mt-2">
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-bold">ฝากระโปรงรถ</label>
+                                        <div class="image-upload" onclick="document.getElementById('hoodImage').click()">
+                                            <i class="fas fa-camera fa-2x mb-2"></i>
+                                            <p class="mb-0">คลิกเพื่ออัปโหลดรูป</p>
+                                            <input type="file" id="hoodImage" accept="image/*" style="display: none;" onchange="previewImage(this, 'hoodPreview')">
+                                        </div>
+                                        <div id="hoodPreview" class="mt-2"></div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-bold">ภายในห้องคนขับ</label>
+                                        <div class="image-upload" onclick="document.getElementById('driverCabinImage').click()">
+                                            <i class="fas fa-camera fa-2x mb-2"></i>
+                                            <p class="mb-0">คลิกเพื่ออัปโหลดรูป</p>
+                                            <input type="file" id="driverCabinImage" accept="image/*" style="display: none;" onchange="previewImage(this, 'driverCabinPreview')">
+                                        </div>
+                                        <div id="driverCabinPreview" class="mt-2"></div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-bold">ภายในตู้</label>
+                                        <div class="image-upload" onclick="document.getElementById('cargoImage').click()">
+                                            <i class="fas fa-camera fa-2x mb-2"></i>
+                                            <p class="mb-0">คลิกเพื่ออัปโหลดรูป</p>
+                                            <input type="file" id="cargoImage" accept="image/*" style="display: none;" onchange="previewImage(this, 'cargoPreview')">
+                                        </div>
+                                        <div id="cargoPreview" class="mt-2"></div>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div class="d-grid gap-2 d-md-flex justify-content-md-end">
                                 <button type="button" class="btn btn-secondary me-md-2" onclick="history.back()">
                                     <i class="fas fa-arrow-left"></i> ย้อนกลับ
@@ -597,7 +634,10 @@
                 { id: 'doorsImage', name: 'doorsImage' },
                 { id: 'lightsImage', name: 'lightsImage' },
                 { id: 'mirrorsImage', name: 'mirrorsImage' },
-                { id: 'othersImage', name: 'othersImage' }
+                { id: 'othersImage', name: 'othersImage' },
+                { id: 'hoodImage', name: 'hoodImage' },
+                { id: 'driverCabinImage', name: 'driverCabinImage' },
+                { id: 'cargoImage', name: 'cargoImage' }
             ];
 
             imageFields.forEach(field => {

@@ -301,6 +301,70 @@ def init_db():
     conn.commit()
     conn.close()
 
+def ensure_vehicle_maintenance_requests_table(cursor):
+    """สร้างตารางคำขอซ่อมบำรุงรถหากยังไม่มี"""
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS vehicle_maintenance_requests (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            vehicle_id TEXT NOT NULL,
+            branch_code TEXT,
+            request_date TEXT,
+            maintenance_items TEXT,
+            garage_name TEXT,
+            estimated_cost REAL,
+            quote_attachment TEXT,
+            quote_filename TEXT,
+            before_images TEXT,
+            status TEXT DEFAULT 'requested',
+            created_by INTEGER,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            completion_date TEXT,
+            actual_cost REAL,
+            receipt_attachment TEXT,
+            receipt_filename TEXT,
+            after_images TEXT
+        )
+    ''')
+
+def encode_file_storage(file_storage):
+    """แปลงไฟล์จาก FormData เป็น base64 string พร้อมชื่อไฟล์"""
+    if not file_storage or not getattr(file_storage, 'filename', None):
+        return None, None
+    file_data = file_storage.read()
+    if not file_data:
+        return None, None
+    encoded = base64.b64encode(file_data).decode('utf-8')
+    return file_storage.filename, encoded
+
+def encode_multiple_images(file_list):
+    """แปลงรายการไฟล์ภาพเป็น list ของ dict ที่เก็บชื่อและข้อมูล base64"""
+    images = []
+    for file_storage in file_list:
+        if not file_storage or not getattr(file_storage, 'filename', None):
+            continue
+        file_data = file_storage.read()
+        if not file_data:
+            continue
+        encoded = base64.b64encode(file_data).decode('utf-8')
+        images.append({
+            'filename': file_storage.filename,
+            'data': encoded
+        })
+    return images
+
+def parse_images_json(images_text):
+    """แปลงข้อความ JSON ของรูปภาพให้เป็น list"""
+    if not images_text:
+        return []
+    try:
+        images = json.loads(images_text)
+        if isinstance(images, list):
+            return images
+        return []
+    except json.JSONDecodeError:
+        return []
+
 # เรียกใช้ init_db() - skip for existing database
 # init_db()
 
@@ -4189,6 +4253,13 @@ def vehicle_list():
     """หน้ารายการรถบริษัท"""
     return render_template('vehicle/list.html')
 
+@app.route('/vehicle/maintenance')
+@login_required
+@role_required(['GM', 'MD', 'HR', 'การเงิน', 'SPV'])
+def vehicle_maintenance():
+    """หน้าจัดการซ่อมบำรุงรถ"""
+    return render_template('vehicle/maintenance.html')
+
 @app.route('/vehicle/add-fuel')
 @login_required
 @role_required(['GM', 'MD', 'HR', 'การเงิน', 'SPV'])
@@ -4452,6 +4523,288 @@ def api_vehicle_list():
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+@app.route('/api/vehicle/maintenance/requests', methods=['GET'])
+@login_required
+@role_required(['GM', 'MD', 'HR', 'การเงิน', 'SPV'])
+def api_vehicle_maintenance_requests():
+    """API สำหรับรายการคำขอซ่อมบำรุง"""
+    try:
+        status = request.args.get('status', '')
+        branch_code = request.args.get('branch_code', '')
+        vehicle_id = request.args.get('vehicle_id', '')
+
+        conn = sqlite3.connect('database/daex_system.db')
+        cursor = conn.cursor()
+        ensure_vehicle_maintenance_requests_table(cursor)
+
+        query = '''
+            SELECT vmr.id, vmr.vehicle_id, v.license_plate, v.brand, v.model,
+                   vmr.branch_code, vmr.request_date, vmr.maintenance_items,
+                   vmr.garage_name, vmr.estimated_cost, vmr.status,
+                   vmr.created_at, vmr.updated_at, vmr.completion_date,
+                   vmr.actual_cost, vmr.quote_filename, vmr.receipt_filename,
+                   vmr.before_images, vmr.after_images
+            FROM vehicle_maintenance_requests vmr
+            LEFT JOIN vehicles v ON vmr.vehicle_id = v.vehicle_id
+            WHERE 1=1
+        '''
+        params = []
+
+        if status:
+            query += ' AND vmr.status = ?'
+            params.append(status)
+
+        if branch_code:
+            query += ' AND vmr.branch_code = ?'
+            params.append(branch_code)
+
+        if vehicle_id:
+            query += ' AND vmr.vehicle_id = ?'
+            params.append(vehicle_id)
+
+        query += ' ORDER BY vmr.created_at DESC'
+
+        cursor.execute(query, params)
+        rows = cursor.fetchall()
+        conn.close()
+
+        result = []
+        for row in rows:
+            before_list = parse_images_json(row[17])
+            after_list = parse_images_json(row[18])
+            result.append({
+                'id': row[0],
+                'vehicle_id': row[1],
+                'license_plate': row[2],
+                'brand': row[3],
+                'model': row[4],
+                'vehicle_display': f"{row[2] or ''} {row[3] or ''} {row[4] or ''}".strip(),
+                'branch_code': row[5],
+                'request_date': row[6],
+                'maintenance_items': row[7],
+                'garage_name': row[8],
+                'estimated_cost': row[9],
+                'status': row[10],
+                'created_at': row[11],
+                'updated_at': row[12],
+                'completion_date': row[13],
+                'actual_cost': row[14],
+                'quote_filename': row[15],
+                'receipt_filename': row[16],
+                'before_image_count': len(before_list),
+                'after_image_count': len(after_list)
+            })
+
+        return jsonify(result)
+
+    except Exception as e:
+        import traceback
+        print(f"Error in api_vehicle_maintenance_requests: {str(e)}\n{traceback.format_exc()}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/vehicle/maintenance/requests', methods=['POST'])
+@login_required
+@role_required(['GM', 'MD', 'HR', 'การเงิน', 'SPV'])
+def api_create_vehicle_maintenance_request():
+    """API สำหรับสร้างคำขอซ่อมบำรุง (รอบที่ 1)"""
+    try:
+        user_id = session.get('user_id')
+        if not user_id:
+            return jsonify({'success': False, 'message': 'ไม่พบข้อมูลผู้ใช้งาน'}), 400
+
+        vehicle_id = request.form.get('vehicle_id', '').strip()
+        branch_code = request.form.get('branch_code', '').strip()
+        request_date = request.form.get('request_date', '').strip()
+        maintenance_items = request.form.get('maintenance_items', '').strip()
+        garage_name = request.form.get('garage_name', '').strip()
+        estimated_cost_raw = request.form.get('estimated_cost', '').strip()
+
+        if not vehicle_id:
+            return jsonify({'success': False, 'message': 'กรุณาเลือกรถ'}), 400
+        if not branch_code:
+            return jsonify({'success': False, 'message': 'กรุณาเลือกสาขา'}), 400
+        if not request_date:
+            return jsonify({'success': False, 'message': 'กรุณาระบุวันที่'}), 400
+        if not maintenance_items:
+            return jsonify({'success': False, 'message': 'กรุณาระบุรายการซ่อม'}), 400
+        if not garage_name:
+            return jsonify({'success': False, 'message': 'กรุณาระบุอู่ที่ใช้บริการ'}), 400
+
+        estimated_cost = None
+        if estimated_cost_raw:
+            try:
+                estimated_cost = float(estimated_cost_raw.replace(',', ''))
+            except ValueError:
+                return jsonify({'success': False, 'message': 'กรุณาระบุประมาณการค่าใช้จ่ายเป็นตัวเลข'}), 400
+
+        quote_filename, quote_data = encode_file_storage(request.files.get('quoteAttachment'))
+        if not quote_data:
+            return jsonify({'success': False, 'message': 'กรุณาแนบใบเสนอราคา'}), 400
+
+        before_images_files = request.files.getlist('beforeImages[]')
+        before_images = encode_multiple_images(before_images_files)
+        if len(before_images) == 0:
+            return jsonify({'success': False, 'message': 'กรุณาแนบรูปภาพก่อนซ่อมอย่างน้อย 1 รูป'}), 400
+
+        conn = sqlite3.connect('database/daex_system.db')
+        cursor = conn.cursor()
+        ensure_vehicle_maintenance_requests_table(cursor)
+
+        now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+        cursor.execute('''
+            INSERT INTO vehicle_maintenance_requests (
+                vehicle_id, branch_code, request_date, maintenance_items,
+                garage_name, estimated_cost, quote_attachment, quote_filename,
+                before_images, status, created_by, created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (
+            vehicle_id, branch_code, request_date, maintenance_items,
+            garage_name, estimated_cost, quote_data, quote_filename,
+            json.dumps(before_images), 'requested', user_id, now_str, now_str
+        ))
+
+        request_id = cursor.lastrowid
+        conn.commit()
+        conn.close()
+
+        return jsonify({'success': True, 'message': 'บันทึกคำขอซ่อมบำรุงเรียบร้อย', 'request_id': request_id})
+
+    except Exception as e:
+        import traceback
+        print(f"Error in api_create_vehicle_maintenance_request: {str(e)}\n{traceback.format_exc()}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/vehicle/maintenance/requests/<int:request_id>', methods=['GET'])
+@login_required
+@role_required(['GM', 'MD', 'HR', 'การเงิน', 'SPV'])
+def api_vehicle_maintenance_request_detail(request_id):
+    """API สำหรับรายละเอียดคำขอซ่อมบำรุง"""
+    try:
+        conn = sqlite3.connect('database/daex_system.db')
+        cursor = conn.cursor()
+        ensure_vehicle_maintenance_requests_table(cursor)
+
+        cursor.execute('''
+            SELECT vmr.id, vmr.vehicle_id, v.license_plate, v.brand, v.model,
+                   vmr.branch_code, vmr.request_date, vmr.maintenance_items,
+                   vmr.garage_name, vmr.estimated_cost, vmr.status,
+                   vmr.created_at, vmr.updated_at, vmr.completion_date,
+                   vmr.actual_cost, vmr.quote_attachment, vmr.quote_filename,
+                   vmr.receipt_attachment, vmr.receipt_filename,
+                   vmr.before_images, vmr.after_images
+            FROM vehicle_maintenance_requests vmr
+            LEFT JOIN vehicles v ON vmr.vehicle_id = v.vehicle_id
+            WHERE vmr.id = ?
+        ''', (request_id,))
+        row = cursor.fetchone()
+        conn.close()
+
+        if not row:
+            return jsonify({'error': 'ไม่พบคำขอ'}), 404
+
+        before_images = parse_images_json(row[19])
+        after_images = parse_images_json(row[20])
+
+        return jsonify({
+            'id': row[0],
+            'vehicle_id': row[1],
+            'license_plate': row[2],
+            'brand': row[3],
+            'model': row[4],
+            'vehicle_display': f"{row[2] or ''} {row[3] or ''} {row[4] or ''}".strip(),
+            'branch_code': row[5],
+            'request_date': row[6],
+            'maintenance_items': row[7],
+            'garage_name': row[8],
+            'estimated_cost': row[9],
+            'status': row[10],
+            'created_at': row[11],
+            'updated_at': row[12],
+            'completion_date': row[13],
+            'actual_cost': row[14],
+            'quote_attachment': row[15],
+            'quote_filename': row[16],
+            'receipt_attachment': row[17],
+            'receipt_filename': row[18],
+            'before_images': before_images,
+            'after_images': after_images
+        })
+
+    except Exception as e:
+        import traceback
+        print(f"Error in api_vehicle_maintenance_request_detail: {str(e)}\n{traceback.format_exc()}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/vehicle/maintenance/requests/<int:request_id>/complete', methods=['POST'])
+@login_required
+@role_required(['GM', 'MD', 'HR', 'การเงิน', 'SPV'])
+def api_complete_vehicle_maintenance_request(request_id):
+    """API สำหรับบันทึกผลหลังซ่อมบำรุง (รอบที่ 2)"""
+    try:
+        conn = sqlite3.connect('database/daex_system.db')
+        cursor = conn.cursor()
+        ensure_vehicle_maintenance_requests_table(cursor)
+
+        cursor.execute('''
+            SELECT status FROM vehicle_maintenance_requests WHERE id = ?
+        ''', (request_id,))
+        row = cursor.fetchone()
+        if not row:
+            conn.close()
+            return jsonify({'success': False, 'message': 'ไม่พบคำขอซ่อมบำรุง'}), 404
+
+        current_status = row[0]
+        if current_status == 'completed':
+            conn.close()
+            return jsonify({'success': False, 'message': 'คำขอนี้ถูกบันทึกผลหลังซ่อมแล้ว'}), 400
+
+        actual_cost_raw = request.form.get('actual_cost', '').strip()
+        completion_date = request.form.get('completion_date', '').strip()
+        if not completion_date:
+            completion_date = datetime.now().strftime('%Y-%m-%d')
+
+        actual_cost = None
+        if actual_cost_raw:
+            try:
+                actual_cost = float(actual_cost_raw.replace(',', ''))
+            except ValueError:
+                conn.close()
+                return jsonify({'success': False, 'message': 'กรุณาระบุค่าใช้จ่ายจริงเป็นตัวเลข'}), 400
+
+        receipt_filename, receipt_data = encode_file_storage(request.files.get('receiptAttachment'))
+        if not receipt_data:
+            conn.close()
+            return jsonify({'success': False, 'message': 'กรุณาแนบใบเสร็จ'}), 400
+
+        after_images_files = request.files.getlist('afterImages[]')
+        after_images = encode_multiple_images(after_images_files)
+        if len(after_images) == 0:
+            conn.close()
+            return jsonify({'success': False, 'message': 'กรุณาแนบรูปภาพหลังซ่อมอย่างน้อย 1 รูป'}), 400
+
+        now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+        cursor.execute('''
+            UPDATE vehicle_maintenance_requests
+            SET actual_cost = ?, completion_date = ?, receipt_attachment = ?, receipt_filename = ?,
+                after_images = ?, status = ?, updated_at = ?
+            WHERE id = ?
+        ''', (
+            actual_cost, completion_date, receipt_data, receipt_filename,
+            json.dumps(after_images), 'completed', now_str, request_id
+        ))
+
+        conn.commit()
+        conn.close()
+
+        return jsonify({'success': True, 'message': 'บันทึกผลการซ่อมบำรุงเรียบร้อย'})
+
+    except Exception as e:
+        import traceback
+        print(f"Error in api_complete_vehicle_maintenance_request: {str(e)}\n{traceback.format_exc()}")
+        return jsonify({'success': False, 'message': str(e)}), 500
 
 @app.route('/api/vehicle/statistics')
 @login_required
@@ -4808,7 +5161,10 @@ def api_vehicle_check():
             'doorsImage': 'doors_image',
             'lightsImage': 'lights_image',
             'mirrorsImage': 'mirrors_image',
-            'othersImage': 'others_image'
+            'othersImage': 'others_image',
+            'hoodImage': 'hood_image',
+            'driverCabinImage': 'driver_cabin_image',
+            'cargoImage': 'cargo_area_image'
         }
         
         # Field เก่า (รองรับข้อมูลเก่า)
@@ -4875,7 +5231,10 @@ def api_vehicle_check():
             'others_status': 'TEXT',
             'others_notes': 'TEXT',
             'others_description': 'TEXT',
-            'others_image': 'TEXT'
+            'others_image': 'TEXT',
+            'hood_image': 'TEXT',
+            'driver_cabin_image': 'TEXT',
+            'cargo_area_image': 'TEXT'
         }
         
         for col_name, col_type in new_columns.items():
@@ -4909,6 +5268,7 @@ def api_vehicle_check():
             lights_status, lights_notes, image_data.get('lights_image'),
             mirrors_status, mirrors_notes, image_data.get('mirrors_image'),
             others_status, others_notes, others_description, image_data.get('others_image'),
+            image_data.get('hood_image'), image_data.get('driver_cabin_image'), image_data.get('cargo_area_image'),
             overall_status, overall_notes, recommendations, next_check_date,
             engine_status or oil_status, engine_notes or oil_notes, image_data.get('engine_image'),
             body_status, body_notes, image_data.get('body_image'),
@@ -4934,6 +5294,7 @@ def api_vehicle_check():
                 lights_status, lights_notes, lights_image,
                 mirrors_status, mirrors_notes, mirrors_image,
                 others_status, others_notes, others_description, others_image,
+                hood_image, driver_cabin_image, cargo_area_image,
                 overall_status, overall_notes, recommendations, next_check_date,
                 engine_status, engine_notes, engine_image,
                 body_status, body_notes, body_image,
@@ -5028,7 +5389,10 @@ def api_vehicle_check_history():
             'others_status': 'vwc.others_status',
             'others_notes': 'vwc.others_notes',
             'others_description': 'vwc.others_description',
-            'others_image': 'vwc.others_image'
+            'others_image': 'vwc.others_image',
+            'hood_image': 'vwc.hood_image',
+            'driver_cabin_image': 'vwc.driver_cabin_image',
+            'cargo_area_image': 'vwc.cargo_area_image'
         }
         
         # เพิ่ม field ใหม่ถ้ามี column
@@ -5083,7 +5447,8 @@ def api_vehicle_check_history():
                          'coolant_status', 'coolant_notes', 'coolant_image',
                          'doors_status', 'doors_notes', 'doors_image',
                          'mirrors_status', 'mirrors_notes', 'mirrors_image',
-                         'others_status', 'others_notes', 'others_description', 'others_image']:
+                         'others_status', 'others_notes', 'others_description', 'others_image',
+                         'hood_image', 'driver_cabin_image', 'cargo_area_image']:
             if col_name in existing_columns:
                 field_names.append(col_name)
         
@@ -5191,7 +5556,10 @@ def api_export_check_history():
             'others_status': 'vwc.others_status',
             'others_notes': 'vwc.others_notes',
             'others_description': 'vwc.others_description',
-            'others_image': 'vwc.others_image'
+            'others_image': 'vwc.others_image',
+            'hood_image': 'vwc.hood_image',
+            'driver_cabin_image': 'vwc.driver_cabin_image',
+            'cargo_area_image': 'vwc.cargo_area_image'
         }
         
         # เพิ่ม field ใหม่ถ้ามี column
@@ -5249,7 +5617,8 @@ def api_export_check_history():
                          'coolant_status', 'coolant_notes', 'coolant_image',
                          'doors_status', 'doors_notes', 'doors_image',
                          'mirrors_status', 'mirrors_notes', 'mirrors_image',
-                         'others_status', 'others_notes', 'others_description', 'others_image']:
+                         'others_status', 'others_notes', 'others_description', 'others_image',
+                         'hood_image', 'driver_cabin_image', 'cargo_area_image']:
             if col_name in existing_columns:
                 field_names.append(col_name)
         
@@ -5273,6 +5642,7 @@ def api_export_check_history():
             image_fields = ['oil_image', 'battery_image', 'tires_image', 'brake_fluid_image',
                            'clutch_fluid_image', 'ac_fluid_image', 'coolant_image',
                            'doors_image', 'lights_image', 'mirrors_image', 'others_image',
+                           'hood_image', 'driver_cabin_image', 'cargo_area_image',
                            'engine_image', 'body_image', 'brakes_image', 'interior_image', 'overall_image']
             
             for img_field in image_fields:
@@ -5323,6 +5693,9 @@ def api_export_check_history():
                 'รายการอื่นๆ': record_dict.get('others_description') or '',
                 'หมายเหตุอื่นๆ': record_dict.get('others_notes') or '',
                 'รูปภาพอื่นๆ': '',
+                'รูปภาพฝากระโปรงรถ': '',
+                'รูปภาพภายในห้องคนขับ': '',
+                'รูปภาพภายในตู้': '',
                 # Field เก่า (รองรับข้อมูลเก่า)
                 'สถานะเครื่องยนต์': status_map.get(record_dict.get('engine_status'), record_dict.get('engine_status') or ''),
                 'หมายเหตุเครื่องยนต์': record_dict.get('engine_notes') or '',
@@ -5368,6 +5741,9 @@ def api_export_check_history():
                 'รูปภาพไฟ': 'lights_image',
                 'รูปภาพกระจกมองข้าง': 'mirrors_image',
                 'รูปภาพอื่นๆ': 'others_image',
+                'รูปภาพฝากระโปรงรถ': 'hood_image',
+                'รูปภาพภายในห้องคนขับ': 'driver_cabin_image',
+                'รูปภาพภายในตู้': 'cargo_area_image',
                 # Field เก่า (รองรับข้อมูลเก่า)
                 'รูปภาพเครื่องยนต์': 'engine_image',
                 'รูปภาพตัวถัง': 'body_image',
